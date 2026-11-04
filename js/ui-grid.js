@@ -269,7 +269,7 @@
       }
       app.selection = null;
       this.refreshLine(app.cursor.line);
-      MW.touchStatus('cursor');
+      MW.touchStatus('cursor', ['cursor']);
     },
 
     onMouseMove(e) {

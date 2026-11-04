@@ -3,6 +3,12 @@
   'use strict';
   const MW = global.MW;
 
+  /* each panel repaints only for the slices it displays */
+  const PANEL_KEYS = {
+    play: ['transport'],
+    edit: ['editMode', 'spaceAsDel', 'chordMode', 'octave', 'advance']
+  };
+
   const panels = MW.panels = {
     current: 'play',
 
@@ -10,8 +16,9 @@
       this.host = host;
       if (MW.store && !this.wiredStore) {
         this.wiredStore = true;
-        MW.store.subscribe('transport', () => {
-          if (this.current === 'play') this.show('play');
+        MW.store.subscribe('*', e => {
+          const keys = PANEL_KEYS[this.current];
+          if (keys && keys.indexOf(e.key) !== -1) this.show(this.current);
         });
       }
       this.show('play');
@@ -302,7 +309,7 @@
           MW.player.channels[t].muted = MW.app.mutedTracks[t];
           this.refresh();
           MW.grid.render();
-          MW.touchStatus('song');
+          MW.touchStatus('mute', ['mutedTracks']);
         };
       });
     },
@@ -453,7 +460,7 @@
 
     wire_files() {
       const title = this.host.querySelector('#song-title');
-      if (title) title.oninput = () => { MW.app.song.name = title.value; MW.touchStatus('song'); };
+      if (title) title.oninput = () => { MW.app.song.name = title.value; MW.touchStatus('song', ['song']); };
     },
 
     /* ---------------------------------------------------------- Misc */

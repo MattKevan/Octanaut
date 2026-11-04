@@ -40,6 +40,7 @@
     no16: false,
     ptkey: false,
     clipRange: null,
+    seq: 0,
     transport: { playing: false }
   };
 
@@ -48,9 +49,10 @@
      panels that a slice changed. */
   const store = MW.store = MW.createStore(app);
   const STATUS_KEYS = ['song', 'cursor', 'currentIns', 'editMode', 'spaceAsDel',
-    'chordMode', 'octave', 'mutedTracks', 'songIndex', 'songList', 'transport'];
+    'chordMode', 'octave', 'advance', 'mutedTracks', 'songIndex', 'songList', 'seq'];
   MW.statusKeys = STATUS_KEYS;
-  MW.touchStatus = reason => store.commit(STATUS_KEYS, reason || 'status');
+  /* commit the given slices; with none, repaint the whole status strip */
+  MW.touchStatus = (reason, keys) => store.commit(keys || STATUS_KEYS, reason || 'status');
   store.subscribe(STATUS_KEYS, updateStatus);
 
   const clipboard = { tracks: [], lines: 0, tracksCount: 0, kind: null };
@@ -738,7 +740,7 @@
     app.cursor.track = t;
     app.cursor.field = f;
     MW.grid.refreshLine(app.cursor.line);
-    MW.touchStatus('cursor');
+    MW.touchStatus('cursor', ['cursor']);
   }
 
   function moveCursor(dLine, dTrack, dField) {
@@ -770,7 +772,7 @@
     }
     app.typePending = 0;
     MW.grid.render();
-    MW.touchStatus('cursor');
+    MW.touchStatus('cursor', ['cursor']);
   }
 
   function insertNote(note) {
@@ -1024,8 +1026,7 @@
       if (app.ptkey) {
         if (MW.player.playing) { MW.player.stop(); return; }
         app.editMode = !app.editMode;
-        MW.touchStatus('status');
-        MW.panels.refresh();
+        MW.touchStatus('edit', ['editMode']);
         return;
       }
       if (app.spaceAsDel && app.editMode && !shift && !alt) {
@@ -1128,8 +1129,7 @@
 
     if (key === 'Escape') {
       app.editMode = !app.editMode;
-      MW.touchStatus('status');
-      MW.panels.refresh();
+      MW.touchStatus('edit', ['editMode']);
       return;
     }
 
@@ -1151,8 +1151,7 @@
 
     if (key === '~' || key === '`') {
       app.spaceAsDel = !app.spaceAsDel;
-      MW.touchStatus('status');
-      MW.panels.refresh();
+      MW.touchStatus('space', ['spaceAsDel']);
       return;
     }
 
@@ -1169,7 +1168,7 @@
         app.mutedTracks[d] = !app.mutedTracks[d];
         MW.player.channels[d].muted = app.mutedTracks[d];
         MW.grid.render();
-        MW.touchStatus('status');
+        MW.touchStatus('mute', ['mutedTracks']);
       }
       return;
     }
@@ -1180,15 +1179,14 @@
       const n = parseInt(key.slice(1), 10);
       if (n >= 1 && n <= 4) {
         app.octave = n - 1;
-        MW.touchStatus('status');
-        MW.panels.refresh();
+        MW.touchStatus('octave', ['octave']);
       } else if (app.ptkey && n >= 3 && n <= 5 && (shift || alt)) {
         const op = n === 3 ? 'cut' : n === 4 ? 'copy' : 'paste';
         if (alt) ops[op + 'Block'](); else ops[op + 'Track']();
       } else if (n >= 6 && n <= 10) {
         app.cursor.line = Math.min(b.lines - 1, Math.round(((n - 6) / 4) * b.lines));
         MW.grid.render();
-        MW.touchStatus('status');
+        MW.touchStatus('cursor', ['cursor']);
       }
       return;
     }
@@ -1725,10 +1723,10 @@
 
   function lastActionFor(act) {
     const map = {
-      'edit-toggle': () => { app.editMode = !app.editMode; MW.panels.refresh(); MW.touchStatus('edit'); },
-      'edit-space': () => { app.spaceAsDel = !app.spaceAsDel; MW.panels.refresh(); },
-      'edit-chord': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); },
-      'chord-toggle': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); },
+      'edit-toggle': () => { app.editMode = !app.editMode; MW.touchStatus('edit', ['editMode']); },
+      'edit-space': () => { app.spaceAsDel = !app.spaceAsDel; MW.touchStatus('space', ['spaceAsDel']); },
+      'edit-chord': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
+      'chord-toggle': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
       'file-open': () => MW.requester.open(),
       'file-save': saveModule,
       'file-save-mod': saveST,
@@ -1862,8 +1860,8 @@
     if (map[act]) return map[act];
 
     if (act.startsWith('scope-')) return () => { app.transposeScope = act.slice(6); MW.panels.refresh(); };
-    if (act.startsWith('oct-')) return () => { app.octave = parseInt(act.slice(4), 10); MW.panels.refresh(); MW.touchStatus('octave'); };
-    if (act.startsWith('adv-')) return () => { app.advance = act.slice(4); MW.panels.refresh(); };
+    if (act.startsWith('oct-')) return () => { app.octave = parseInt(act.slice(4), 10); MW.touchStatus('octave', ['octave']); };
+    if (act.startsWith('adv-')) return () => { app.advance = act.slice(4); MW.touchStatus('advance', ['advance']); };
     if (act.startsWith('blk-tracks-')) return () => ops.setTracks(parseInt(act.slice(11), 10));
     if (act.startsWith('instscope-')) return () => { app.transposeInstrScope = act.slice(10); MW.panels.refresh(); };
     if (act.startsWith('chmode-')) return () => {
@@ -2170,7 +2168,7 @@
           app.cursor.line = Math.min(b.lines - 1, app.cursor.line + app.step);
           MW.grid.render();
         }
-        MW.touchStatus('cursor');
+        MW.touchStatus('cursor', ['cursor']);
         return;
       }
     }
@@ -2615,7 +2613,7 @@
       const t = parseInt(d.dataset.mute, 10);
       app.mutedTracks[t] = !app.mutedTracks[t];
       MW.player.channels[t].muted = app.mutedTracks[t];
-      MW.touchStatus('status');
+      MW.touchStatus('mute', ['mutedTracks']);
       MW.grid.render();
     });
 
@@ -2705,14 +2703,15 @@
           MW.grid.refreshLine(row.line);
         }
       }
-      MW.touchStatus('play');
+      store.set({ seq: MW.player.seqPos }, 'play');
+      MW.touchStatus('play', ['cursor']);
     };
 
     MW.player.onStop = () => {
       MW.grid.refreshLine(-1);
       MW.grid.updatePadding();
       MW.grid.centerLine(app.cursor.line);
-      MW.touchStatus('stop');
+      MW.touchStatus('stop', ['cursor']);
     };
 
     MW.on('transport', t => {
