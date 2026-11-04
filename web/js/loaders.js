@@ -100,8 +100,33 @@
       p = off + 8;
     }
     tracks = Math.max(1, Math.min(16, tracks));
-    lines = Math.max(1, Math.min(256, lines));
+    lines = Math.max(1, Math.min(id >= 1 ? 3200 : 256, lines));
     const block = MW.createBlock(tracks, lines);
+
+    /* MMD1 and later carry a BlockInfo struct after the header */
+    if (id >= 1) {
+      const info = u32(dv, off + 4);
+      if (info) {
+        const namePtr = u32(dv, info + 4);
+        const nameLen = u32(dv, info + 8);
+        if (namePtr && nameLen) {
+          let nm = '';
+          for (let k = 0; k < Math.min(nameLen, 256); k++) {
+            const ch = u8(dv, namePtr + k);
+            if (!ch) break;
+            nm += String.fromCharCode(ch);
+          }
+          block.name = nm;
+        }
+        const hlPtr = u32(dv, info);
+        if (hlPtr) {
+          for (let l = 0; l < lines; l++) {
+            const word = u32(dv, hlPtr + (l >> 5) * 4);
+            block.highlight[l] = (word >>> (l & 31)) & 1;
+          }
+        }
+      }
+    }
     for (let l = 0; l < lines; l++) {
       for (let t = 0; t < tracks; t++) {
         const c = block.rows[l][t];
@@ -298,6 +323,17 @@
           out += String.fromCharCode(ch);
         }
         annotxt = out.trim();
+      }
+      const songnamePtr = u32(dv, e + 44);
+      const songnameLen = u32(dv, e + 48);
+      if (songnamePtr && songnameLen) {
+        let out = '';
+        for (let i = 0; i < Math.min(songnameLen, 256); i++) {
+          const ch = u8(dv, songnamePtr + i);
+          if (!ch) break;
+          out += String.fromCharCode(ch);
+        }
+        songName = out.trim();
       }
     }
 

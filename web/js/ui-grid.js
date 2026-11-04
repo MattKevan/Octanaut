@@ -24,7 +24,10 @@
       this.wrap.addEventListener('contextmenu', e => e.preventDefault());
       this.wrap.addEventListener('scroll', () => { this.onScroll(); this.placeMeters(); this.placeLines(); }, { passive: true });
       window.addEventListener('mousemove', e => this.onMouseMove(e));
-      window.addEventListener('mouseup', () => { this.dragging = false; });
+      window.addEventListener('mouseup', () => {
+        if (this.dragging) MW.touchStatus('selection', ['selection']);
+        this.dragging = false;
+      });
       window.addEventListener('resize', () => { this.updatePadding(); this.placeMeters(); this.placeLines(); });
       this.render();
       if (typeof requestAnimationFrame === 'function') {
@@ -258,6 +261,7 @@
         app.selection = { l0: at.line, l1: at.line, t0: at.track == null ? 0 : at.track, t1: at.track == null ? 0 : at.track };
         this.dragging = true;
         this.render();
+        MW.touchStatus('selection', ['selection']);
         return;
       }
       if (e.button !== 0) return;
@@ -269,7 +273,7 @@
       }
       app.selection = null;
       this.refreshLine(app.cursor.line);
-      MW.touchStatus('cursor', ['cursor']);
+      MW.touchStatus('selection', ['selection', 'cursor']);
     },
 
     onMouseMove(e) {

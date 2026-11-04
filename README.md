@@ -62,7 +62,7 @@ Octanaut reads and plays:
 | **IFF 8SVX** and raw samples | Instrument import. |
 | **LHA archives** | Drop a `.lha` and the module inside is extracted and opened. If it holds several, you get a picker. Headers at levels 0, 1 and 2; methods -lh0-, -lh1-, -lh4- to -lh7-. |
 
-It writes **MMD0** (the format OctaMED reads back), **ProTracker modules** with the effects converted, **WAV** and **IFF 8SVX** samples. V4's native MOD1 format is not written yet. It also records from a microphone, which the sample editor's Monitor and Record gadgets drive.
+It writes **MMD1** (`.med`, V4's native format), **MMD0** (the older interoperable format), **ProTracker modules** with the effects converted, **WAV**, **AAC** and **IFF 8SVX** samples. Audio export renders the song offline, so it does not depend on real-time playback. MP3 appears when the browser exposes an encoder, which Chromium currently does not. It also records from a microphone, which the sample editor's Monitor and Record gadgets drive.
 
 Playing an OctaMED demo from 1991 is the point. `File > Load demo` gives you something to poke at if you do not have a module to hand.
 
@@ -70,7 +70,7 @@ Playing an OctaMED demo from 1991 is the point. `File > Load demo` gives you som
 
 Octanaut keeps OctaMED's shape:
 
-- A song is a list of **blocks** of 1–256 lines and 1–16 tracks. Block length is variable. V4 allows 3200 lines; the current cap follows the MMD0 writer, which cannot represent more.
+- A song is a list of **blocks** of 1–3200 lines and 1–16 tracks. Block length is variable. MMD1 keeps the full V4 range; MMD0 stops at 256 and refuses longer blocks rather than truncating them.
 - A **play sequence** names which blocks play in which order, up to 256 entries.
 - Up to 63 **instruments** are shared by every song in the module.
 - Notes carry a note, an instrument, a command and a data byte.
@@ -163,6 +163,10 @@ Shift+arrows do not select a range: on the Amiga that is block and sample naviga
 
 **Synthsounds** run the real bytecode: ten volume commands and fourteen waveform commands, executed once per timing pulse, driving up to 64 single-cycle waveforms. The renderer detects program loops so held notes sustain instead of stopping after a fixed length.
 
+## MIDI
+
+Web MIDI drives note input and output in Chromium. An instrument with a MIDI channel leaves the mixer and sends its notes, preset changes and controller values down the selected port. The MIDI panel also covers clock out, active sensing, local control and panic. Safari's Web MIDI support is limited, and the message editor, input maps and external sync described in the V4 manual are still missing.
+
 ## Recording system audio
 
 The sample editor's **Input** selector offers three sources:
@@ -193,9 +197,10 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 
 ## Known gaps
 
-- **MOD1 save** is not implemented; MMD0 is the only writer. That is the main V4 format gap and it blocks 3200-line blocks.
+- **MOD1 (no instruments)** save is not implemented; `.med` always embeds the samples. MMD0 remains available for older players.
 - **MIDI messages and maps** are not implemented: no SysEx editor, input map, external sync, dump or send-out. Basic MIDI note output and input work.
 - **The sample list** shows loaded instruments rather than a `MED_Paths` library, so it cannot browse a disk collection or resolve missing names.
+- **MP3 export** depends on a browser audio encoder. Chromium exposes AAC but not MP3, so there the WAV and AAC buttons are the reliable pair.
 - **Octaves** stop at 4+5, where V4 reaches 9+A. The keypad has two maps, where V4 has four.
 - Browsers hold audio back until the page has been clicked once. Octanaut resumes the audio context on the first click or key press and says so if it is still blocked.
 - **Synthsound sequence editing** changes values and inserts/deletes lines, but does not let you type command names inline; the binary instruments round-trip unchanged through MMD0.
@@ -219,7 +224,7 @@ app/
     js/store.js       app state, patch/commit and subscriptions
     js/loaders.js     MMD0-3, MED4, MED2, MOD, MSH, 8SVX
     js/lha.js         LHA/LZH archives, levels 0-2, -lh0- to -lh7-
-    js/writer.js      MMD0 writer
+    js/writer.js      MMD0 and MMD1 writers
     js/synth.js       synthsound renderer
     js/engine.js      tick scheduler, Web Audio voices, effects
     js/ui-grid.js     note grid
@@ -230,9 +235,9 @@ app/
 
 The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.writeMMD0(song)` work without a DOM, which is how the demo modules were round-trip tested (7,680 cells, no differences).
 
-Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 19 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 writer round-tripping notes, tempo and block counts. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the MMD0 writer, the synth renderer, the audio engine and the store. The UI scripts can join them one file at a time.
+Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 31 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export and the store. The UI scripts can join them one file at a time.
 
-`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 105 features matching, 23 partial, 33 absent.
+`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 111 features matching, 22 partial, 29 absent.
 
 ## Command bytes
 

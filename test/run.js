@@ -106,5 +106,55 @@ if (!ruff) {
     saved.blocks.length + '/' + song.blocks.length);
 }
 
+/* --------------------------------------------------- MMD1 round trip */
+
+const v4 = MW.createSong();
+v4.name = 'v4 test';
+v4.channels = 8;
+v4.bpmMode = true;
+v4.linesPerBeat = 4;
+MW.resizeBlock(v4.blocks[0], 16, 300);
+v4.blocks[0].name = 'Long block';
+v4.blocks[0].highlight[299] = 1;
+const lastCell = v4.blocks[0].rows[299][15];
+lastCell.note = 60;
+lastCell.ins = 3;
+lastCell.cmd = 0x19;
+lastCell.dat = 7;
+const testInst = MW.createInstrument('sample');
+testInst.name = 'Test sample';
+testInst.data = new Float32Array(128).fill(0.25);
+testInst.finetune = -3;
+testInst.hold = 5;
+testInst.decay = 2;
+v4.instruments[2] = testInst;
+
+let mmd0Refused = false;
+try { MW.writeMMD0(v4); } catch (e) { mmd0Refused = /256/.test(String(e && e.message)); }
+check('MMD0 refuses blocks over 256 lines', mmd0Refused);
+
+const v4back = MW.loadModule(MW.writeMMD1(v4));
+check('MMD1 detected', v4back.format === 'MMD1', v4back.format);
+check('MMD1 300 lines', v4back.blocks[0].lines === 300, String(v4back.blocks[0].lines));
+check('MMD1 16 tracks', v4back.blocks[0].tracks === 16, String(v4back.blocks[0].tracks));
+check('MMD1 extended command', v4back.blocks[0].rows[299][15].cmd === 0x19,
+  '0x' + v4back.blocks[0].rows[299][15].cmd.toString(16));
+check('MMD1 block name', v4back.blocks[0].name === 'Long block', v4back.blocks[0].name);
+check('MMD1 highlight', v4back.blocks[0].highlight[299] === 1, String(v4back.blocks[0].highlight[299]));
+check('MMD1 finetune', v4back.instruments[2].finetune === -3, String(v4back.instruments[2].finetune));
+check('MMD1 hold/decay', v4back.instruments[2].hold === 5 && v4back.instruments[2].decay === 2,
+  v4back.instruments[2].hold + '/' + v4back.instruments[2].decay);
+check('MMD1 BPM mode', v4back.bpmMode === true && v4back.linesPerBeat === 4,
+  v4back.bpmMode + '/' + v4back.linesPerBeat);
+
+const second = MW.createSong();
+second.name = 'second song';
+second.playseq = [0];
+const multi = MW.loadModule(MW.writeMMD1(v4, [second]));
+check('MMD1 multi-module chain', multi.multis && multi.multis.length === 1,
+  String(multi.multis ? multi.multis.length : 0));
+check('MMD1 second song name', multi.multis && multi.multis[0].name === 'second song',
+  multi.multis ? multi.multis[0].name : '');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

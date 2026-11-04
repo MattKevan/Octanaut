@@ -8,6 +8,7 @@
     play: ['transport'],
     instr: ['currentIns'],
     midi: ['currentIns'],
+    range: ['selection', 'selectedTracks'],
     edit: ['editMode', 'spaceAsDel', 'chordMode', 'octave', 'advance']
   };
 
@@ -269,8 +270,9 @@
         + '<div class="panel-row">'
         + this.group('Tracks', `${[4, 8, 12, 16].map(n => this.btn(String(n), 'blk-tracks-' + n, b.tracks === n ? 'on' : '')).join('')}`)
         + this.group('Lines', `
-            <input class="pnum" id="blk-lines" type="number" min="1" max="256" value="${b.lines}">
+            <input class="pnum" id="blk-lines" type="number" min="1" max="3200" value="${b.lines}">
             ${this.btn('Set', 'blk-lines-set')}`)
+        + this.group('Name', `<input class="ptext" id="blk-name" value="${escapeAttr(b.name || '')}" maxlength="40" style="min-width:150px">`)
         + this.group('Track', `${this.btn('Cut', 'trk-cut')}${this.btn('Copy', 'trk-copy')}${this.btn('Paste', 'trk-paste')}${this.btn('Swap', 'trk-swap')}`)
         + this.group('Block', `${this.btn('Cut', 'blk-cut')}${this.btn('Copy', 'blk-copy')}${this.btn('Paste', 'blk-paste')}${this.btn('Swap', 'blk-swap')}`)
         + this.group('Lines', `${this.btn('Ins', 'line-ins')}${this.btn('Del', 'line-del')}${this.btn('Ins trk', 'track-ins')}${this.btn('Del trk', 'track-del')}`)
@@ -287,6 +289,11 @@
     wire_block() {
       const el = this.host.querySelector('#blk-lines');
       if (el) el.onchange = () => MW.ops.setLines(parseInt(el.value, 10) || 64);
+      const name = this.host.querySelector('#blk-name');
+      if (name) name.oninput = () => {
+        const b = MW.app.song.blocks[MW.app.cursor.block];
+        if (b) b.name = name.value;
+      };
     },
 
     /* ---------------------------------------------------------- Edit */
@@ -351,7 +358,7 @@
         el.onclick = () => {
           const t = parseInt(el.dataset.selTrack, 10);
           app.selectedTracks[t] = !app.selectedTracks[t];
-          this.refresh();
+          MW.touchStatus('selection', ['selectedTracks']);
         };
       });
     },
@@ -461,12 +468,13 @@
       const f = app.song.format || 'new';
       return this.title('Files', f)
         + '<div class="panel-row">'
-        + this.group('Module', `${this.btn('Open…', 'file-open')}${this.btn('Save MMD0', 'file-save')}${this.btn('Save MOD', 'file-save-mod')}${this.btn('New song', 'file-new')}`)
+        + this.group('Module', `${this.btn('Open…', 'file-open')}${this.btn('Save .med', 'file-save')}${this.btn('Save MMD0', 'file-save-mmd0')}${this.btn('Save MOD', 'file-save-mod')}${this.btn('New song', 'file-new')}`)
         + this.group('Instrument', `${this.btn('Load sample…', 'ins-open')}${this.btn('Export WAV', 'ins-wav')}${this.btn('Export IFF', 'file-save-iff')}`)
         + this.group('Name', `<input class="ptext" id="song-title" value="${escapeAttr(app.song.name || '')}" maxlength="40" style="min-width:180px">`)
         + this.group('Library', `${this.btn('Load demo', 'file-demo')}`)
+        + this.group('Audio', `${this.btn('WAV', 'audio-wav')}${this.btn('AAC', 'audio-aac')}${this.btn('MP3', 'audio-mp3')}`)
         + '</div>'
-        + `<p class="preadout" style="margin-top:10px;max-width:80ch">Reads MMD0, MMD1, MMD2 and MMD3 modules, MED 2.10 song files and ProTracker modules. Writes MMD0. Instrument files: raw samples, IFF 8SVX and MED synth patches (.msh).</p>`;
+        + `<p class="preadout" style="margin-top:10px;max-width:80ch">Reads MMD0, MMD1, MMD2 and MMD3 modules, MED 2.10 song files and ProTracker modules. Writes MMD1 (.med) and MMD0. Audio export renders the song offline to WAV, AAC or MP3. Instrument files: raw samples, IFF 8SVX and MED synth patches (.msh).</p>`;
     },
 
     wire_files() {

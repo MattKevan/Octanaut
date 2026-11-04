@@ -150,7 +150,7 @@
 
     setLines(n) {
       const b = block();
-      n = MW.clamp(n || 64, 1, 256);
+      n = MW.clamp(n || 64, 1, 3200);
       MW.resizeBlock(b, b.tracks, n);
       app.cursor.line = Math.min(app.cursor.line, n - 1);
       refreshAll();
@@ -243,7 +243,7 @@
 
     insertLine() {
       const b = block();
-      if (b.lines >= 256) return MW.toast('Block is already 256 lines', true);
+      if (b.lines >= 3200) return MW.toast('Block is already 3200 lines', true);
       const line = app.cursor.line;
       b.rows.splice(line, 0, new Array(b.tracks).fill(0).map(() => MW.cell()));
       b.lines++;
@@ -284,7 +284,7 @@
 
     expand(factor) {
       const b = block();
-      if (b.lines * factor > 256) return MW.toast('Expanded block would exceed 256 lines', true);
+      if (b.lines * factor > 3200) return MW.toast('Expanded block would exceed 3200 lines', true);
       const rows = [];
       for (let l = 0; l < b.lines; l++) {
         rows.push(b.rows[l]);
@@ -1250,7 +1250,7 @@
     if (dLine || dLine2) app.selection.l1 = MW.clamp(app.selection.l1 + (dLine || dLine2), 0, block().lines - 1);
     if (dTrack) app.selection.t1 = MW.clamp(app.selection.t1 + dTrack, 0, block().tracks - 1);
     MW.grid.render();
-    MW.panels.refresh();
+    MW.touchStatus('selection', ['selection']);
   }
 
   function toggleHighlight() {
@@ -1365,8 +1365,9 @@
     reader.readAsArrayBuffer(file);
   }
 
-  function saveModule() {
+  function saveModule(format) {
     try {
+      const mmd1 = format !== 0;
       const list = (app.songList && app.songList.length > 1)
         ? app.songList
         : [app.song];
@@ -1377,19 +1378,20 @@
           : true;
         others = all ? list.filter(s => s !== app.song) : [];
       }
-      const buf = MW.writeMMD0(app.song, others);
+      const buf = mmd1 ? MW.writeMMD1(app.song, others) : MW.writeMMD0(app.song, others);
       const blob = new Blob([buf], { type: 'application/octet-stream' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = (app.song.name || 'untitled') + '.mmd0';
+      a.download = (app.song.name || 'untitled') + (mmd1 ? '.med' : '.mmd0');
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      MW.toast('Saved MMD0' + (others.length ? ` with ${others.length + 1} songs` : ''));
+      MW.toast('Saved ' + (mmd1 ? 'MMD1 (.med)' : 'MMD0') + (others.length ? ` with ${others.length + 1} songs` : ''));
     } catch (err) {
       MW.toast('Save failed: ' + err.message, true);
     }
   }
-  MW.saveModule = saveModule;
+  MW.saveModule = () => saveModule(1);
+  MW.saveMMD0 = () => saveModule(0);
 
 
   function saveST() {
@@ -1733,7 +1735,11 @@
       'edit-chord': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
       'chord-toggle': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
       'file-open': () => MW.requester.open(),
-      'file-save': saveModule,
+      'file-save': () => saveModule(1),
+      'file-save-mmd0': () => saveModule(0),
+      'audio-wav': () => MW.exportAudio('wav'),
+      'audio-aac': () => MW.exportAudio('aac'),
+      'audio-mp3': () => MW.exportAudio('mp3'),
       'file-save-mod': saveST,
       'file-new': () => { app.song = MW.createSong(); app.cursor = { block: 0, line: 0, track: 0, field: 0, seq: 0 }; MW.player.setSong(app.song); refreshAll(); },
       'file-demo': () => {
@@ -1787,8 +1793,8 @@
       'hl-3': () => ops.highlightEvery(3), 'hl-4': () => ops.highlightEvery(4),
       'hl-8': () => ops.highlightEvery(8), 'hl-16': () => ops.highlightEvery(16),
       'hl-clear': () => ops.clearHighlight(),
-      'sel-all': () => { app.selection = { l0: 0, l1: block().lines - 1, t0: 0, t1: block().tracks - 1 }; refreshAll(); },
-      'sel-cancel': () => { app.selection = null; refreshAll(); },
+      'sel-all': () => { app.selection = { l0: 0, l1: block().lines - 1, t0: 0, t1: block().tracks - 1 }; MW.grid.render(); MW.touchStatus('selection', ['selection']); },
+      'sel-cancel': () => { app.selection = null; MW.grid.render(); MW.touchStatus('selection', ['selection']); },
       'rng-clear': () => ops.clearRange(),
       'rng-cut': () => ops.copyRange(true),
       'rng-copy': () => ops.copyRange(false),
@@ -2734,7 +2740,8 @@
     const origTrigger = MW.player.trigger;
     MW.player.trigger = function (ch, note, time, cell) {
       if (ch.inst && ch.inst.midiChannel) {
-        midiTrigger(ch.inst, note, ch.idx);
+        /* offline export has no MIDI hardware to talk to */
+        if (!this.offline) midiTrigger(ch.inst, note, ch.idx);
         return;
       }
       return origTrigger.call(this, ch, note, time, cell);

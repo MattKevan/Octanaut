@@ -41,6 +41,12 @@
         }
       }
       this.ctx = ctx;
+      this.build(ctx);
+      return ctx;
+    },
+
+    /* Build the master chain on any context, real or offline. */
+    build(ctx) {
       this.master = ctx.createGain();
       this.master.gain.value = 0.85;
       this.filter = ctx.createBiquadFilter();
@@ -61,8 +67,29 @@
       this.analyser.fftSize = 1024;
       this.limiter.connect(this.analyser);
       this.analyser.connect(ctx.destination);
+      this.buses = null;
       this.ready = true;
       return ctx;
+    },
+
+    /* Swap the graph to an offline context and back again. */
+    useContext(ctx) {
+      this.ctx = ctx;
+      this.buses = null;
+      this.build(ctx);
+      return ctx;
+    },
+
+    snapshot() {
+      return {
+        ctx: this.ctx, master: this.master, limiter: this.limiter,
+        filter: this.filter, buses: this.buses, analyser: this.analyser,
+        ready: this.ready, unlocked: this.unlocked
+      };
+    },
+
+    restore(s) {
+      Object.assign(this, s);
     },
 
     level() {
@@ -207,6 +234,7 @@
     }
   };
 
+  /** @type {any} */
   const player = MW.player = {
     song: null,
     playing: false,
@@ -410,6 +438,10 @@
     },
 
     advanceSeq() {
+      if (this.offline && this.seqPos + 1 >= this.song.playseq.length) {
+        this.offlineDone = true;
+        return;
+      }
       this.seqPos++;
       if (this.seqPos >= this.song.playseq.length) this.seqPos = 0;
       const b = this.song.playseq[this.seqPos];
@@ -870,6 +902,103 @@
       ch.src.playbackRate.setValueAtTime(rate, time);
       ch.gain.gain.setValueAtTime(this.gainFor(ch, ch.inst), time);
     }
+  };
+
+
+  /* ---------------------------------------------------------- offline render
+   *
+   * Renders the current song through the same scheduler and voice code, but
+   * against an OfflineAudioContext. The result is a stereo AudioBuffer that
+   * the WAV, AAC and MP3 encoders can consume without touching the speakers.
+   */
+  player.renderOffline = async function (song, options) {
+    const opts = options || {};
+    const sampleRate = opts.sampleRate || 44100;
+    const maxSeconds = Math.min(600, Math.max(1, opts.maxSeconds || 300));
+
+    let lines = 0;
+    for (const b of song.playseq) {
+      const block = song.blocks[b];
+      if (block) lines += block.lines;
+    }
+    const pulse = MW.pulseSeconds(song.deftempo || 33, song.tempo2 || 6, song.bpmMode, song.linesPerBeat);
+    const estimate = Math.max(1, lines * (song.tempo2 || 6) * pulse * 1.3 + 8);
+    const seconds = Math.min(maxSeconds, estimate);
+    const frames = Math.max(1, Math.ceil(seconds * sampleRate));
+
+    if (typeof OfflineAudioContext === 'undefined') {
+      throw new Error('This browser cannot render audio offline');
+    }
+    const ctx = new OfflineAudioContext(2, frames, sampleRate);
+
+    if (this.playing) this.stop();
+    const savedAudio = audio.snapshot();
+    const oldState = {
+      song: this.song, seqPos: this.seqPos, blockIdx: this.blockIdx,
+      line: this.line, tick: this.tick, tempo: this.tempo, tempo2: this.tempo2,
+      playing: this.playing
+    };
+    const oldOnRow = this.onRow;
+    const oldOnStop = this.onStop;
+    const oldSync = this.sync;
+
+    /* offline buffers must come from the offline context */
+    for (const inst of song.instruments) {
+      if (!inst) continue;
+      inst._abuf = null; inst._abufKey = null;
+      inst._synthBuf = null; inst._synthKey = null;
+    }
+
+    audio.useContext(ctx);
+    this.onRow = null;
+    this.onStop = null;
+    this.sync = false;
+    this.offline = true;
+    this.offlineDone = false;
+    this.playing = false;
+    this.setSong(song);
+    this.playing = true;
+    this.nextTime = 0;
+    this.errors = 0;
+
+    let guard = 0;
+    while (this.playing && !this.offlineDone && this.nextTime < seconds && guard++ < 5_000_000) {
+      this.step(this.nextTime);
+      this.nextTime += this.pulse;
+    }
+
+    this.playing = false;
+    this.offline = false;
+    this.offlineDone = false;
+    this.onRow = oldOnRow;
+    this.onStop = oldOnStop;
+    this.sync = oldSync;
+    audio.restore(savedAudio);
+    Object.assign(this, oldState);
+    this.playing = false;
+    this.channels = [];
+    for (let i = 0; i < 16; i++) this.channels.push(this.newChannel(i));
+
+    const rendered = await ctx.startRendering();
+    for (const inst of song.instruments) {
+      if (!inst) continue;
+      inst._abuf = null; inst._abufKey = null;
+      inst._synthBuf = null; inst._synthKey = null;
+    }
+
+    /* trim the tail so the file does not carry minutes of silence */
+    const left = rendered.getChannelData(0);
+    const right = rendered.getChannelData(1);
+    let last = rendered.length - 1;
+    while (last > 0 && Math.abs(left[last]) < 1e-4 && Math.abs(right[last]) < 1e-4) last--;
+    const end = Math.min(rendered.length, last + Math.ceil(sampleRate * 0.2));
+    return {
+      buffer: rendered,
+      end,
+      duration: end / sampleRate,
+      sampleRate,
+      truncated: estimate > maxSeconds
+    };
   };
 
   MW.voicePreview = function (note, insIdx) {

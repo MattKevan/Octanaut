@@ -13,18 +13,18 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 
 | Feature | Status | Notes |
 |---|---|---|
-| MOD1 (+instruments) save | no | V4's native format. Only MMD0 is written today. |
+| MOD1 (+instruments) save | yes | Writes `.med` with the MMD1 song struct, 4-byte cells, BlockInfo and expdata. Verified by re-import and libxmp. |
 | MOD1 (no instruments) save | no | Instrument names and MED_Paths lookup. |
 | MOD0 (old) multi-song save | yes | Writes a proper nextmod chain. |
-| 3200-line blocks | no | Model and loader cap at 256. MMD0 cannot represent more; the full range needs the MOD1 writer. |
+| 3200-line blocks | yes | MMD1 writer, loader, model and block panel. MMD0 still caps at 256, with a clear error. |
 | Blocks 00–99 | part | No explicit 100-block cap; the status bar will show more. |
 | Octaves 1+2 to 9+A | part | 1+2 to 4+5 only; notes cap at 96. |
-| Instrument finetune -8..+7 | part | Panel and engine now carry it; the MMD0 writer still stores 0. |
+| Instrument finetune -8..+7 | yes | Panel, engine and MMD1 expdata. MMD0 cannot store it. |
 | Last occupied instrument (`>|<`) | yes | Scans down from 1V. |
 | Keypad MAP2 maps | no | Track on/off and select-instrument only. |
 | Programmable key editor with `x` wildcards | part | Keys can be picked; there is no digit editor, and range pick stores one note. |
 | TRK ON SET / CLR | no | Per-track toggles only. |
-| Block name | no | Song name only. |
+| Block name | yes | Stored in BlockInfo and editable in the Block panel. |
 | NRM 1/2 and 2/3 playback | no | No slowed real-time entry. |
 | Note echo (DIST / MIN) | no | Sample echo exists; pattern echo does not. |
 | Sample list / MED_Paths | part | Lists loaded instruments rather than a disk library. |
@@ -56,7 +56,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | Load song (MED 1.12 – 3.20, OctaMED 1–4, MMD0/1, ST modules) | yes | MMD0/1/2/3, MED4, MED2, ProTracker, plus MSH and 8SVX instruments. MED 2.00 (`MED` + v3) is rejected with a message. |
 | Load instrument (raw, IFF, synth, hybrid) | yes | |
 | Load ST module | yes | Folded into Load; effects converted. |
-| Save MOD1 (+instruments) | no | V4's native format. Writes MMD0 only. |
+| Save MOD1 (+instruments) | yes | `.med` with samples included. |
 | Save MOD1 (no instruments) | no | Instrument names and MED_Paths lookup do not exist yet. |
 | Save MOD0 (old) | yes | Multi-song nextmod chain. |
 | Save song + samples | yes | MMD0 already embeds the samples; that is the interoperable container. |
@@ -66,6 +66,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | Delete file | no | Use the OS. |
 | Load / save MIDI messages and maps | no | |
 | Save instrument as raw or IFF | yes | WAV and IFF 8SVX. |
+| Export audio (browser extra) | part | WAV always; AAC through WebCodecs; MP3 where the browser exposes an encoder. |
 
 ## Play panel
 
@@ -107,7 +108,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | Block cut / copy / paste / swap | yes | |
 | Del buffer | yes | |
 | Track count 4 / 8 / 12 / 16 | yes | |
-| Line count 1–3200 | part | Direct entry, but the UI, loader and MMD0 writer cap at 256. |
+| Line count 1–3200 | yes | Direct entry. MMD0 export refuses blocks over 256. |
 | Line highlighting 1/2/3/4/8/16/C | yes | Marks every Nth line. |
 | New block / DEF | yes | |
 | New here / DEF | yes | |
@@ -249,10 +250,10 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 
 The V4 gaps that matter most:
 
-1. **MOD1 save.** The native V4 format unlocks instrument-less songs, 3200-line blocks and a clean round trip with the original program. The MMD0 writer cannot represent any of those.
-2. **Large blocks.** The model, loader and UI stop at 256 lines; V4 allows 3200. This follows the MOD1 writer.
-3. **MIDI messages and maps.** No SysEx message editor, input map editor, external sync, dump or send-out. Basic note out and input work.
-4. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
-5. **Command coverage.** 05/06/07 (slide+fade, vibrato+fade, tremolo), 10 (MIDI message), 16 (block loop), 1C (MIDI preset), 1E (line delay) and the MIDI 0A/0C/0D forms are absent.
-6. **Editor polish.** Octaves 1+2 to 9+A, keypad MAP2, programmable-key wildcards and group entry, block names, NRM, note echo, sample/synth range tools and notation ghosting.
-7. **Filesystem-adjacent features.** INFO/ICON on save, delete file, absolute instrument names, paths add/remove and the RGB palette editor.
+1. **MOD1 without instruments.** `.med` always embeds the samples. The instrument-less variant, which resolves names through MED_Paths, is still absent.
+2. **MIDI messages and maps.** No SysEx message editor, input map editor, external sync, dump or send-out. Basic note out and input work.
+3. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
+4. **Command coverage.** 05/06/07 (slide+fade, vibrato+fade, tremolo), 10 (MIDI message), 16 (block loop), 1C (MIDI preset), 1E (line delay) and the MIDI 0A/0C/0D forms are absent.
+5. **Editor polish.** Octaves 1+2 to 9+A, keypad MAP2, programmable-key wildcards and group entry, NRM, note echo, sample/synth range tools and notation ghosting.
+6. **Filesystem-adjacent features.** INFO/ICON on save, delete file, absolute instrument names, paths add/remove and the RGB palette editor.
+7. **MP3 export.** WAV and AAC work without extra code; MP3 waits for a browser encoder or a bundled one.

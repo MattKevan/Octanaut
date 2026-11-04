@@ -1,5 +1,5 @@
 // @ts-check
-/* Octanaut - MMD0 writer */
+/* Octanaut - MMD0 and MMD1 writers */
 (function (global) {
   'use strict';
   const MW = global.MW;
@@ -51,6 +51,11 @@
 
   MW.writeMMD0 = function (song, others) {
     const songs = [song].concat(others || []);
+    for (const s of songs) {
+      for (const b of s.blocks) {
+        if (b.lines > 256) throw new Error('MMD0 blocks stop at 256 lines; save as .med instead');
+      }
+    }
     const n = songs.length;
     const elements = song.instruments;
 
@@ -114,11 +119,12 @@
       dv.setUint32(h + 8, songOff[i], false);
       dv.setUint32(h + 12, 0, false);
       dv.setUint32(h + 16, blockarrOff[i], false);
-      dv.setUint32(h + 20, s.blocks.length, false);
+      dv.setUint8(h + 20, 0);
       dv.setUint32(h + 24, smplarrOff, false);
-      dv.setUint32(h + 28, 63, false);
+      dv.setUint32(h + 28, 0, false);
       dv.setUint32(h + 32, aux[i].e.exp, false);
-      dv.setUint32(h + 36, 84, false);
+      dv.setUint32(h + 36, 0, false);
+      dv.setUint16(h + 48, 0xffff, false);
       dv.setUint8(h + 50, 0);
       dv.setUint8(h + 51, n - 1);
     }
@@ -152,7 +158,10 @@
       if (s.flags.stslide) flags |= 0x20;
       if ((s.channels || 4) > 4) flags |= 0x40;
       dv.setUint8(p, flags); p += 1;
-      dv.setUint8(p, 0); p += 1;
+      let flags2 = (Math.max(1, s.linesPerBeat || 1) - 1) & 0x1f;
+      if (s.bpmMode) flags2 |= 0x20;
+      if (s.mixing) flags2 |= 0x80;
+      dv.setUint8(p, flags2); p += 1;
       dv.setUint8(p, s.tempo2 || 6); p += 1;
       for (let k = 0; k < 16; k++) dv.setUint8(p + k, s.trkvol[k] || 64);
       p += 16;
@@ -256,6 +265,259 @@
     return buf.buffer;
   };
 
+
+
+  /* ------------------------------------------------------------ MMD1 writer
+   *
+   * MMD1 is OctaMED Professional's native format. It keeps the MMD0 song
+   * structure, instrument table and expansion block, but gives every block
+   * a 16-bit track/line count, 4-byte cells with a full command byte, and
+   * a BlockInfo struct for the line highlights and block name.
+   */
+  MW.writeMMD1 = function (song, others) {
+    const songs = [song].concat(others || []);
+    const n = songs.length;
+    const elements = song.instruments;
+
+    /* ---- first pass: measure ---- */
+    let cursor = n * 52;
+    const songOff = [], blockarrOff = [], blockOffsets = [], blockInfo = [];
+
+    for (let i = 0; i < n; i++) {
+      const s = songs[i];
+      songOff[i] = cursor; cursor += 788;
+      blockarrOff[i] = cursor; cursor += s.blocks.length * 4;
+      const offs = [], infos = [];
+      for (const b of s.blocks) {
+        offs.push(cursor);
+        cursor += 8 + b.tracks * b.lines * 4;
+        cursor += cursor & 1;
+
+        const name = (b.name || '') + '\0';
+        const hlBytes = Math.ceil(b.lines / 32) * 4;
+        const info = {
+          info: cursor,
+          hl: cursor + 36,
+          name: cursor + 36 + hlBytes,
+          nameLen: name.length
+        };
+        cursor = info.name + name.length;
+        cursor += cursor & 1;
+        infos.push(info);
+      }
+      blockOffsets[i] = offs;
+      blockInfo[i] = infos;
+    }
+
+    const smplarrOff = cursor;
+    cursor += 63 * 4;
+
+    const sampleOffsets = [];
+    for (let i = 0; i < 63; i++) {
+      const inst = elements[i];
+      if (!inst) { sampleOffsets.push(0); continue; }
+      sampleOffsets.push(cursor);
+      cursor += (inst.type === 'synth' || inst.type === 'hybrid')
+        ? synthSize(inst)
+        : 6 + (inst.data ? inst.data.length : 0);
+      cursor += cursor & 1;
+      if (cursor > 16_000_000) throw new Error('module too large to save as MMD1');
+    }
+
+    const aux = [];
+    for (let i = 0; i < n; i++) {
+      const s = songs[i];
+      const e = { exp: cursor };
+      e.expSmp = e.exp + 84;
+      e.iinfo = e.expSmp + 63 * 4;
+      e.anno = e.iinfo + 63 * 40;
+      const anno = (s.annotation || s.name || '') + '\0';
+      e.annoLen = anno.length;
+      e.rgb = e.anno + anno.length + (anno.length & 1);
+      e.ninfo = e.rgb + 16;
+      e.songname = e.ninfo + 108;
+      const songname = (s.name || '') + '\0';
+      e.songnameLen = songname.length;
+      cursor = e.songname + songname.length;
+      cursor += cursor & 1;
+      aux.push({ e, anno, songname, s });
+    }
+
+    const total = cursor + 2;
+    const buf = new Uint8Array(total);
+    const dv = new DataView(buf.buffer);
+
+    /* ---- headers, one per song, chained through nextmod ---- */
+    for (let i = 0; i < n; i++) {
+      const h = i * 52;
+      dv.setUint32(h + 0, 0x4d4d4431, false);
+      dv.setUint32(h + 4, total, false);
+      dv.setUint32(h + 8, songOff[i], false);
+      dv.setUint32(h + 12, 0, false);
+      dv.setUint32(h + 16, blockarrOff[i], false);
+      dv.setUint8(h + 20, 0);
+      dv.setUint32(h + 24, smplarrOff, false);
+      dv.setUint32(h + 28, 0, false);
+      dv.setUint32(h + 32, aux[i].e.exp, false);
+      dv.setUint32(h + 36, 0, false);
+      dv.setUint16(h + 48, 0xffff, false);
+      dv.setUint8(h + 50, 0);
+      dv.setUint8(h + 51, n - 1);
+    }
+
+    /* ---- per song: song struct, block table, blocks ---- */
+    for (let i = 0; i < n; i++) {
+      const s = songs[i];
+      let p = songOff[i];
+      for (let k = 0; k < 63; k++) {
+        const inst = elements[k];
+        dv.setUint16(p, inst ? Math.round((inst.loop || 0) / 2) : 0, false);
+        dv.setUint16(p + 2, inst ? Math.round((inst.looplen || 0) / 2) : 0, false);
+        dv.setUint8(p + 4, inst ? inst.midiChannel || 0 : 0);
+        dv.setUint8(p + 5, inst ? inst.midiPreset || 0 : 0);
+        dv.setUint8(p + 6, inst ? (inst.volume == null ? 64 : inst.volume) : 64);
+        dv.setInt8(p + 7, inst ? inst.transpose || 0 : 0);
+        p += 8;
+      }
+      dv.setUint16(p, s.blocks.length, false); p += 2;
+      const seq = s.playseq.slice(0, 256);
+      dv.setUint16(p, seq.length, false); p += 2;
+      for (let k = 0; k < 256; k++) dv.setUint8(p + k, k < seq.length ? seq[k] : 0);
+      p += 256;
+      dv.setUint16(p, s.deftempo || 33, false); p += 2;
+      dv.setInt8(p, s.playtransp || 0); p += 1;
+
+      let flags = 0;
+      if (s.flags.filteron) flags |= 0x01;
+      if (s.flags.jumping) flags |= 0x02;
+      if (s.flags.jump8th) flags |= 0x04;
+      if (s.flags.volhex) flags |= 0x10;
+      if (s.flags.stslide) flags |= 0x20;
+      if ((s.channels || 4) > 4) flags |= 0x40;
+      dv.setUint8(p, flags); p += 1;
+
+      let flags2 = (Math.max(1, s.linesPerBeat || 1) - 1) & 0x1f;
+      if (s.bpmMode) flags2 |= 0x20;
+      if (s.mixing) flags2 |= 0x80;
+      dv.setUint8(p, flags2); p += 1;
+
+      dv.setUint8(p, s.tempo2 || 6); p += 1;
+      for (let k = 0; k < 16; k++) dv.setUint8(p + k, s.trkvol[k] || 64);
+      p += 16;
+      dv.setUint8(p, s.mastervol || 64); p += 1;
+      dv.setUint8(p, 63); p += 1;
+
+      for (let b = 0; b < s.blocks.length; b++) {
+        const blk = s.blocks[b];
+        const info = blockInfo[i][b];
+        const q0 = blockOffsets[i][b];
+        dv.setUint32(blockarrOff[i] + b * 4, q0, false);
+
+        dv.setUint16(q0, blk.tracks, false);
+        dv.setUint16(q0 + 2, blk.lines - 1, false);
+        dv.setUint32(q0 + 4, info.info, false);
+        let q = q0 + 8;
+        for (let l = 0; l < blk.lines; l++) {
+          for (let t = 0; t < blk.tracks; t++) {
+            const c = blk.rows[l][t];
+            dv.setUint8(q, c.note & 0x7f);
+            dv.setUint8(q + 1, c.ins & 0x3f);
+            dv.setUint8(q + 2, c.cmd & 0xff);
+            dv.setUint8(q + 3, c.dat & 0xff);
+            q += 4;
+          }
+        }
+
+        dv.setUint32(info.info + 0, info.hl, false);
+        dv.setUint32(info.info + 4, info.name, false);
+        dv.setUint32(info.info + 8, info.nameLen, false);
+        dv.setUint32(info.info + 12, 0, false);
+
+        const words = Math.ceil(blk.lines / 32);
+        for (let w = 0; w < words; w++) {
+          let value = 0;
+          for (let bit = 0; bit < 32; bit++) {
+            const line = w * 32 + bit;
+            if (line < blk.lines && blk.highlight && blk.highlight[line]) value |= (1 << bit);
+          }
+          dv.setUint32(info.hl + w * 4, value >>> 0, false);
+        }
+
+        const name = (blk.name || '') + '\0';
+        for (let k = 0; k < name.length; k++) dv.setUint8(info.name + k, name.charCodeAt(k) & 0xff);
+      }
+    }
+
+    /* ---- instrument table and payloads, shared by every song ---- */
+    for (let i = 0; i < 63; i++) dv.setUint32(smplarrOff + i * 4, sampleOffsets[i] || 0, false);
+
+    let jumpmask = 0;
+    for (let i = 0; i < 32; i++) if (elements[i] && elements[i].jump) jumpmask |= (1 << i);
+
+    for (let i = 0; i < 63; i++) {
+      const inst = elements[i];
+      if (!inst) continue;
+      const at = sampleOffsets[i];
+      if (inst.type === 'synth' || inst.type === 'hybrid') {
+        writeSynth(dv, at, inst);
+      } else {
+        const data = inst.data || new Float32Array(0);
+        dv.setUint32(at, data.length, false);
+        dv.setInt16(at + 4, 0, false);
+        for (let k = 0; k < data.length; k++) {
+          dv.setInt8(at + 6 + k, Math.max(-128, Math.min(127, Math.round(data[k] * 127))));
+        }
+      }
+    }
+
+    /* ---- expansion block per song, chained with nextmod ---- */
+    for (let i = 0; i < n; i++) {
+      const { e, anno, songname, s } = aux[i];
+      dv.setUint32(e.exp + 0, i + 1 < n ? (i + 1) * 52 : 0, false);
+      dv.setUint32(e.exp + 4, e.expSmp, false);
+      dv.setUint16(e.exp + 8, 63, false);
+      dv.setUint16(e.exp + 10, 4, false);
+      dv.setUint32(e.exp + 12, e.anno, false);
+      dv.setUint32(e.exp + 16, e.annoLen, false);
+      dv.setUint32(e.exp + 20, e.iinfo, false);
+      dv.setUint16(e.exp + 24, 63, false);
+      dv.setUint16(e.exp + 26, 40, false);
+      dv.setUint32(e.exp + 28, jumpmask, false);
+      dv.setUint32(e.exp + 32, e.rgb, false);
+      const ch = s.channels || 4;
+      const split = ch >= 8 ? 0 : ch === 7 ? 0xff : ch === 6 ? 0xffff : ch === 5 ? 0xffffff : 0;
+      dv.setUint32(e.exp + 36, split, false);
+      dv.setUint32(e.exp + 40, e.ninfo, false);
+      dv.setUint32(e.exp + 44, e.songname, false);
+      dv.setUint32(e.exp + 48, e.songnameLen, false);
+
+      for (let k = 0; k < 63; k++) {
+        const inst = elements[k];
+        const o = e.expSmp + k * 4;
+        dv.setUint8(o, inst ? inst.hold || 0 : 0);
+        dv.setUint8(o + 1, inst ? inst.decay || 0 : 0);
+        dv.setUint8(o + 2, inst && inst.suppressOff ? 1 : 0);
+        dv.setInt8(o + 3, inst ? MW.clamp(inst.finetune || 0, -8, 7) : 0);
+        const oi = e.iinfo + k * 40;
+        const name = (inst && inst.name ? inst.name : '').slice(0, 39);
+        for (let c = 0; c < 40; c++) dv.setUint8(oi + c, c < name.length ? name.charCodeAt(c) : 0);
+      }
+
+      for (let k = 0; k < anno.length; k++) dv.setUint8(e.anno + k, anno.charCodeAt(k) & 0xff);
+
+      const rgb = [0x000, 0xeee, 0x48c, 0x4c4, 0xc44, 0xcc4, 0x46c, 0xccc];
+      for (let k = 0; k < 8; k++) dv.setUint16(e.rgb + k * 2, rgb[k], false);
+
+      dv.setUint8(e.ninfo, 0);
+      dv.setUint8(e.ninfo + 1, 0);
+      for (let k = 0; k < 5; k++) dv.setUint16(e.ninfo + 2 + k * 2, 0xffff, false);
+      for (let k = 0; k < 16; k++) dv.setUint8(e.ninfo + 12 + k, 0x1f);
+      for (let k = 0; k < 16; k++) dv.setUint8(e.ninfo + 28 + k, 0);
+      for (let k = 0; k < songname.length; k++) dv.setUint8(e.songname + k, songname.charCodeAt(k) & 0xff);
+    }
+
+    return buf.buffer;
+  };
 
   /* ------------------------------------------------------------ MOD writer
    *
