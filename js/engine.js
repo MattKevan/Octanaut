@@ -1,3 +1,4 @@
+// @ts-check
 /* Octanaut - audio engine.
  *
  * A tracker tick scheduler driving Web Audio voices. Each tick schedules
@@ -12,9 +13,11 @@
   for (let i = 0; i < 64; i++) SINE[i] = Math.sin((i / 64) * Math.PI * 2);
 
   const audio = MW.audio = {
+    /** @type {AudioContext | null} */
     ctx: null,
     master: null,
     limiter: null,
+    /** @type {BiquadFilterNode | null} */
     filter: null,
     buses: null,
     ready: false,
@@ -33,7 +36,7 @@
         try {
           ctx = new Ctx();
         } catch (e2) {
-          MW.toast('Audio could not start: ' + e2.message, true);
+          MW.toast('Audio could not start: ' + /** @type {any} */ (e2).message, true);
           return null;
         }
       }
@@ -133,11 +136,13 @@
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 512;
         analyser.smoothingTimeConstant = 0.08;
+        /** @type {StereoPannerNode | null} */
         let pan = null;
         if (ctx.createStereoPanner) {
-          pan = ctx.createStereoPanner();
-          analyser.connect(pan);
-          pan.connect(this.filter);
+          const panner = ctx.createStereoPanner();
+          pan = panner;
+          analyser.connect(panner);
+          panner.connect(this.filter);
         } else {
           analyser.connect(this.filter);
         }
@@ -340,7 +345,7 @@
           this.step(this.nextTime);
         } catch (err) {
           this.errors = (this.errors || 0) + 1;
-          if (this.errors === 1 && MW.toast) MW.toast('Playback error: ' + err.message, true);
+          if (this.errors === 1 && MW.toast) MW.toast('Playback error: ' + /** @type {any} */ (err).message, true);
           if (this.errors > 40) { this.stop(); return; }
         }
         this.nextTime += this.pulse;
@@ -462,7 +467,7 @@
 
     bufferFor(inst, ch) {
       const ctx = audio.ctx;
-      if (!inst) return null;
+      if (!ctx || !inst) return null;
       if ((inst.type === 'synth' || inst.type === 'hybrid') && inst.synth) {
         const pulseHz = 1 / Math.max(0.004, this.pulse);
         const start = ch && ch.synthStart ? ch.synthStart : 0;
@@ -485,7 +490,7 @@
          enhanced - native depth, stereo kept (OctaMED Soundstudio and later)
          classic  - what a stock Amiga would do: 8 bit, mono            */
     pcmBuffer(inst) {
-      if (!inst.data) return null;
+      if (!inst.data || !audio.ctx) return null;
       const sr = audio.ctx.sampleRate;
       const c2 = inst.c2rate || 8363;
       const classic = (MW.app && MW.app.depth) === 'classic';
@@ -521,7 +526,9 @@
         for (let i = 0; i < n; i++) right[i] = Math.round(right[i] * 32767) / 32767;
       }
 
-      const buf = audio.ctx.createBuffer(right ? 2 : 1, n, sr);
+      const ctx = audio.ctx;
+      if (!ctx) return null;
+      const buf = ctx.createBuffer(right ? 2 : 1, n, sr);
       buf.getChannelData(0).set(left);
       if (right) buf.getChannelData(1).set(right);
       inst._abuf = buf;
@@ -538,6 +545,8 @@
 
     makeBuffer(data, rate, loopStart, loopEnd) {
       const ctx = audio.ctx;
+      if (!ctx) return null;
+      /** @type {any} */
       const buf = ctx.createBuffer(1, Math.max(2, data.length), rate);
       buf.getChannelData(0).set(data);
       buf._loopStart = loopStart || 0;
@@ -548,7 +557,7 @@
     trigger(ch, note, time, cell) {
       const ctx = audio.ctx;
       const inst = ch.inst;
-      if (!inst) return;
+      if (!ctx || !inst) return;
 
       const eff = MW.clamp(note + (this.song.playtransp || 0) + (inst.transpose || 0), 1, 96);
       if (!ch._keepStart) ch.synthStart = 0;
@@ -606,7 +615,7 @@
         gain.connect(bus.analyser);
         ch.pan = bus.pan;
       } else {
-        gain.connect(audio.filter);
+        if (audio.filter) gain.connect(audio.filter);
         ch.pan = null;
       }
 

@@ -1,3 +1,4 @@
+// @ts-check
 /* Octanaut - LHA archive reader.
  *
  * Enough of LHA/LZH to open the archives Amiga software ships in:
@@ -605,6 +606,7 @@
         starts.push(base + 2, base);
       }
 
+      /** @type {Uint8Array | null} */
       let out = null;
       let usedStart = -1;
       for (const st of starts) {

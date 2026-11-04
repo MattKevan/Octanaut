@@ -1,3 +1,4 @@
+// @ts-check
 /* Octanaut - module loaders: MMD0-3, MED2/3/4 song files, ProTracker MOD, MSH, 8SVX */
 (function (global) {
   'use strict';
@@ -53,6 +54,7 @@
   /* ------------------------------------------------------------- MMD read */
 
   function readSynth(dv, base, type) {
+    /** @type {any} */
     const synth = { voltbllen: 0, wftbllen: 0, volspeed: 1, wfspeed: 1, waveforms: [] };
     const voltbllen = u16(dv, base + 14);
     const wftbllen = u16(dv, base + 16);
@@ -387,7 +389,7 @@
     if (ver !== 4) {
       if (ver === 3) {
         const err = new Error('MED 2.00 song files use a format this build cannot read yet. Open the file in OctaMED and save it as a module (MMD0).');
-        err.friendly = true;
+        /** @type {any} */ (err).friendly = true;
         throw err;
       }
       return null;
@@ -858,6 +860,7 @@
     const dv = new DataView(buffer);
     if (buffer.byteLength < 12 || tag(dv, 0) !== 'FORM') return null;
     let pos = 12;
+    /** @type {any} */
     let inst = null;
     let name = '';
     let volume = 64;

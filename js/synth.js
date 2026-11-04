@@ -1,3 +1,4 @@
+// @ts-check
 /* Octanaut - synthetic instrument renderer.
  *
  * MED synthsounds are two little programs (volume and waveform/pitch) stepped
@@ -37,7 +38,7 @@
 
   /**
    * Render a synthsound to PCM.
-   * @param {object} inst instrument with .synth
+   * @param {any} inst instrument with .synth
    * @param {number} sampleRate output rate
    * @param {number} pulseHz program steps per second
    * @param {number} maxSeconds hard cap
@@ -69,13 +70,16 @@
     let pitchRate = 0;         // per pulse, multiplier delta
     let pitchMul = 1;
     let vibDepth = 0, vibSpeed = 0, vibPos = 0;
+    /** @type {any} */
     let vibWave = null;
+    /** @type {any} */
     let arp = null, arpPos = 0;
     let wfIndex = 0;
     let decayJump = inst.decay || 0;
 
     let volRunning = true;
     let wfRunning = true;
+    /** @type {any} */
     let env = null, envPos = 0;
 
     let phase = 0;
@@ -227,6 +231,7 @@
     }
 
     const end = Math.max(64, Math.min(maxLen, written + 32));
+    /** @type {any} */
     const result = out.slice(0, end);
     result.loopStart = loopStartSample > 0 ? loopStartSample : 0;
     result.loopEnd = end;

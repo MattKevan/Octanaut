@@ -220,7 +220,7 @@ app/
 
 The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.writeMMD0(song)` work without a DOM, which is how the demo modules were round-trip tested (7,680 cells, no differences).
 
-`npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 19 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 writer round-tripping notes, tempo and block counts. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the MMD0 writer and the store. The rest of the scripts can join them one file at a time.
+`npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 19 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 writer round-tripping notes, tempo and block counts. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the MMD0 writer, the synth renderer, the audio engine and the store. The UI scripts can join them one file at a time.
 
 `FEATURES.md` tracks parity with the original, panel by panel: 110 features matching, 2 partial, 5 absent.
 
