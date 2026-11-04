@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Octanaut — eight channel tracker</title>
+<link rel="preload" href="fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/PixelOperatorMonoHB8.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="css/app.css?v=119">
+</head>
+<body>
+
+<div class="frame">
+
+  <div class="titlebar">
+    <span class="tick" aria-hidden="true"></span>
+    <span class="brand">OctaNAUT Professional (v0.01)</span>
+    <span class="credit">Inspired by Teijo Kinnunen</span>
+    <span class="rule" aria-hidden="true"></span>
+    <span class="timer-label">TIMER</span>
+    <b id="timer">00:00</b>
+    <span class="grip" aria-hidden="true"><i></i></span>
+  </div>
+
+  <div class="deck">
+    <div class="deck-main">
+      <div class="deck-left">
+        <div class="seqbox" id="seqbox"></div>
+        <div class="seqarrows" id="seqarrows"></div>
+        <div class="seqtools">
+          <div class="row">
+            <button class="flex h-full min-w-0 flex-1 items-center justify-center border-b border-ink bg-paper px-0 text-[16px] leading-none active:bg-ink active:text-paper" data-act="seq-add" title="Append a sequence entry">+</button>
+            <button class="flex h-full min-w-0 flex-1 items-center justify-center border-b border-ink bg-paper px-0 text-[16px] leading-none active:bg-ink active:text-paper" data-act="seq-sub" title="Remove the last entry">−</button>
+          </div>
+          <button class="flex h-full min-w-0 flex-1 items-center justify-center border-b border-ink bg-paper px-0 text-[16px] leading-none active:bg-ink active:text-paper" data-act="seq-ins" title="Insert an entry below">INS</button>
+          <button class="flex h-full min-w-0 flex-1 items-center justify-center border-b border-ink bg-paper px-0 text-[16px] leading-none active:bg-ink active:text-paper" data-act="seq-del" title="Delete the current entry">DEL</button>
+          <button class="flex h-full min-w-0 flex-1 items-center justify-center border-b border-ink bg-paper px-0 text-[16px] leading-none active:bg-ink active:text-paper" data-act="seq-ins-block" title="Insert the current block">INS↓</button>
+        </div>
+      </div>
+
+      <div class="deck-panel" id="panel"></div>
+    </div>
+
+    <div class="deck-side">
+      <div class="panelgrid" id="rail" aria-label="Panels">
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="files">FILES</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="misc">MISC</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active" data-panel="play">PLAY</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="vol">VOL</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="instr">INSTR</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="midi">MIDI</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="block">BLOCK</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="transp">TRANS</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="edit">EDIT</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="range">RANGE</button>
+      </div>
+      <div class="dispgrid" id="display-tabs" aria-label="Displays">
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active" data-display="grid">NOTES</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="notation">NOTA</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="synth">SYNTH</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="sample">SMPED</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="list">SLIST</button>
+      </div>
+    </div>
+
+    <div class="statusline">
+      <span class="sb"><b id="st-seq">0001/0001</b></span>
+      <span class="sb"><b id="st-block">0000/0000</b></span>
+      <span class="sb"><b id="st-oct">12</b></span>
+      <span class="sb flag" id="st-edit">E</span>
+      <span class="sb" id="st-space">SP</span>
+      <span class="sb" id="st-chord">CHRD</span>
+      <span class="sb leds" id="st-tracks"></span>
+      <span class="sb"><b id="st-ins">01</b></span>
+      <span class="sb grow" id="st-insname">no instrument</span>
+      <span class="sb cursor-pointer text-[11px]" id="st-song-prev" title="Previous song (Shift: delete last)">◀</span>
+      <span class="sb cursor-pointer text-[11px]" id="st-song-next" title="Next song">▶</span>
+      <span class="sb"><b id="st-song">01/01</b></span>
+    </div>
+  </div>
+
+  <div class="screen" id="display-body"></div>
+
+  <div class="bottom">
+    <div class="membar">
+      <span class="mem-label">MEM</span>
+      <span id="mem-used">000000</span>
+      <span class="mem-sep">/</span>
+      <span id="mem-total">000000</span>
+      <span class="mem-bars"><i id="mem-bar-a"></i><i id="mem-bar-b"></i></span>
+      <span id="display-meta" class="sr-only"></span>
+      <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[14px] leading-none active:bg-ink active:text-paper" id="btn-nrm" title="Monitor normalisation">NRM</button>
+    </div>
+    <div class="monitor"><canvas id="meters"></canvas></div>
+  </div>
+
+  <input id="file-input" type="file" accept=".mmd0,.mmd1,.mmd2,.mmd3,.med,.mod,.mmd,.msh,.8svx,.lha,.lzh" hidden>
+
+</div>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script src="js/core.js?v=119"></script>
+<script src="js/loaders.js?v=119"></script>
+<script src="js/lha.js?v=119"></script>
+<script src="js/writer.js?v=119"></script>
+<script src="js/synth.js?v=119"></script>
+<script src="js/engine.js?v=119"></script>
+<script src="js/ui-grid.js?v=119"></script>
+<script src="js/ui-panels.js?v=119"></script>
+<script src="js/ui-displays.js?v=119"></script>
+<script src="js/app.js?v=119"></script>
+</body>
+</html>

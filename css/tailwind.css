@@ -1,0 +1,733 @@
+@import "tailwindcss";
+
+@source "../index.html";
+@source "../js/*.js";
+
+/* ------------------------------------------------------------------ fonts */
+
+@font-face {
+  font-family: "Departure Mono";
+  src: url("../fonts/DepartureMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pixel Operator Mono HB 8";
+  src: url("../fonts/PixelOperatorMonoHB8.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+/* narrower cut, used when a block has more than four tracks */
+@font-face {
+  font-family: "Pixel Operator Mono HB";
+  src: url("../fonts/PixelOperatorMonoHB.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@custom-variant on (&.on);
+@custom-variant selected (&.active);
+@custom-variant playing (&.playing);
+
+@theme {
+  --font-ui: "Departure Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-pixel: "Pixel Operator Mono HB 8", "Pixel Operator Mono", ui-monospace, monospace;
+  --font-pixel-narrow: "Pixel Operator Mono HB", "Pixel Operator Mono HB 8", ui-monospace, monospace;
+
+  --color-paper: #ffffff;
+  --color-ink: #000000;
+  --color-magenta: #ff00ff;
+  --color-cyan: #00ffff;
+  --color-violet: #a55aff;
+}
+
+/* ------------------------------------------------------------------- base */
+
+@layer base {
+  html,
+  body {
+    @apply h-full bg-paper text-ink font-ui;
+  }
+
+  body {
+    @apply overflow-auto p-[23px] text-[14px];
+  }
+
+  button,
+  input,
+  select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    border-radius: 0;
+    background: none;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  ::selection {
+    @apply bg-ink text-paper;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #000;
+    border-left: 1px solid #333;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #fff;
+    border: 2px solid #000;
+  }
+}
+
+/* -------------------------------------------------------------- components */
+
+@layer components {
+  /* window --------------------------------------------------------------- */
+  .frame {
+    @apply flex h-full min-h-[620px] min-w-[1024px] flex-col overflow-hidden border border-ink bg-paper shadow-[2px_2px_0_0_#000];
+  }
+
+  .titlebar {
+    @apply flex h-[30px] shrink-0 items-center gap-2.5 border-b border-ink px-2;
+  }
+
+  .tick {
+    @apply size-[14px] shrink-0 border border-ink;
+  }
+
+  .brand {
+    @apply whitespace-nowrap text-[14px] leading-none;
+  }
+
+  .credit {
+    @apply whitespace-nowrap text-[10px] uppercase leading-none tracking-[0.05em];
+  }
+
+  .rule {
+    @apply h-[13px] w-[364px] max-w-[40vw] shrink bg-[repeating-linear-gradient(to_bottom,#000_0,#000_1px,transparent_1px,transparent_4px)];
+  }
+
+  .timer-label {
+    @apply ml-auto whitespace-nowrap text-[14px] uppercase leading-none;
+  }
+
+  #timer {
+    @apply whitespace-nowrap text-[14px] font-normal leading-none tabular-nums;
+  }
+
+  .grip {
+    @apply flex size-[14px] shrink-0 items-center justify-center border border-ink bg-paper;
+  }
+
+  .grip i {
+    @apply block size-[6px] border border-ink bg-paper;
+  }
+
+  /* top deck ------------------------------------------------------------- */
+  .deck {
+    @apply grid h-[193px] shrink-0 grid-cols-[minmax(0,1fr)_254px] grid-rows-[144px_29px] gap-x-2 gap-y-[6px] px-2 pb-1 pt-2;
+    background-image: repeating-conic-gradient(rgba(0, 0, 0, 0.35) 0 25%, transparent 0 50%);
+    background-size: 2px 2px;
+  }
+
+  .deck-main {
+    @apply flex min-w-0 border border-ink bg-paper shadow-[1px_1px_0_0_#000] p-1;
+  }
+
+  .deck-left {
+    @apply flex w-[146px] shrink-0 border border-ink;
+  }
+
+  .deck-panel {
+    @apply min-w-0 flex-1 overflow-y-auto overflow-x-hidden;
+  }
+
+  .deck-side {
+    @apply grid h-[144px] min-w-0 grid-cols-3 grid-rows-5 gap-[2px] border border-ink bg-paper p-[2px];
+  }
+
+  #rail,
+  #display-tabs {
+    display: contents;
+  }
+
+  #rail [data-panel="files"] { grid-area: 1 / 1; }
+  #rail [data-panel="play"] { grid-area: 2 / 1; }
+  #rail [data-panel="instr"] { grid-area: 3 / 1; }
+  #rail [data-panel="block"] { grid-area: 4 / 1; }
+  #rail [data-panel="edit"] { grid-area: 5 / 1; }
+  #rail [data-panel="misc"] { grid-area: 1 / 2; }
+  #rail [data-panel="vol"] { grid-area: 2 / 2; }
+  #rail [data-panel="midi"] { grid-area: 3 / 2; }
+  #rail [data-panel="transp"] { grid-area: 4 / 2; }
+  #rail [data-panel="range"] { grid-area: 5 / 2; }
+
+  #display-tabs [data-display="grid"] { grid-area: 1 / 3; }
+  #display-tabs [data-display="notation"] { grid-area: 2 / 3; }
+  #display-tabs [data-display="synth"] { grid-area: 3 / 3; }
+  #display-tabs [data-display="sample"] { grid-area: 4 / 3; }
+  #display-tabs [data-display="list"] { grid-area: 5 / 3; }
+
+  /* play sequence box ---------------------------------------------------- */
+  .seqbox {
+    @apply h-full w-[57px] shrink-0 border-r border-t border-l border-ink bg-paper;
+  }
+
+  .seq-list {
+    @apply grid h-full grid-rows-5;
+  }
+
+  .seq-row {
+    @apply flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap;
+  }
+
+  .seq-row .ix {
+    @apply text-[16px];
+  }
+
+  .seq-row.playing {
+    @apply bg-ink text-paper;
+  }
+
+  .seq-row.cur {
+    @apply bg-ink text-paper;
+  }
+
+  .seqarrows {
+    @apply grid w-[29px] shrink-0 grid-rows-4 border-r border-ink;
+  }
+
+  .seqtools {
+    @apply grid w-[59px] shrink-0 grid-rows-4;
+  }
+
+  .seqtools .row {
+    @apply flex min-h-0;
+  }
+
+  /* status strip --------------------------------------------------------- */
+  .statusline {
+    @apply col-span-2 col-start-1 grid h-[29px] min-w-0 grid-cols-[119px_96px_33px_24px_30px_58px_88px_33px_minmax(0,1fr)_18px_18px_71px] gap-1;
+  }
+
+  .sb {
+    @apply flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap;
+  }
+
+  .sb b {
+    @apply font-normal;
+  }
+
+  .sb.flag.on {
+    @apply bg-ink text-paper;
+  }
+
+  .sb.grow {
+    @apply justify-start px-2;
+  }
+
+  .sb.leds {
+    @apply flex-wrap content-center justify-start gap-[1px] px-1;
+  }
+
+  .sb .dot {
+    @apply size-[8px] shrink-0 border border-ink bg-paper;
+  }
+
+  .sb .dot.on {
+    @apply bg-ink;
+  }
+
+  /* note grid ------------------------------------------------------------ */
+  .screen {
+    @apply relative min-h-0 flex-1 overflow-hidden bg-black text-white;
+    outline: 1px solid #fff;
+    outline-offset: -1px;
+  }
+
+  .grid-wrap {
+    @apply relative z-[1] h-full overflow-auto outline-none;
+    overscroll-behavior: contain;
+  }
+
+  .grid-wrap:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.6);
+    outline-offset: -1px;
+  }
+
+  .notegrid {
+    @apply relative min-w-min pb-[35vh] font-pixel text-[16px] leading-[25px] text-white;
+  }
+
+  .grid-head {
+    @apply hidden;
+  }
+
+  /* 5-8 tracks get the narrower cut so five digits still fit a column */
+  .notegrid.many {
+    font-family: var(--font-pixel-narrow);
+  }
+
+  .notegrid.many .data-fields {
+    @apply ml-[24px];
+  }
+
+  .grid-row {
+    @apply flex h-[25px] items-center whitespace-pre;
+  }
+
+  .grid-num {
+    @apply w-[80px] shrink-0 select-none pl-1 text-left text-[16px] leading-[25px] text-white;
+  }
+
+  .grid-row.hl {
+    box-shadow: inset 2px 0 0 #fff;
+  }
+
+  .grid-row.sel {
+    @apply bg-white/15;
+  }
+
+  /* the white bar is the play head; it stays on the centre line */
+  .grid-row.cur,
+  .grid-row.playing {
+    @apply bg-white text-black;
+    min-width: 100%;
+  }
+
+  .grid-row.cur .grid-num,
+  .grid-row.playing .grid-num {
+    @apply bg-transparent text-black;
+  }
+
+  .grid-row.cur .cell,
+  .grid-row.playing .cell {
+    @apply text-black;
+  }
+
+  .track {
+    @apply relative shrink-0 overflow-visible pl-2 pr-2;
+  }
+
+  .track.muted {
+    @apply opacity-30;
+  }
+
+  .cell {
+    @apply relative inline-block;
+  }
+
+  .cell.note {
+    @apply w-[3ch] text-left;
+  }
+
+  .data-fields {
+    @apply ml-[32px] inline-block whitespace-pre;
+  }
+
+  .cell.ins,
+  .cell.cmd,
+  .cell.dat {
+    @apply inline-block;
+  }
+
+  /* the active cell for editing: a magenta box with a blue inner rule */
+  .cell .caret {
+    @apply pointer-events-none absolute -inset-px;
+    border: 2px solid #ff00ff;
+    box-shadow: inset 0 0 0 1px #3c7fff;
+  }
+
+  /* meters drawn over the grid */
+  .grid-lines {
+    @apply pointer-events-none absolute inset-0 z-0 overflow-hidden;
+  }
+
+  .grid-lines i {
+    @apply absolute top-0 bottom-0 block w-px bg-white/80;
+  }
+
+  .ch-meters,
+  .ch-waves {
+    @apply pointer-events-none absolute inset-0 z-0 overflow-hidden;
+  }
+
+  .ch-waves {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .ch-meter {
+    @apply pointer-events-none absolute bottom-0 w-[30px] bg-[linear-gradient(to_top,#00ffff_0%,#a55aff_55%,#ff00ff_100%)];
+    height: 0;
+  }
+
+  /* memory + monitor ----------------------------------------------------- */
+  .bottom {
+    @apply shrink-0 px-2 pb-2 pt-[6px];
+    background-image: repeating-conic-gradient(rgba(0, 0, 0, 0.35) 0 25%, transparent 0 50%);
+    background-size: 2px 2px;
+  }
+
+  .membar {
+    @apply flex h-[30px] items-center gap-1.5 border border-ink bg-paper px-2 text-[16px] leading-none;
+  }
+
+  .membar .mem-label {
+    @apply pr-1 text-[16px];
+  }
+
+  .mem-bars {
+    @apply mx-1 flex h-[14px] min-w-0 flex-1 gap-1 overflow-hidden border border-ink/30 p-[1px];
+  }
+
+  .mem-bars i {
+    @apply block h-full bg-[linear-gradient(to_right,#ff00ff,#a55aff,#00ffff)];
+  }
+
+  .monitor {
+    @apply mt-[6px] h-[117px] border border-ink bg-paper p-1.5;
+  }
+
+  .monitor canvas {
+    @apply block h-full w-full;
+  }
+
+  /* generic panel controls ----------------------------------------------- */
+  .panel-title {
+    @apply mb-1 flex items-baseline justify-between gap-2 text-[13px] uppercase leading-none tracking-[0.06em];
+  }
+
+  .panel-title em {
+    @apply text-[11px] not-italic opacity-60;
+  }
+
+  .panel-row {
+    @apply flex flex-wrap items-end gap-x-2 gap-y-1.5;
+  }
+
+  .group {
+    @apply flex flex-col gap-1 border-r border-ink/30 pr-2;
+  }
+
+  .group:last-child {
+    @apply border-r-0 pr-0;
+  }
+
+  .group-label {
+    @apply text-[10px] uppercase leading-none tracking-[0.04em];
+  }
+
+  .group-row {
+    @apply flex flex-wrap items-center gap-1;
+  }
+
+  .pnum,
+  .ptext,
+  .pselect,
+  .field-input {
+    @apply h-[26px] border border-ink bg-paper px-1 text-[14px] leading-none text-ink;
+  }
+
+  .pnum {
+    @apply w-[52px] text-right;
+  }
+
+  .ptext {
+    @apply min-w-[180px];
+  }
+
+  .preadout {
+    @apply text-[12px] leading-tight;
+  }
+
+  .pslider {
+    @apply h-[14px] w-[110px] appearance-none border border-ink bg-paper;
+  }
+
+  .pslider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 14px;
+    background: #fff;
+    border: 1px solid #000;
+    cursor: pointer;
+  }
+
+  .pslider::-moz-range-thumb {
+    width: 10px;
+    height: 14px;
+    border-radius: 0;
+    background: #fff;
+    border: 1px solid #000;
+    cursor: pointer;
+  }
+
+  .led {
+    @apply grid size-[13px] place-items-center border border-ink bg-paper p-0 text-[8px] text-ink;
+  }
+
+  .led.on {
+    @apply bg-ink text-paper;
+  }
+
+  /* play panel ----------------------------------------------------------- */
+  .playpanel {
+    @apply flex h-full flex-col;
+  }
+
+  .insbox {
+    @apply flex h-full w-[34px] shrink-0 flex-col items-center justify-center border border-ink leading-none;
+  }
+
+  .insbox span {
+    @apply text-[9px] uppercase;
+  }
+
+  .insbox b {
+    @apply text-[16px] font-normal;
+  }
+
+  .tslider {
+    @apply relative h-full min-w-0 flex-1 border border-l-2 border-t-2 border-ink bg-paper;
+    background-image: repeating-conic-gradient(rgba(0, 0, 0, 0.35) 0 25%, transparent 0 50%);
+    background-size: 2px 2px;
+  }
+
+  .tslider .knob {
+    @apply absolute top-1 bottom-1 w-[10px] border border-ink bg-paper shadow-[1px_1px_0_0_#000];
+  }
+
+  /* displays ------------------------------------------------------------- */
+  .pane {
+    @apply h-full overflow-auto bg-black px-3 py-2.5 text-[#f2f0ec];
+  }
+
+  .pane h2 {
+    @apply mb-1 text-[10px] font-normal uppercase tracking-[0.1em] text-[#8a8a8a];
+  }
+
+  .pane p.lede {
+    @apply mb-2.5 max-w-[80ch] text-[11px] text-[#9a948e];
+  }
+
+  .empty {
+    @apply grid h-full place-items-center p-6 text-center text-[12px] leading-relaxed text-[#8a8a8a];
+  }
+
+  .ins-table {
+    @apply w-full border-collapse text-[11.5px];
+  }
+
+  .ins-table th {
+    @apply border-b border-[#333] pb-1 pr-2.5 text-left text-[9.5px] font-normal uppercase tracking-[0.08em] text-[#8a8a8a];
+  }
+
+  .ins-table td {
+    @apply border-b border-[#161616] py-[3px] pr-2.5;
+  }
+
+  .ins-table tr {
+    @apply cursor-pointer;
+  }
+
+  .ins-table tr:hover td {
+    @apply bg-[#141414];
+  }
+
+  .ins-table tr.cur td {
+    @apply bg-white text-black;
+  }
+
+  .ins-table .mono {
+    font-family: var(--font-ui);
+  }
+
+  .tag {
+    @apply border border-[#444] px-1 font-ui text-[9px] text-[#9a948e];
+  }
+
+  .tag.sample { @apply border-[#5a5040] text-[#d8c9a0]; }
+  .tag.synth { @apply border-[#2e4a44] text-[#7ac0a8]; }
+  .tag.hybrid { @apply border-[#443a58] text-[#b9a6d9]; }
+  .tag.midi { @apply border-[#4d332f] text-[#d99b8f]; }
+
+  .wave-wrap {
+    @apply border border-[#333] bg-black;
+  }
+
+  .wave-wrap canvas {
+    @apply block h-[190px] w-full;
+  }
+
+  .sheet-wrap {
+    @apply h-full overflow-auto bg-[#efe9dc] px-4 py-3 text-[#1b1917];
+  }
+
+  .sheet-wrap canvas {
+    @apply block w-full;
+  }
+
+  .synth-lists {
+    @apply mt-2 grid grid-cols-2 gap-2.5;
+  }
+
+  .seq-list.synth {
+    @apply max-h-[190px] overflow-auto border border-[#333] bg-[#050505] font-ui text-[11.5px];
+  }
+
+  .seq-list.synth .syn-row {
+    @apply flex cursor-pointer gap-2.5 px-2 text-[#9a948e];
+  }
+
+  .seq-list.synth .syn-row.cur {
+    @apply bg-white text-black;
+  }
+
+  .seq-list.synth .seq-ix { @apply w-[3ch] text-[#5a5550]; }
+  .seq-list.synth .seq-op { @apply w-[4ch] text-white; }
+  .seq-list.synth .seq-arg { @apply text-[#cfcac4]; }
+
+  .keys {
+    @apply mt-2 grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-x-4 gap-y-0.5 text-[10.5px] text-[#9a948e];
+  }
+
+  .keys kbd {
+    @apply inline-block border border-[#3a3a3a] bg-[#1a1a1a] px-1 font-ui text-[10px] text-[#ddd8d0];
+  }
+
+  /* file requester ------------------------------------------------------- */
+  .requester {
+    @apply fixed inset-0 z-[200] grid place-items-center bg-black/55;
+  }
+
+  .req-frame {
+    @apply w-[min(560px,92vw)] border border-ink bg-paper p-2 text-ink shadow-[2px_2px_0_0_#000];
+  }
+
+  .req-title {
+    @apply mb-1.5 text-[11px] uppercase tracking-[0.08em];
+  }
+
+  .req-path {
+    @apply mb-1 overflow-hidden text-ellipsis whitespace-nowrap border border-ink bg-ink px-1.5 py-[3px] font-ui text-[11px] text-paper;
+  }
+
+  .req-list {
+    @apply h-[240px] overflow-auto border border-ink bg-ink p-0.5 font-ui text-[11.5px];
+  }
+
+  .req-row {
+    @apply cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap px-1.5 py-[1px] text-[#cfcac4];
+  }
+
+  .req-row.dir { @apply text-white; }
+  .req-row:hover { @apply bg-[#1a1a1a]; }
+  .req-row.sel { @apply bg-white text-black; }
+
+  .req-empty {
+    @apply p-2 text-[11px] text-[#8a8a8a];
+  }
+
+  .req-note {
+    @apply my-1 min-h-[14px] text-[10.5px];
+  }
+
+  .req-buttons {
+    @apply flex items-center gap-1;
+  }
+
+  .req-buttons .spacer {
+    @apply flex-1;
+  }
+
+  /* toast ---------------------------------------------------------------- */
+  .toast {
+    @apply pointer-events-none fixed bottom-[180px] left-1/2 z-50 max-w-[64ch] -translate-x-1/2 translate-y-1.5 border border-ink bg-paper px-3 py-1.5 text-[11px] text-ink opacity-0 transition duration-100;
+  }
+
+  .toast.show {
+    @apply translate-y-0 opacity-100;
+  }
+
+  .toast.err {
+    @apply bg-ink text-paper;
+  }
+
+  /* misc ----------------------------------------------------------------- */
+  .dither {
+    background-image: repeating-conic-gradient(rgba(0, 0, 0, 0.35) 0 25%, transparent 0 50%);
+    background-size: 2px 2px;
+  }
+
+}
+
+/* ------------------------------------------------------------------ extras */
+
+.print-sheet { display: none; }
+
+body.dragging::after {
+  content: "Drop a module to load it";
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px dashed #000;
+  color: #000;
+  font-size: 14px;
+  z-index: 100;
+}
+
+/* four colours instead of eight */
+body.dep2 .cell .note { color: #f0f0f0; }
+body.dep2 .grid-row.playing .cell .note { color: #000; }
+
+@media (max-width: 1120px) {
+  .credit { display: none; }
+  .deck { grid-template-columns: minmax(0, 1fr) 230px; }
+  .statusline { grid-template-columns: 96px 82px 30px 22px 26px 50px 70px 30px minmax(0, 1fr) 16px 16px 60px; }
+  .deck-left { width: 132px; }
+  .seqarrows { width: 26px; }
+  .seqtools { width: 49px; }
+}
+
+@media (max-width: 900px) {
+  body { padding: 8px; }
+  .frame { box-shadow: none; }
+  .deck { grid-template-columns: minmax(0, 1fr) 210px; }
+  .notegrid { font-size: 20px; line-height: 22px; }
+  .grid-row { height: 22px; }
+  .grid-num { width: 60px; font-size: 20px; line-height: 22px; }
+}
+
+@media print {
+  html, body { background: #fff; height: auto; overflow: visible; }
+  body { padding: 0; }
+  .frame { display: block; height: auto; border: 0; box-shadow: none; }
+  .titlebar, .deck, .statusline, .bottom, .monitor {
+    display: none !important;
+  }
+  .screen { position: static; height: auto; overflow: visible; background: #fff; }
+  .pane { background: #fff; padding: 0; overflow: visible; }
+  .sheet-wrap { background: #fff; padding: 0; overflow: visible; height: auto; }
+  .sheet-wrap canvas { width: 100% !important; height: auto !important; }
+  body.printing .frame { display: none !important; }
+  body.printing .print-sheet { display: block !important; background: #fff; color: #000; }
+  .print-page { page-break-inside: avoid; margin: 0 0 12mm; }
+  .print-page.feed { page-break-after: always; }
+  .print-head { font: 10px ui-monospace, monospace; color: #444; margin: 0 0 4px; }
+  .print-sheet canvas { display: block; width: 100% !important; height: auto !important; }
+}
