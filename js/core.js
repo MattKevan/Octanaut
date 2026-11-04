@@ -1,3 +1,4 @@
+// @ts-check
 /* Octanaut - core model and helpers */
 (function (global) {
   'use strict';

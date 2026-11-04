@@ -602,7 +602,7 @@
          analyser used by the meters and oscilloscopes */
       const bus = audio.channelBus(ch.idx);
       if (bus) {
-        if (bus.pan) bus.pan.pan.value = this.panOf(ch.idx);
+        if (bus.pan) bus.pan.pan.setValueAtTime(this.panOf(ch.idx), time);
         gain.connect(bus.analyser);
         ch.pan = bus.pan;
       } else {
@@ -614,7 +614,7 @@
       ch.gain = gain;
       ch.rate = this.rateFor(ch);
 
-      src.playbackRate.value = ch.rate;
+      src.playbackRate.setValueAtTime(ch.rate, time);
       const v = this.gainFor(ch, inst);
       gain.gain.setValueAtTime(0, time);
       gain.gain.linearRampToValueAtTime(v, time + 0.002);
@@ -653,8 +653,12 @@
       if (ch.src) {
         try {
           if (ch.gain) {
-            ch.gain.gain.cancelScheduledValues(time);
-            ch.gain.gain.setValueAtTime(ch.gain.gain.value, time);
+            if (ch.gain.gain.cancelAndHoldAtTime) {
+              ch.gain.gain.cancelAndHoldAtTime(time);
+            } else {
+              ch.gain.gain.cancelScheduledValues(time);
+              ch.gain.gain.setValueAtTime(ch.gain.gain.value, time);
+            }
             ch.gain.gain.linearRampToValueAtTime(0, time + 0.004);
           }
           ch.src.stop(time + 0.008);

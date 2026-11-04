@@ -39,8 +39,19 @@
     dep2: false,
     no16: false,
     ptkey: false,
-    clipRange: null
+    clipRange: null,
+    transport: { playing: false }
   };
+
+  /* One state object, one notification path. The store wraps the app
+     object itself, so direct reads keep working; a commit tells the
+     panels that a slice changed. */
+  const store = MW.store = MW.createStore(app);
+  const STATUS_KEYS = ['song', 'cursor', 'currentIns', 'editMode', 'spaceAsDel',
+    'chordMode', 'octave', 'mutedTracks', 'songIndex', 'songList', 'transport'];
+  MW.statusKeys = STATUS_KEYS;
+  MW.touchStatus = reason => store.commit(STATUS_KEYS, reason || 'status');
+  store.subscribe(STATUS_KEYS, updateStatus);
 
   const clipboard = { tracks: [], lines: 0, tracksCount: 0, kind: null };
   const sampleClip = MW.sampleClip = { data: null };
@@ -59,7 +70,7 @@
     MW.panels.refresh();
     MW.displays.refresh();
     if (MW.renderSeqBox) MW.renderSeqBox();
-    updateStatus();
+    MW.touchStatus('refresh');
   }
   MW.refreshAll = refreshAll;
 
@@ -127,7 +138,7 @@
 
   function afterEdit() {
     MW.grid.render();
-    updateStatus();
+    MW.touchStatus('edit');
     MW.emit('edit', null);
   }
 
@@ -727,7 +738,7 @@
     app.cursor.track = t;
     app.cursor.field = f;
     MW.grid.refreshLine(app.cursor.line);
-    updateStatus();
+    MW.touchStatus('cursor');
   }
 
   function moveCursor(dLine, dTrack, dField) {
@@ -759,7 +770,7 @@
     }
     app.typePending = 0;
     MW.grid.render();
-    updateStatus();
+    MW.touchStatus('cursor');
   }
 
   function insertNote(note) {
@@ -1013,7 +1024,7 @@
       if (app.ptkey) {
         if (MW.player.playing) { MW.player.stop(); return; }
         app.editMode = !app.editMode;
-        updateStatus();
+        MW.touchStatus('status');
         MW.panels.refresh();
         return;
       }
@@ -1117,7 +1128,7 @@
 
     if (key === 'Escape') {
       app.editMode = !app.editMode;
-      updateStatus();
+      MW.touchStatus('status');
       MW.panels.refresh();
       return;
     }
@@ -1140,7 +1151,7 @@
 
     if (key === '~' || key === '`') {
       app.spaceAsDel = !app.spaceAsDel;
-      updateStatus();
+      MW.touchStatus('status');
       MW.panels.refresh();
       return;
     }
@@ -1158,7 +1169,7 @@
         app.mutedTracks[d] = !app.mutedTracks[d];
         MW.player.channels[d].muted = app.mutedTracks[d];
         MW.grid.render();
-        updateStatus();
+        MW.touchStatus('status');
       }
       return;
     }
@@ -1169,7 +1180,7 @@
       const n = parseInt(key.slice(1), 10);
       if (n >= 1 && n <= 4) {
         app.octave = n - 1;
-        updateStatus();
+        MW.touchStatus('status');
         MW.panels.refresh();
       } else if (app.ptkey && n >= 3 && n <= 5 && (shift || alt)) {
         const op = n === 3 ? 'cut' : n === 4 ? 'copy' : 'paste';
@@ -1177,7 +1188,7 @@
       } else if (n >= 6 && n <= 10) {
         app.cursor.line = Math.min(b.lines - 1, Math.round(((n - 6) / 4) * b.lines));
         MW.grid.render();
-        updateStatus();
+        MW.touchStatus('status');
       }
       return;
     }
@@ -1714,7 +1725,7 @@
 
   function lastActionFor(act) {
     const map = {
-      'edit-toggle': () => { app.editMode = !app.editMode; MW.panels.refresh(); updateStatus(); },
+      'edit-toggle': () => { app.editMode = !app.editMode; MW.panels.refresh(); MW.touchStatus('edit'); },
       'edit-space': () => { app.spaceAsDel = !app.spaceAsDel; MW.panels.refresh(); },
       'edit-chord': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); },
       'chord-toggle': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); },
@@ -1851,7 +1862,7 @@
     if (map[act]) return map[act];
 
     if (act.startsWith('scope-')) return () => { app.transposeScope = act.slice(6); MW.panels.refresh(); };
-    if (act.startsWith('oct-')) return () => { app.octave = parseInt(act.slice(4), 10); MW.panels.refresh(); updateStatus(); };
+    if (act.startsWith('oct-')) return () => { app.octave = parseInt(act.slice(4), 10); MW.panels.refresh(); MW.touchStatus('octave'); };
     if (act.startsWith('adv-')) return () => { app.advance = act.slice(4); MW.panels.refresh(); };
     if (act.startsWith('blk-tracks-')) return () => ops.setTracks(parseInt(act.slice(11), 10));
     if (act.startsWith('instscope-')) return () => { app.transposeInstrScope = act.slice(10); MW.panels.refresh(); };
@@ -2159,7 +2170,7 @@
           app.cursor.line = Math.min(b.lines - 1, app.cursor.line + app.step);
           MW.grid.render();
         }
-        MW.updateStatus();
+        MW.touchStatus('cursor');
         return;
       }
     }
@@ -2604,7 +2615,7 @@
       const t = parseInt(d.dataset.mute, 10);
       app.mutedTracks[t] = !app.mutedTracks[t];
       MW.player.channels[t].muted = app.mutedTracks[t];
-      updateStatus();
+      MW.touchStatus('status');
       MW.grid.render();
     });
 
@@ -2678,34 +2689,34 @@
     app.loadInstrumentFile = () => insInput.click();
 
     MW.player.onRow = row => {
-      updateStatus();
       if (row.seq !== MW.lastSeq) {
         MW.lastSeq = row.seq;
         MW.renderSeqBox();
       }
-      if (!app.follow) return;
-      if (row.block !== app.cursor.block) {
-        app.cursor.block = row.block;
-        app.cursor.line = row.line;
-        app.cursor.seq = row.seq;
-        MW.grid.render();
-        MW.renderSeqBox();
-      } else {
-        app.cursor.line = row.line;
-        MW.grid.refreshLine(row.line);
+      if (app.follow) {
+        if (row.block !== app.cursor.block) {
+          app.cursor.block = row.block;
+          app.cursor.line = row.line;
+          app.cursor.seq = row.seq;
+          MW.grid.render();
+          MW.renderSeqBox();
+        } else {
+          app.cursor.line = row.line;
+          MW.grid.refreshLine(row.line);
+        }
       }
+      MW.touchStatus('play');
     };
 
     MW.player.onStop = () => {
       MW.grid.refreshLine(-1);
       MW.grid.updatePadding();
       MW.grid.centerLine(app.cursor.line);
-      document.getElementById('btn-play').classList.remove('playing');
-      updateStatus();
+      MW.touchStatus('stop');
     };
 
     MW.on('transport', t => {
-      document.getElementById('btn-play').classList.toggle('playing', t.playing);
+      store.set({ transport: { ...app.transport, ...t } }, 'transport');
       MW.grid.updatePadding();
       if (t.playing && MW.app.follow) MW.grid.centerLine(MW.player.line);
       MW.renderSeqBox();

@@ -6,7 +6,16 @@
   const panels = MW.panels = {
     current: 'play',
 
-    mount(host) { this.host = host; this.show('play'); },
+    mount(host) {
+      this.host = host;
+      if (MW.store && !this.wiredStore) {
+        this.wiredStore = true;
+        MW.store.subscribe('transport', () => {
+          if (this.current === 'play') this.show('play');
+        });
+      }
+      this.show('play');
+    },
 
     show(name) {
       this.current = name;
@@ -87,7 +96,7 @@
           <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper border-l-0" id="btn-stop" title="Stop (Space)">STOP</button>
           <div class="grid grid-rows-2 border-l border-ink">
             <div class="flex items-stretch">
-              <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6]" id="btn-play" title="Play song">PLAY SONG</button>
+              <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6] ${MW.player.playing ? 'playing' : ''}" id="btn-play" title="Play song">PLAY SONG</button>
               <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-cont" title="Continue from here">CONT. SONG</button>
             </div>
             <div class="flex items-stretch">
@@ -293,7 +302,7 @@
           MW.player.channels[t].muted = MW.app.mutedTracks[t];
           this.refresh();
           MW.grid.render();
-          MW.updateStatus();
+          MW.touchStatus('song');
         };
       });
     },
@@ -444,7 +453,7 @@
 
     wire_files() {
       const title = this.host.querySelector('#song-title');
-      if (title) title.oninput = () => { MW.app.song.name = title.value; MW.updateStatus(); };
+      if (title) title.oninput = () => { MW.app.song.name = title.value; MW.touchStatus('song'); };
     },
 
     /* ---------------------------------------------------------- Misc */

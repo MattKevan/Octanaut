@@ -1,3 +1,4 @@
+// @ts-check
 /* Octanaut - MMD0 writer */
 (function (global) {
   'use strict';
