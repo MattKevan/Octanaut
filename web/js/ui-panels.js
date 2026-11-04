@@ -6,6 +6,8 @@
   /* each panel repaints only for the slices it displays */
   const PANEL_KEYS = {
     play: ['transport'],
+    instr: ['currentIns'],
+    midi: ['currentIns'],
     edit: ['editMode', 'spaceAsDel', 'chordMode', 'octave', 'advance']
   };
 
@@ -199,7 +201,7 @@
             ${this.btn('<<', 'ins-first')}${this.btn('<', 'ins-prev')}
             <span class="preadout" style="min-width:3ch;text-align:center">${MW.insName(cur)}</span>
             ${this.btn('>', 'ins-next')}${this.btn('>>', 'ins-last')}
-            ${this.btn('L.U.', 'ins-last')}${this.btn('New', 'ins-new')}${this.btn('Kill', 'ins-kill')}
+            ${this.btn('L.U.', 'ins-lastused')}${this.btn('New', 'ins-new')}${this.btn('Kill', 'ins-kill')}
             ${this.btn('Jump ' + (inst && inst.jump ? 'on' : 'off'), 'ins-jump', inst && inst.jump ? 'on' : '')}`)
         + this.group('Name', `<input class="ptext" id="ins-name" value="${escapeAttr(name)}" maxlength="39">`)
         + this.group('Sample', `<input class="ptext" id="ins-file" placeholder="file name" style="min-width:150px">${this.btn('Load', 'ins-load')}`)

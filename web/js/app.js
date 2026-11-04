@@ -833,10 +833,17 @@
     return Math.max(1, Math.floor((wrap.clientWidth - 52) / MW.grid.trackWidth(block().tracks)));
   }
 
+  function setInstrument(n) {
+    const next = MW.clamp(n || 1, 1, 63);
+    if (next !== app.currentIns) app.lastIns = app.currentIns;
+    app.currentIns = next;
+    if (MW.displays && MW.displays.refresh) MW.displays.refresh();
+    MW.touchStatus('instrument', ['currentIns']);
+  }
+  MW.setInstrument = setInstrument;
+
   function selectIns(delta) {
-    app.currentIns = MW.clamp(app.currentIns + delta, 1, 63);
-    app.lastIns = app.currentIns;
-    refreshAll();
+    setInstrument(app.currentIns + delta);
   }
 
   function selectBlock(dir) {
@@ -1161,9 +1168,7 @@
       const d = parseInt(e.code.slice(6), 10);
       if (app.padMode === 'instr') {
         const map = [12, 13, 14, 15, 8, 9, 10, 11, 4, 5];
-        app.currentIns = MW.clamp(map[d] + 1, 1, 63);
-        app.lastIns = app.currentIns;
-        refreshAll();
+        setInstrument(map[d] + 1);
       } else {
         app.mutedTracks[d] = !app.mutedTracks[d];
         MW.player.channels[d].muted = app.mutedTracks[d];
@@ -1747,10 +1752,10 @@
         refreshAll();
       },
       'ins-kill': () => { app.song.instruments[app.currentIns - 1] = null; refreshAll(); },
-      'ins-first': () => { app.currentIns = 1; refreshAll(); },
-      'ins-last': () => { app.currentIns = 63; refreshAll(); },
-      'ins-prev': () => { app.currentIns = Math.max(1, app.currentIns - 1); refreshAll(); },
-      'ins-next': () => { app.currentIns = Math.min(63, app.currentIns + 1); refreshAll(); },
+      'ins-first': () => setInstrument(1),
+      'ins-last': () => setInstrument(63),
+      'ins-prev': () => setInstrument(app.currentIns - 1),
+      'ins-next': () => setInstrument(app.currentIns + 1),
       'seq-inc': () => { const s = app.song; s.playseq[app.cursor.seq] = Math.min(s.blocks.length - 1, (s.playseq[app.cursor.seq] || 0) + 1); refreshAll(); },
       'seq-dec': () => { const s = app.song; s.playseq[app.cursor.seq] = Math.max(0, (s.playseq[app.cursor.seq] || 0) - 1); refreshAll(); },
       'seq-ins': () => { app.song.playseq.splice(app.cursor.seq, 0, 0); refreshAll(); },
@@ -1816,7 +1821,7 @@
       'pick-range': () => pickProgRange(),
       'pick-buffer': () => pickProgBuffer(),
       'play-on-note': () => { app.playOnNote = !app.playOnNote; MW.panels.refresh(); },
-      'ins-last': () => { app.currentIns = app.lastIns; refreshAll(); },
+      'ins-lastused': () => setInstrument(app.lastIns),
       'ins-jump': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) { i.jump = !i.jump; MW.panels.refresh(); } },
       'file-save-iff': () => MW.saveIFF(),
       'samp-record': () => {

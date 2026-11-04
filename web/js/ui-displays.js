@@ -61,10 +61,12 @@
       </div>`;
       host.querySelectorAll('tr[data-ins]').forEach(tr => {
         tr.onclick = () => {
-          MW.app.currentIns = parseInt(tr.dataset.ins, 10);
+          const next = parseInt(tr.dataset.ins, 10);
+          if (next !== MW.app.currentIns) MW.app.lastIns = MW.app.currentIns;
+          MW.app.currentIns = next;
           MW.app.sampleView = null;
-          MW.panels.refresh();
           this.show('list');
+          MW.touchStatus('instrument', ['currentIns']);
           MW.emit('instrument', MW.app.currentIns);
         };
       });
