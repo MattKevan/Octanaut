@@ -1,0 +1,17 @@
+{
+  "name": "octanaut",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Octanaut - browser tracker, styled with Tailwind",
+  "scripts": {
+    "build:css": "tailwindcss -i web/css/tailwind.css -o web/css/app.css --minify",
+    "watch:css": "tailwindcss -i web/css/tailwind.css -o web/css/app.css --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck && node --test test/store.test.js test/engine.test.js && node test/run.js"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.4",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^7.0.2"
+  }
+}

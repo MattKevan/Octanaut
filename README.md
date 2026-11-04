@@ -4,10 +4,10 @@ An eight-channel music tracker for the browser, built to open the modules that O
 
 The name is a nod to OctaMED, which is where all of this comes from.
 
-Open `index.html` directly, or serve the folder:
+Open `web/index.html` directly, or serve the site:
 
 ```
-python3 -m http.server 8000
+python3 -m http.server 8000 --directory web
 # then visit http://localhost:8000/
 ```
 
@@ -15,17 +15,17 @@ The JavaScript is plain ES2019 in classic scripts, with no build step. The style
 
 ## Styling
 
-The interface is built with Tailwind CSS v4. The source lives in `app/css/tailwind.css`, the compiled output in `app/css/app.css`.
+The interface is built with Tailwind CSS v4. The source lives in `web/css/tailwind.css`, the compiled output in `web/css/app.css`.
 
 ```
 npm install          # once
-npm run build:css    # compile app/css/app.css
+npm run build:css    # compile web/css/app.css
 npm run watch:css    # rebuild while editing
 ```
 
 Buttons carry their utility classes in the markup. Three custom variants handle the states the scripts toggle: `on` for a lit gadget, `selected` for the active tab, and `playing` for the row under the playhead. The `@layer components` block holds the drawn, repeated shapes: the frame, the sequence box, the status line, the grid and its cells, the channel meters and the scope overlays.
 
-Fonts are bundled in `app/fonts/`:
+Fonts are bundled in `web/fonts/`:
 
 - **Departure Mono** by Helena Zhang and Tobias Fried (MIT) for the interface.
 - **Pixel Operator Mono HB 8** by Jayvee Enaguas (CC0), used only in the note editor for four-track blocks.
@@ -202,25 +202,30 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 
 ```
 app/
-  index.html
-  css/tailwind.css  Tailwind source
-  css/app.css       compiled output, checked in
-  js/core.js        model, note tables, tempo conversion
-  js/store.js       app state, patch/commit and subscriptions
-  js/loaders.js     MMD0-3, MED4, MED2, MOD, MSH, 8SVX
-  js/lha.js         LHA/LZH archives, levels 0-2, -lh0- to -lh7-
-  js/writer.js      MMD0 writer
-  js/synth.js       synthsound renderer
-  js/engine.js      tick scheduler, Web Audio voices, effects
-  js/ui-grid.js     note grid
-  js/ui-panels.js   the ten panels
-  js/ui-displays.js notation, sample, synth, instrument list
-  js/app.js         editing operations, keyboard, file IO
+  package.json      Tailwind and test scripts
+  tsconfig.json     type checking for the core
+  test/             unit tests and headless checks
+  web/              the served site
+    index.html
+    css/tailwind.css  Tailwind source
+    css/app.css       compiled output, checked in
+    fonts/            Departure Mono and Pixel Operator
+    js/core.js        model, note tables, tempo conversion
+    js/store.js       app state, patch/commit and subscriptions
+    js/loaders.js     MMD0-3, MED4, MED2, MOD, MSH, 8SVX
+    js/lha.js         LHA/LZH archives, levels 0-2, -lh0- to -lh7-
+    js/writer.js      MMD0 writer
+    js/synth.js       synthsound renderer
+    js/engine.js      tick scheduler, Web Audio voices, effects
+    js/ui-grid.js     note grid
+    js/ui-panels.js   the ten panels
+    js/ui-displays.js notation, sample, synth, instrument list
+    js/app.js         editing operations, keyboard, file IO
 ```
 
 The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.writeMMD0(song)` work without a DOM, which is how the demo modules were round-trip tested (7,680 cells, no differences).
 
-`npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 19 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 writer round-tripping notes, tempo and block counts. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the MMD0 writer, the synth renderer, the audio engine and the store. The UI scripts can join them one file at a time.
+Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 19 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 writer round-tripping notes, tempo and block counts. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the MMD0 writer, the synth renderer, the audio engine and the store. The UI scripts can join them one file at a time.
 
 `FEATURES.md` tracks parity with the original, panel by panel: 110 features matching, 2 partial, 5 absent.
 
