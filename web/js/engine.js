@@ -735,6 +735,12 @@
               this.trigger(ch, ch.note, time + step, null);
               this.trigger(ch, ch.note, time + step * 2, null);
             }
+          } else if (ch.dat === 0xf8) {
+            this.song.flags.filteron = 0;
+            audio.setFilter(false);
+          } else if (ch.dat === 0xf9) {
+            this.song.flags.filteron = 1;
+            audio.setFilter(true);
           } else if (ch.dat === 0xfd) {
             ch.period = MW.period(MW.clamp((cell && cell.note ? cell.note : ch.note) + (this.song.playtransp || 0) + (inst ? inst.transpose || 0 : 0), 1, 96));
             if (ch.src) ch.src.playbackRate.setValueAtTime(this.rateFor(ch), time);

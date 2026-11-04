@@ -201,6 +201,7 @@
             ${this.btn('<<', 'ins-first')}${this.btn('<', 'ins-prev')}
             <span class="preadout" style="min-width:3ch;text-align:center">${MW.insName(cur)}</span>
             ${this.btn('>', 'ins-next')}${this.btn('>>', 'ins-last')}
+            ${this.btn('>|<', 'ins-lastoccupied')}
             ${this.btn('L.U.', 'ins-lastused')}${this.btn('New', 'ins-new')}${this.btn('Kill', 'ins-kill')}
             ${this.btn('Jump ' + (inst && inst.jump ? 'on' : 'off'), 'ins-jump', inst && inst.jump ? 'on' : '')}`)
         + this.group('Name', `<input class="ptext" id="ins-name" value="${escapeAttr(name)}" maxlength="39">`)
@@ -214,6 +215,7 @@
             <input class="pnum" type="number" min="0" value="${inst ? inst.loop || 0 : 0}" data-act="ins-loop" title="repeat start">
             <input class="pnum" type="number" min="0" value="${inst ? inst.looplen || 0 : 0}" data-act="ins-looplen" title="repeat length">`)
         + this.group('Transpose', `<input class="pnum" type="number" min="-48" max="48" value="${inst ? inst.transpose || 0 : 0}" data-act="ins-transp">`)
+        + this.group('Finetune', `<input class="pnum" type="number" min="-8" max="7" value="${inst ? inst.finetune || 0 : 0}" data-act="ins-finetune" title="finetune -8 to +7">`)
         + '</div>'
         + `<div class="panel-row" style="margin-top:8px">
              <span class="preadout">${type} · ${len} frames · ${inst ? (inst.bits16 ? '16 bit' : '8 bit') + (inst.stereo16 ? ' stereo' : ' mono') : ''} · ${inst && inst.missing ? 'samples not in this file' : ''}</span>
@@ -247,6 +249,13 @@
       bind('ins-loop', 'loop');
       bind('ins-looplen', 'looplen');
       bind('ins-transp', 'transpose');
+      this.host.querySelectorAll('[data-act="ins-finetune"]').forEach(el => {
+        el.onchange = () => {
+          const i = inst(); if (!i) return;
+          i.finetune = MW.clamp(parseInt(el.value, 10) || 0, -8, 7);
+          el.value = i.finetune;
+        };
+      });
 
       const fileEl = this.host.querySelector('#ins-file');
       if (fileEl) fileEl.onkeydown = e => { if (e.key === 'Enter') MW.app.loadInstrumentFile(); };

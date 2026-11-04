@@ -2,7 +2,7 @@
 
 An eight-channel music tracker for the browser, built to open the modules that OctaMED wrote.
 
-The name is a nod to OctaMED, which is where all of this comes from.
+The name is a nod to OctaMED, which is where all of this comes from. The reference is OctaMED Professional V4.00 (1992), and `FEATURES.md` tracks parity against its manual and retail binary.
 
 Open `web/index.html` directly, or serve the site:
 
@@ -62,7 +62,7 @@ Octanaut reads and plays:
 | **IFF 8SVX** and raw samples | Instrument import. |
 | **LHA archives** | Drop a `.lha` and the module inside is extracted and opened. If it holds several, you get a picker. Headers at levels 0, 1 and 2; methods -lh0-, -lh1-, -lh4- to -lh7-. |
 
-It writes **MMD0** (the format OctaMED reads back), **ProTracker modules** with the effects converted, **WAV** and **IFF 8SVX** samples. It also records from a microphone, which the sample editor's Monitor and Record gadgets drive.
+It writes **MMD0** (the format OctaMED reads back), **ProTracker modules** with the effects converted, **WAV** and **IFF 8SVX** samples. V4's native MOD1 format is not written yet. It also records from a microphone, which the sample editor's Monitor and Record gadgets drive.
 
 Playing an OctaMED demo from 1991 is the point. `File > Load demo` gives you something to poke at if you do not have a module to hand.
 
@@ -70,7 +70,7 @@ Playing an OctaMED demo from 1991 is the point. `File > Load demo` gives you som
 
 Octanaut keeps OctaMED's shape:
 
-- A song is a list of **blocks** of 1–256 lines and 1–16 tracks. Block length is variable.
+- A song is a list of **blocks** of 1–256 lines and 1–16 tracks. Block length is variable. V4 allows 3200 lines; the current cap follows the MMD0 writer, which cannot represent more.
 - A **play sequence** names which blocks play in which order, up to 256 entries.
 - Up to 63 **instruments** are shared by every song in the module.
 - Notes carry a note, an instrument, a command and a data byte.
@@ -95,6 +95,8 @@ The full MED command set is implemented:
 | `C` | Set volume, and `$80`–`$C0` sets the instrument's default volume |
 | `E` | Synthsound waveform jump (MIDI pan in the original) |
 | `F` | `00` next block, `01`–`F0` tempo, `FD` retune, `FE` stop, `FF` note off |
+
+V4's ProTracker-compatible `05` slide with fade, `06` vibrato with fade and `07` tremolo are not implemented. The extended V4 commands `10` (MIDI message), `16` (block loop), `1C` (MIDI preset) and `1E` (line delay) are also absent.
 
 ## Two depths
 
@@ -191,12 +193,15 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 
 ## Known gaps
 
-- **MIDI input** is not implemented (output is).
+- **MOD1 save** is not implemented; MMD0 is the only writer. That is the main V4 format gap and it blocks 3200-line blocks.
+- **MIDI messages and maps** are not implemented: no SysEx editor, input map, external sync, dump or send-out. Basic MIDI note output and input work.
+- **The sample list** shows loaded instruments rather than a `MED_Paths` library, so it cannot browse a disk collection or resolve missing names.
+- **Octaves** stop at 4+5, where V4 reaches 9+A. The keypad has two maps, where V4 has four.
 - Browsers hold audio back until the page has been clicked once. Octanaut resumes the audio context on the first click or key press and says so if it is still blocked.
 - **Synthsound sequence editing** changes values and inserts/deletes lines, but does not let you type command names inline; the binary instruments round-trip unchanged through MMD0.
-- **The sample editor** has reverse, normalise, fades, crop and loop setting. It has no echo, mix or noise generator yet.
+- **The sample editor** has reverse, normalise, fades, crop, filter, boost, echo, noise, mix, buffer undo and loop setting. It has no freehand drawing, RANGE ALL, pitch-to-note, zero search or D.PIXELS.
 - **MED 2.00** (`MED` + version 3) song files produce an error message; save them as MMD0 in OctaMED first.
-- Notation is a single-staff sketch per track.
+- Notation is a single-staff sketch per track. Ghost tracks, hide-instrument mode and saved view settings are missing.
 
 ## Layout
 
@@ -227,7 +232,7 @@ The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.write
 
 Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 19 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 writer round-tripping notes, tempo and block counts. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the MMD0 writer, the synth renderer, the audio engine and the store. The UI scripts can join them one file at a time.
 
-`FEATURES.md` tracks parity with the original, panel by panel: 110 features matching, 2 partial, 5 absent.
+`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 105 features matching, 23 partial, 33 absent.
 
 ## Command bytes
 

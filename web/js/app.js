@@ -1822,6 +1822,11 @@
       'pick-buffer': () => pickProgBuffer(),
       'play-on-note': () => { app.playOnNote = !app.playOnNote; MW.panels.refresh(); },
       'ins-lastused': () => setInstrument(app.lastIns),
+      'ins-lastoccupied': () => {
+        const list = app.song.instruments;
+        for (let i = list.length - 1; i >= 0; i--) if (list[i]) return setInstrument(i + 1);
+        setInstrument(1);
+      },
       'ins-jump': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) { i.jump = !i.jump; MW.panels.refresh(); } },
       'file-save-iff': () => MW.saveIFF(),
       'samp-record': () => {

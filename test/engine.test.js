@@ -26,6 +26,7 @@ function song(overrides) {
     trkvol: [64, 64, 64, 64, 64, 64, 64, 64],
     mastervol: 64,
     pans: [0, 0, 0, 0, 0, 0, 0, 0],
+    flags: { filteron: 0, volhex: 1 },
     ...overrides
   };
 }
@@ -81,4 +82,14 @@ test('playback rate follows the period and finetune', () => {
   assert.equal(player.rateFor({ period: 428, inst: { finetune: 0 } }), 1);
   assert.equal(player.rateFor({ period: 214, inst: { finetune: 0 } }), 2);
   assert.equal(player.rateFor({ period: 428, inst: { finetune: 96 } }), 2);
+});
+
+test('FF8 and FF9 switch the low-pass filter flag', () => {
+  player.song = song({ flags: { filteron: 1, volhex: 1 } });
+  const ch = { cmd: 0x0f, dat: 0xf8, idx: 0 };
+  player.startEffect(ch, 0, null);
+  assert.equal(player.song.flags.filteron, 0);
+  ch.dat = 0xf9;
+  player.startEffect(ch, 0, null);
+  assert.equal(player.song.flags.filteron, 1);
 });

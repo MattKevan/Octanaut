@@ -1,10 +1,50 @@
-# Feature parity with OctaMED V2.00 / OctaMED Professional
+# Feature parity with OctaMED Professional V4.00
 
-A line-by-line check against the manual shipped on the original disk (`Docs/OctaMED2.0.doc`) and the screen layout of the Professional build. Status is what the code actually does today.
+A line-by-line check against the retail V4 manual and the retail binary (`amiga/v4/Octamed4/OctaMED`, version string `OctaMED Professional 4.00h (8.12.92)`). Status is what the code actually does today. V2 remains the baseline for the model and file formats that V4 inherited.
 
 Legend: **yes** implemented · **part** partial or approximated · **no** absent.
 
 Two adaptations are unavoidable in a browser and are not counted as gaps: the Workbench open/close gadget, and the Amiga key, which maps to **Cmd** on a Mac or **Ctrl** with the shortcuts a browser leaves alone.
+
+
+## The V4 delta
+
+Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summary to read first; the panel tables below carry the detail.
+
+| Feature | Status | Notes |
+|---|---|---|
+| MOD1 (+instruments) save | no | V4's native format. Only MMD0 is written today. |
+| MOD1 (no instruments) save | no | Instrument names and MED_Paths lookup. |
+| MOD0 (old) multi-song save | yes | Writes a proper nextmod chain. |
+| 3200-line blocks | no | Model and loader cap at 256. MMD0 cannot represent more; the full range needs the MOD1 writer. |
+| Blocks 00–99 | part | No explicit 100-block cap; the status bar will show more. |
+| Octaves 1+2 to 9+A | part | 1+2 to 4+5 only; notes cap at 96. |
+| Instrument finetune -8..+7 | part | Panel and engine now carry it; the MMD0 writer still stores 0. |
+| Last occupied instrument (`>|<`) | yes | Scans down from 1V. |
+| Keypad MAP2 maps | no | Track on/off and select-instrument only. |
+| Programmable key editor with `x` wildcards | part | Keys can be picked; there is no digit editor, and range pick stores one note. |
+| TRK ON SET / CLR | no | Per-track toggles only. |
+| Block name | no | Song name only. |
+| NRM 1/2 and 2/3 playback | no | No slowed real-time entry. |
+| Note echo (DIST / MIN) | no | Sample echo exists; pattern echo does not. |
+| Sample list / MED_Paths | part | Lists loaded instruments rather than a disk library. |
+| MIDI message editor and command 10 | no | |
+| MIDI input map editor | no | Input works without maps. |
+| External MIDI sync | no | Clock out only. |
+| MIDI dump, SEND OUT, SUPPR.N.OFF | no | |
+| All Off / Reset modes | part | Panic and reset exist; the two-way mode selectors do not. |
+| Sample editor freehand, RANGE ALL, zero search, D.PIXELS, dest-note pitch | part | Echo, filter, boost, noise, mix, fades and buffer undo are present. |
+| Synth draw modes, RANGE ALL, cut/copy/paste, DBL, REV, stretch, VOL.CHG, SPEED | part | Waveform copy, exchange, mix, add, undo and transform are present. |
+| Notation ghost tracks, hide instrument, saved settings | part | Show/hide and five presets exist; ghosting and saved settings do not. |
+| Print HEADER / TEXT / FILE / BLKS | part | Notation print with form feeds exists. |
+| Commands 05, 06, 07 | no | 05 is old vibrato; 06 and 07 are absent. |
+| Commands 10, 16, 1C, 1E | no | MIDI message, block loop, MIDI preset, line delay. |
+| MIDI commands 0A, 0C, 0D | no | Aftertouch, velocity, channel pressure. |
+| FF8 / FF9 filter | yes | Sets the filter flag and the biquad. |
+| INFO / ICON on save | no | |
+| Delete file | no | Browser leaves this to the OS. |
+| Absolute instrument names / paths | no | |
+| Palette RGB editor | part | Four fixed palettes. |
 
 ---
 
@@ -13,15 +53,18 @@ Two adaptations are unavoidable in a browser and are not counted as gaps: the Wo
 | Feature | Status | Notes |
 |---|---|---|
 | File requester with Currdir / Devices / Assigns | yes | Drawn in the app's own style, driven by the File System Access API where the browser has it (folder listing, parent, double-click). Elsewhere Browse feeds the same list from the native picker. Devices and assigns do not exist in a browser. |
-| Load song (MED 1.12 – 3.20, OctaMED 1–2, MMD0, ST modules) | yes | MMD0/1/2/3, MED4, MED2, ProTracker, plus MSH and 8SVX instruments. MED 2.00 (`MED` + v3) is rejected with a message. |
+| Load song (MED 1.12 – 3.20, OctaMED 1–4, MMD0/1, ST modules) | yes | MMD0/1/2/3, MED4, MED2, ProTracker, plus MSH and 8SVX instruments. MED 2.00 (`MED` + v3) is rejected with a message. |
 | Load instrument (raw, IFF, synth, hybrid) | yes | |
 | Load ST module | yes | Folded into Load; effects converted. |
-| Save song (native, compressed) | no | Writes MMD0 only. |
+| Save MOD1 (+instruments) | no | V4's native format. Writes MMD0 only. |
+| Save MOD1 (no instruments) | no | Instrument names and MED_Paths lookup do not exist yet. |
+| Save MOD0 (old) | yes | Multi-song nextmod chain. |
 | Save song + samples | yes | MMD0 already embeds the samples; that is the interoperable container. |
 | Save module (MMD0) | yes | Full writer, 7,680-cell round trip verified. |
 | Save ST module | yes | 4 tracks, 31 instruments, blocks over 64 lines truncated, effects translated back to MOD. Verified by re-import. |
-| Icon gadget on save | no | |
+| INFO / ICON on save | no | |
 | Delete file | no | Use the OS. |
+| Load / save MIDI messages and maps | no | |
 | Save instrument as raw or IFF | yes | WAV and IFF 8SVX. |
 
 ## Play panel
@@ -64,7 +107,7 @@ Two adaptations are unavoidable in a browser and are not counted as gaps: the Wo
 | Block cut / copy / paste / swap | yes | |
 | Del buffer | yes | |
 | Track count 4 / 8 / 12 / 16 | yes | |
-| Line count with < > and ±10 | yes | Direct entry. |
+| Line count 1–3200 | part | Direct entry, but the UI, loader and MMD0 writer cap at 256. |
 | Line highlighting 1/2/3/4/8/16/C | yes | Marks every Nth line. |
 | New block / DEF | yes | |
 | New here / DEF | yes | |
@@ -80,13 +123,14 @@ Two adaptations are unavoidable in a browser and are not counted as gaps: the Wo
 |---|---|---|
 | Per-track on/off switches | yes | In the panel, and the status lamps. |
 | Edit on/off, SPC, space value 1–16 | yes | SPC sets how far the cursor advances, which is the quantise step during real-time entry. |
-| Octave pairs 1+2 – 4+5 | yes | |
-| Programmable keys 0–9 | yes | Shift+digit inserts, Ctrl+Shift+digit picks. No on-screen editor for them. |
+| Octave pairs 1+2 – 9+A | part | 1+2 to 4+5 only. |
+| Programmable keys 0–9 | part | Shift+digit inserts, Ctrl+Shift+digit picks. No digit editor or `x` wildcards, and range pick stores only the first note. |
 | Left Alt / Right Alt templates | yes | Pick from the cursor cell; hold Alt while entering a note to apply. |
 | Pick note / pick range / pick buffer | yes | Ctrl+Shift+digit picks the cursor note; the Edit panel picks from the range or the copy buffer. |
 | Clr key definition | yes | The Alt template clear. |
 | SPACE = DEL | yes | |
-| Keypad mode: track on/off or select instrument | yes | |
+| Keypad maps: track on/off, select instrument, MAP2 variants | part | Two of the four V4 maps. |
+| TRK ON SET / CLR | no | Per-track toggles only. |
 | Cursor advance, six directions | yes | Ctrl+A cycles. |
 
 ## Range panel
@@ -126,10 +170,12 @@ Two adaptations are unavoidable in a browser and are not counted as gaps: the Wo
 
 | Feature | Status | Notes |
 |---|---|---|
-| Screen colours | yes | Four colour sets, cycling from the Misc panel. |
+| Screen colours | part | Four fixed sets; no RGB palette editor. |
 | Pointer jumping Off / 8th / Smp | no | Not meaningful in the browser. |
 | Clear all / Clr song only / Quit | part | Clear song and clear all; no quit. |
 | Paths add / remove | no | |
+| Absolute instrument names | no | |
+| NRM 1/2 and 2/3 playback | no | |
 | H→B note naming | yes | Changes B to H and A# to B in the grid. |
 | Workbench open/close | n/a | |
 | Save preferences | yes | localStorage: octave, advance, step, space-as-delete, follow, equalisers, hardware mode, H→B and the programmable keys. "Forget saved" clears it. |
@@ -142,19 +188,20 @@ Two adaptations are unavoidable in a browser and are not counted as gaps: the Wo
 | Feature | Status | Notes |
 |---|---|---|
 | Vertical note display | yes | Editing, block marks, playhead, selection. |
-| Notation editor | yes | Staff rendering, click to place notes, eight lengths, 3/4 and 4/4, key signature, per-track show/hide, five PSET presets, clear track, and Print with optional form feeds between blocks. |
-| Synthsound editor | yes | Two waveform displays (bank and buffer), copy either way, exchange, mix, add together, undo, preset shapes, add/delete waveform, linear transform between two waveforms, editable volume and waveform programs. No range cut/copy/paste or stretch. |
-| Sample editor | yes | Zoom, monitor and record from the microphone, buffer size, octave rate change, reverse, normalise, fades, crop, filter, boost, echo, noise, mix, buffer save/restore, loop from range, zero search, R>SY. |
+| Notation editor | part | Staff rendering, click to place notes, eight lengths, 3/4 and 4/4, key signature, per-track show/hide, five PSET presets, clear track, and print with optional form feeds. No ghost tracks, hide-instrument mode or saved view settings. |
+| Synthsound editor | part | Two waveform displays, copy either way, exchange, mix, add, undo, preset shapes, add/delete waveform, linear transform, and the volume/waveform programs. No freehand draw modes, RANGE ALL, range cut/copy/paste/DBL/REV, stretch, VOL.CHG or SPEED. |
+| Sample editor | part | Zoom, monitor and record, buffer size, octave rate change, reverse, normalise, fades, crop, filter, boost, echo, noise, mix, buffer save/restore, loop from range and R>SY. Missing freehand drawing, RANGE ALL, pitch-to-note, zero search and D.PIXELS. |
 | Sample list | part | Lists the loaded instruments rather than a `MED_paths` library. |
 
 ## Playback engine
 
 | Feature | Status | Notes |
 |---|---|---|
-| Commands 0 1 2 3 4 5 8 9 A B C D E F | yes | E jumps within a synthsound program and pans a MIDI channel. |
+| Commands 0 1 2 3 4 8 9 A B C D E F | yes | E jumps within a synthsound program and pans a MIDI channel. 05 remains old vibrato. |
+| Commands 05 / 06 / 07 | no | V4's slide+fade, vibrato+fade and tremolo are absent. |
 | Extended commands 10-2F (MMD1+) | yes | Sample offset (19), slide pitch once (11/12), vibrato (14), set finetune (15), stop note (18), fine volume slide (1A/1B), pattern break (1D), note delay/retrigger (1F). Others are ignored rather than misread as a low command. |
 | FF1 double strike / FF2 delayed / FF3 triple | yes | |
-| FF8 / FF9 filter | yes | Sets the filter flag. |
+| FF8 / FF9 filter | yes | Sets the filter flag and the biquad. |
 | FFA / FFB MIDI hold pedal | yes | |
 | FFD retune without retrigger | yes | |
 | FFE stop, FFF note off | yes | |
@@ -173,7 +220,12 @@ Two adaptations are unavoidable in a browser and are not counted as gaps: the Wo
 | Program change per preset | yes | |
 | Note-off suppression | yes | |
 | Reset, panic | yes | |
-| Active sensing, sync, local control | yes | Active sensing and 24 PPQN clock out while sending sync; local control on/off gadgets. External sync is not implemented. |
+| Active sensing, sync, local control | part | Active sensing and 24 PPQN clock out; local control on/off. External sync is not implemented. |
+| MIDI message editor and command 10 | no | |
+| MIDI input map editor | no | |
+| MIDI dump save / load | no | |
+| SEND OUT, SUPPR.N.OFF | no | |
+| ALL OFF / RESET mode selectors | part | Panic and reset exist, not the mode selectors. |
 | MIDI input for note entry | yes | Any connected input; notes enter at the cursor when editing, otherwise play the current instrument. Optional velocity into the data column. |
 
 ## Modules and files
@@ -195,9 +247,12 @@ Two adaptations are unavoidable in a browser and are not counted as gaps: the Wo
 
 ## What is left
 
-The honest remainder, all small:
+The V4 gaps that matter most:
 
-1. **Icon gadget on save** and **delete file** — filesystem jobs a browser leaves to the OS.
-2. **External MIDI sync** (receiving clock); sending is done.
-3. **Synth range cut/copy/paste and stretch.**
-4. **Paths add / remove**, which only matters when samples live on other disks.
+1. **MOD1 save.** The native V4 format unlocks instrument-less songs, 3200-line blocks and a clean round trip with the original program. The MMD0 writer cannot represent any of those.
+2. **Large blocks.** The model, loader and UI stop at 256 lines; V4 allows 3200. This follows the MOD1 writer.
+3. **MIDI messages and maps.** No SysEx message editor, input map editor, external sync, dump or send-out. Basic note out and input work.
+4. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
+5. **Command coverage.** 05/06/07 (slide+fade, vibrato+fade, tremolo), 10 (MIDI message), 16 (block loop), 1C (MIDI preset), 1E (line delay) and the MIDI 0A/0C/0D forms are absent.
+6. **Editor polish.** Octaves 1+2 to 9+A, keypad MAP2, programmable-key wildcards and group entry, block names, NRM, note echo, sample/synth range tools and notation ghosting.
+7. **Filesystem-adjacent features.** INFO/ICON on save, delete file, absolute instrument names, paths add/remove and the RGB palette editor.
