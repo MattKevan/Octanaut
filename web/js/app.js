@@ -30,6 +30,10 @@
     progTarget: 0,
     transposeInstrScope: 'all',
     paletteIndex: 0,
+    paletteRGB: { r: 136, g: 136, b: 136 },
+    paletteUndo: null,
+    paths: [],
+    confirmOn: true,
     depth: 'enhanced',
     pset: 0,
     psets: [null, null, null, null, null],
@@ -51,6 +55,7 @@
     midiCapture: false,
     extSync: false,
     midiMapActive: false,
+    midiKeyUp: false,
     midiMapIndex: 60,
     midiMap: null,
     midiInput: true,
@@ -1448,6 +1453,73 @@
     reader.readAsArrayBuffer(file);
   }
 
+  function downloadJSON(name, data, mime) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: mime || 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  function saveMidiJson(kind) {
+    const base = (app.song.name || 'octanaut').replace(/[^\w.-]+/g, '_');
+    if (kind === 'msg') downloadJSON(base + '-messages.json', { messages: app.midiMessages, index: app.midiMsgIndex });
+    else if (kind === 'map') downloadJSON(base + '-map.json', { map: app.midiMap });
+    else downloadJSON(base + '-midi.json', { messages: app.midiMessages, index: app.midiMsgIndex, map: app.midiMap });
+    MW.toast('Saved MIDI ' + (kind === 'msg' ? 'messages' : 'map'));
+  }
+
+  function loadMidiJson(kind) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(String(reader.result));
+          if (kind === 'msg' && Array.isArray(data.messages)) {
+            app.midiMessages = data.messages;
+            app.midiMsgIndex = MW.clamp(data.index || 0, 0, app.midiMessages.length - 1);
+          } else if (kind === 'map' && Array.isArray(data.map)) {
+            app.midiMap = data.map;
+            app.midiMapActive = true;
+          } else if (kind === 'dump' && (Array.isArray(data.messages) || Array.isArray(data.map))) {
+            if (Array.isArray(data.messages)) {
+              app.midiMessages = data.messages;
+              app.midiMsgIndex = MW.clamp(data.index || 0, 0, app.midiMessages.length - 1);
+            }
+            if (Array.isArray(data.map)) { app.midiMap = data.map; app.midiMapActive = true; }
+          } else {
+            throw new Error('not a MIDI ' + kind + ' file');
+          }
+          MW.panels.refresh();
+          MW.toast('Loaded MIDI ' + (kind === 'msg' ? 'messages' : 'map'));
+        } catch (err) {
+          MW.toast('Load failed: ' + err.message, true);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  async function deleteFile() {
+    const req = MW.requester;
+    const entry = req && req.entries && req.entries[req.selected];
+    if (!req || !req.dir || !entry || entry.dir) return MW.toast('Pick a file in a folder first', true);
+    try {
+      await req.dir.removeEntry(entry.name);
+      await req.listDir();
+      MW.toast('Deleted ' + entry.name);
+    } catch (err) {
+      MW.toast('Delete failed: ' + err.message, true);
+    }
+  }
+
   function saveModule(format) {
     try {
       const chosen = format === 0 ? 'mmd0' : format === 1 ? 'mmd1' : (app.saveFormat || 'mmd1');
@@ -1829,12 +1901,12 @@
       'fmt-mmd0': () => { app.saveFormat = 'mmd0'; MW.panels.refresh(); },
       'fmt-st': () => { app.saveFormat = 'st'; MW.panels.refresh(); },
       'file-save-song': () => saveModule(),
-      'file-del': () => MW.missing('Delete file'),
-      'file-icon': () => MW.missing('Save icon'),
-      'file-load-msg': () => MW.missing('MIDI message files'),
-      'file-save-msg': () => MW.missing('MIDI message files'),
-      'file-load-map': () => MW.missing('MIDI map files'),
-      'file-save-map': () => MW.missing('MIDI map files'),
+      'file-del': () => deleteFile(),
+      'file-icon': () => MW.missing('Amiga icon files'),
+      'file-load-msg': () => loadMidiJson('msg'),
+      'file-save-msg': () => saveMidiJson('msg'),
+      'file-load-map': () => loadMidiJson('map'),
+      'file-save-map': () => saveMidiJson('map'),
       'missing': name => MW.missing(name || 'That control'),
       'file-save': () => saveModule(1),
       'file-save-mmd0': () => saveModule(0),
@@ -1918,6 +1990,29 @@
       'audio-test': () => MW.audio.testTone(),
       'audio-unlock': () => { MW.audio.unlock(); MW.toast('Audio: ' + MW.audio.describe()); },
       'pal-cycle': () => { app.paletteIndex = (app.paletteIndex + 1) % MW.palettes.length; MW.grid.render(); MW.panels.refresh(); },
+      'pal-set': () => {
+        const { r, g, b } = app.paletteRGB;
+        app.paletteUndo = MW.palettes[4].tracks.slice();
+        const hex = '#' + [r, g, b].map(v => MW.clamp(v, 0, 255).toString(16).padStart(2, '0')).join('');
+        MW.palettes[4].tracks = new Array(16).fill(hex);
+        app.paletteIndex = 4;
+        MW.grid.render();
+        MW.panels.refresh();
+      },
+      'pal-reset': () => { app.paletteRGB = { r: 136, g: 136, b: 136 }; app.paletteIndex = 4; MW.palettes[4].tracks = new Array(16).fill('#888888'); MW.grid.render(); MW.panels.refresh(); },
+      'pal-undo': () => { if (app.paletteUndo) { MW.palettes[4].tracks = app.paletteUndo; app.paletteIndex = 4; MW.grid.render(); MW.panels.refresh(); } else MW.toast('Nothing to undo', true); },
+      'paths-info': () => MW.toast(app.paths.length + ' path(s) added'),
+      'paths-add': async () => {
+        if (!window.showDirectoryPicker) return MW.toast('This browser cannot list folders', true);
+        try {
+          const handle = await window.showDirectoryPicker({ mode: 'read' });
+          app.paths.push(handle);
+          MW.toast('Path added: ' + handle.name);
+        } catch (err) { if (!err || err.name !== 'AbortError') MW.toast('Path refused', true); }
+      },
+      'paths-rem': () => { app.paths = []; MW.toast('Paths cleared'); },
+      'quit-app': () => { window.close(); setTimeout(() => MW.toast('Close the tab to quit', true), 100); },
+      'confirm-toggle': () => { app.confirmOn = !app.confirmOn; MW.panels.refresh(); },
       'dep2': () => { app.dep2 = !app.dep2; document.body.classList.toggle('dep2', app.dep2); MW.panels.refresh(); },
       'no16': () => { app.no16 = !app.no16; MW.grid.render(); MW.panels.refresh(); },
       'ptkey': () => { app.ptkey = !app.ptkey; MW.panels.refresh(); },
@@ -1942,7 +2037,7 @@
       'pick-note': () => pickProgKey(app.progTarget),
       'prog-prev': () => { app.progTarget = (app.progTarget + 9) % 10; MW.panels.refresh(); },
       'prog-next': () => { app.progTarget = (app.progTarget + 1) % 10; MW.panels.refresh(); },
-      'midi-extsync': () => { app.extSync = !app.extSync; MW.panels.refresh(); },
+      'midi-extsync': () => { app.extSync = !app.extSync; if (!app.extSync) MW.player.extPulse = null; MW.panels.refresh(); },
       'midi-map-active': () => {
         if (!app.midiMap) app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
         app.midiMapActive = !app.midiMapActive;
@@ -1974,6 +2069,11 @@
         app.midiMap[app.midiMapIndex] = { kind: 'fn', fn: fns[next] };
         MW.panels.refresh();
       },
+      'midi-keyup': () => { app.midiKeyUp = !app.midiKeyUp; MW.panels.refresh(); },
+      'midi-dump-save': () => saveMidiJson('dump'),
+      'midi-dump-load': () => loadMidiJson('dump'),
+      'midi-map-up': () => { app.midiMapIndex = Math.max(0, app.midiMapIndex - 1); MW.panels.refresh(); },
+      'midi-map-down': () => { app.midiMapIndex = Math.min(127, app.midiMapIndex + 1); MW.panels.refresh(); },
       'midi-map-prev': () => {
         if (!app.midiMap) app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
         const fns = MIDI_MAP_FUNCTIONS;
@@ -2206,7 +2306,7 @@
 
     async pickDir() {
       try {
-        this.dir = await window.showDirectoryPicker({ mode: 'read' });
+        this.dir = await window.showDirectoryPicker({ mode: 'readwrite' });
         await this.listDir();
       } catch (e) {
         if (e && e.name === 'AbortError') return;
@@ -2408,7 +2508,7 @@
         const med = MW.clamp(note - 23, 1, 120);
         MW.midiNoteIn(med, vel);
       } else if (type === 0x80 || (type === 0x90 && vel === 0)) {
-        // nothing to release: notes are one-shots in this engine
+        if (app.midiSendOut) this.send([0x80 | incoming, note, 0]);
       }
     },
 

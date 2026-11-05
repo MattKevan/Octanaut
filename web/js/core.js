@@ -177,6 +177,10 @@
     {
       name: 'Mono',
       tracks: new Array(16).fill('#b8b8b8')
+    },
+    {
+      name: 'Custom',
+      tracks: new Array(16).fill('#888888')
     }
   ];
 

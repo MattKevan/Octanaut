@@ -28,10 +28,10 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | NRM 1/2 and 2/3 playback | no | No slowed real-time entry. |
 | Note echo (DIST / MIN) | yes | Range operation; fills empty lines with halved volume commands. |
 | Sample list / MED_Paths | part | Lists loaded instruments rather than a disk library. |
-| MIDI message editor and command 10 | part | Edit, send and capture SysEx; messages are not yet saved in MMD1. |
-| MIDI input map editor | part | One key at a time can be assigned a note or a transport/edit function; there is no 128-row list. |
-| External MIDI sync | part | Start, continue and stop follow MIDI transport; clock tempo is not followed. |
-| MIDI dump, SEND OUT, SUPPR.N.OFF | part | Send-out and note-off suppression work; dump save/load is absent. |
+| MIDI message editor and command 10 | part | Edit, send, capture and JSON save; messages are not yet written into MMD1. |
+| MIDI input map editor | yes | 128-row list; each key is a note or a transport/edit function. |
+| External MIDI sync | yes | Start, continue, stop and clock tempo follow the incoming MIDI clock. |
+| MIDI dump, SEND OUT, SUPPR.N.OFF | yes | JSON dumps carry messages and the input map; send-out and note-off suppression work. |
 | All Off / Reset modes | yes | Controller and note-off modes, plus PB+PRES and system reset. |
 | Sample editor freehand, RANGE ALL, zero search, D.PIXELS, dest-note pitch | part | Echo, filter, boost, noise, mix, fades and buffer undo are present. |
 | Synth draw modes, RANGE ALL, cut/copy/paste, DBL, REV, stretch, VOL.CHG, SPEED | part | Waveform copy, exchange, mix, add, undo and transform are present. |
@@ -48,12 +48,18 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 
 ## Controls shown but not implemented
 
-The panels follow the V4 layouts, including controls whose features are still absent. These are the visible placeholders:
+The panels follow the V4 layouts. These controls are disabled because they map to Amiga OS or hardware operations that a browser cannot provide:
 
-- **Files:** ICON, DEL FILE, LOAD MSG, SAVE MSG, LOAD MAP, SAVE MAP. INFO toggles a flag, but the writer always includes the extra information block.
-- **Edit:** programmable keys can be edited field by field, but `x` wildcards are not supported.
-- **Misc:** RGB palette sliders, RES, UNDO, WB OPEN, CLOSE, PATHS, ADD, REM, LOADGFX, MOUSE2, QUIT, CONFIRM.
-- **MIDI:** KEY-UP, dump save/load and clock-following tempo. The input map assigns one key at a time; SysEx messages are not saved in MMD1 yet.
+- **Files:** ICON.
+- **Misc:** WB OPEN, CLOSE, LOADGFX, MOUSE2.
+
+These are implemented with browser equivalents rather than the original file formats:
+
+- **Files:** DEL FILE uses the File System Access API. Messages and maps save and load as JSON.
+- **Misc:** the RGB palette edits the custom track colour. Paths use directory handles. QUIT closes the tab where the browser allows it, and CONFIRM toggles save prompts.
+- **MIDI:** KEY-UP is a transport toggle. SysEx messages save as JSON, not inside MMD1.
+
+The remaining functional gaps are the programmable-key `x` wildcard, note-length capture for MIDI key-up, the old display layouts and the `MED_Paths` sample library.
 
 ---
 
@@ -231,7 +237,7 @@ The panels follow the V4 layouts, including controls whose features are still ab
 | Note-off suppression | yes | |
 | Reset, panic | yes | |
 | Active sensing, sync, local control | part | Active sensing and 24 PPQN clock out; local control on/off. External sync is not implemented. |
-| MIDI message editor and command 10 | part | Edit, send and capture SysEx; messages are not yet saved in MMD1. |
+| MIDI message editor and command 10 | part | Edit, send, capture and JSON save; messages are not yet written into MMD1. |
 | MIDI input map editor | no | |
 | MIDI dump save / load | no | |
 | SEND OUT, SUPPR.N.OFF | no | |

@@ -200,8 +200,9 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 
 ## Known gaps
 
-- **MIDI messages and maps** are partial: SysEx messages can be edited, captured and sent, MIDI start, continue and stop follow external sync, and one input key at a time can be mapped to a note or function. Key-up, dumps and clock-following tempo are still missing.
+- **MIDI messages and maps** are partial: SysEx messages can be edited, captured, sent and saved as JSON; external clock and transport follow; the input map has all 128 keys. Key-up recording and writing SysEx into MMD1 are still missing.
 - **The sample list** shows loaded instruments rather than a `MED_Paths` library, so it cannot browse a disk collection or resolve missing names.
+- **Amiga-only controls** (ICON, Workbench open/close, LOADGFX, MOUSE2) are disabled. They have no browser equivalent.
 - **MP3 export** depends on a browser audio encoder. Chromium exposes AAC but not MP3, so there the WAV and AAC buttons are the reliable pair.
 - Browsers hold audio back until the page has been clicked once. Octanaut resumes the audio context on the first click or key press and says so if it is still blocked.
 - **Synthsound sequence editing** changes values and inserts/deletes lines, but does not let you type command names inline; the binary instruments round-trip unchanged through MMD0.
@@ -239,7 +240,7 @@ The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.write
 
 Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 32 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export, the store and the TSX panel components. The UI scripts can join them one file at a time.
 
-`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 122 features matching, 23 partial, 17 absent.
+`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 125 features matching, 20 partial, 17 absent.
 
 ## Command bytes
 

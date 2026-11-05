@@ -12,14 +12,15 @@ const FIELD = 'h-[20px] min-w-0 border border-ink bg-paper px-1 text-[11px] lead
 const ROW = 'flex items-stretch gap-px';
 
 function B(props: any) {
-  const { act, on, cls, children, title, name, onClick } = props;
+  const { act, on, cls, children, title, name, onClick, disabled } = props;
   return (
     <button
       type="button"
       title={title}
       data-act={act}
       data-name={name}
-      class={`${BTN} ${on ? 'on' : ''} ${cls || ''}`}
+      disabled={disabled}
+      class={`${BTN} ${on ? 'on' : ''} ${disabled ? 'opacity-40' : ''} ${cls || ''}`}
       onClick={onClick}
     >
       {children}
@@ -219,7 +220,7 @@ function FilesPanel() {
       </R>
       <R>
         <L cls="w-[82px]" />
-        <B act="file-icon" cls="w-[46px]">ICON</B>
+        <B act="missing" name="Amiga icon files" disabled cls="w-[46px]">ICON</B>
         <B act="file-save-song" cls="flex-1">SAVE SONG</B>
         <B act="file-save-iff" cls="flex-1">SAVE INSTR</B>
         <B act="file-save-msg" cls="w-[62px]">SAVE MSG</B>
@@ -477,42 +478,47 @@ function EditPanel() {
 function MiscPanel() {
   useKeys(['song']);
   const app = MW.app;
+  const rgb = app.paletteRGB || { r: 136, g: 136, b: 136 };
+  const setRGB = (key: string, value: number) => {
+    app.paletteRGB[key] = value;
+    MW.runAction('pal-set');
+  };
   return (
     <div class="flex h-full flex-col gap-px">
       <R>
         <L cls="w-[16px]">R</L>
-        <input type="range" min="0" max="64" value="0" class="h-[20px] w-[120px]" onChange={() => MW.missing('RGB palette')} />
-        <span class={`${FIELD} w-[28px] text-center`}>0</span>
+        <input type="range" min="0" max="255" value={rgb.r} class="h-[20px] w-[120px]" onChange={(e: any) => setRGB('r', +e.currentTarget.value)} />
+        <span class={`${FIELD} w-[28px] text-center`}>{rgb.r}</span>
         {[0, 1, 2, 3, 4, 5, 6, 7].map(n => (
           <B key={n} onClick={() => MW.missing('RGB palette')} cls={`w-[18px] ${n === 0 ? 'bg-ink' : ''}`}> </B>
         ))}
-        <B act="missing" name="Palette restore" cls="w-[34px]">RES</B>
-        <B act="missing" name="Palette undo" cls="w-[38px]">UNDO</B>
+        <B act="pal-reset" cls="w-[34px]">RES</B>
+        <B act="pal-undo" cls="w-[38px]">UNDO</B>
       </R>
       <R>
         <L cls="w-[16px]">G</L>
-        <input type="range" min="0" max="64" value="0" class="h-[20px] w-[120px]" onChange={() => MW.missing('RGB palette')} />
-        <span class={`${FIELD} w-[28px] text-center`}>0</span>
+        <input type="range" min="0" max="255" value={rgb.g} class="h-[20px] w-[120px]" onChange={(e: any) => setRGB('g', +e.currentTarget.value)} />
+        <span class={`${FIELD} w-[28px] text-center`}>{rgb.g}</span>
         <B act="ptkey" on={!!app.ptkey} cls="w-[46px]">PTKEY</B>
-        <B act="missing" name="Workbench open" cls="w-[44px]">WB OPEN</B>
-        <B act="missing" name="Workbench close" cls="w-[44px]">CLOSE</B>
+        <B act="missing" name="Workbench" disabled cls="w-[44px]">WB OPEN</B>
+        <B act="missing" name="Workbench" disabled cls="w-[44px]">CLOSE</B>
       </R>
       <R>
         <L cls="w-[16px]">B</L>
-        <input type="range" min="0" max="64" value="0" class="h-[20px] w-[120px]" onChange={() => MW.missing('RGB palette')} />
-        <span class={`${FIELD} w-[28px] text-center`}>0</span>
+        <input type="range" min="0" max="255" value={rgb.b} class="h-[20px] w-[120px]" onChange={(e: any) => setRGB('b', +e.currentTarget.value)} />
+        <span class={`${FIELD} w-[28px] text-center`}>{rgb.b}</span>
         <B act="name-flat" on={!!app.hb} cls="w-[44px]">H↔B</B>
-        <B act="missing" name="Load graphics" cls="w-[58px]">LOADGFX</B>
-        <B act="missing" name="Mouse pointer" cls="w-[50px]">MOUSE2</B>
+        <B act="missing" name="Load graphics" disabled cls="w-[58px]">LOADGFX</B>
+        <B act="missing" name="Mouse pointer" disabled cls="w-[50px]">MOUSE2</B>
       </R>
       <R>
-        <B act="missing" name="Paths" cls="w-[52px]">PATHS</B>
-        <B act="missing" name="Paths add" cls="w-[34px]">ADD</B>
-        <B act="missing" name="Paths remove" cls="w-[34px]">REM</B>
+        <B act="paths-info" cls="w-[52px]">PATHS</B>
+        <B act="paths-add" cls="w-[34px]">ADD</B>
+        <B act="paths-rem" cls="w-[34px]">REM</B>
         <B act="misc-clear-all" cls="w-[70px]">CLEAR ALL</B>
         <B act="misc-clear" cls="w-[106px]">CLEAR SONG ONLY</B>
-        <B act="missing" name="Quit" cls="w-[38px]">QUIT</B>
-        <B act="missing" name="Confirm" cls="w-[54px]">CONFIRM</B>
+        <B act="quit-app" cls="w-[38px]">QUIT</B>
+        <B act="confirm-toggle" on={app.confirmOn !== false} cls="w-[54px]">CONFIRM</B>
       </R>
       <R>
         <B act="no16" on={!!app.no16} cls="w-[42px]">NO16</B>
@@ -749,7 +755,7 @@ function MidiPanel() {
       </R>
       <R>
         <L cls="w-[40px]">READ:</L>
-        <B act="missing" name="MIDI key-up" cls="w-[48px]">KEY-UP</B>
+        <B act="midi-keyup" on={!!app.midiKeyUp} cls="w-[48px]">KEY-UP</B>
         <B act="midi-vel" on={!!app.readVelocity} cls="w-[48px]">VOLUME</B>
         <L cls="w-[44px]">RESET:</L>
         <B act="midi-reset-pb" cls="w-[54px]">PB+PRES</B>
@@ -792,9 +798,26 @@ function MidiPanel() {
         <B act="midi-map-next" cls="w-[20px]">&gt;</B>
         <B act="midi-map-new" cls="w-[32px]">NEW</B>
         <B act="midi-map-del" cls="w-[32px]">DEL</B>
+        <B act="midi-dump-save" cls="w-[52px]">SAVE DUMP</B>
+        <B act="midi-dump-load" cls="w-[52px]">LOAD DUMP</B>
         <L cls="w-[26px]">KEY</L>
         <N value={app.midiMapIndex} min={0} max={127} onChange={(v: number) => { app.midiMapIndex = v; MW.panels.refresh(); }} cls="w-[38px]" />
       </R>
+      <div class="max-h-[84px] overflow-auto border border-ink bg-paper">
+        {Array.from({ length: 128 }, (_, i) => {
+          const entry = app.midiMap && app.midiMap[i];
+          const label = entry && entry.kind === 'fn' ? entry.fn : 'note';
+          return (
+            <button key={i} type="button"
+              class={`flex w-full items-center gap-2 px-1 text-left text-[10px] leading-[14px] ${i === app.midiMapIndex ? 'bg-ink text-paper' : ''}`}
+              onClick={() => { app.midiMapIndex = i; MW.panels.refresh(); }}>
+              <span class="w-[26px] text-right">{i}</span>
+              <span class="w-[34px]">{MW.noteName(i - 23, app.hb)}</span>
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
