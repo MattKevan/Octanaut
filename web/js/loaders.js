@@ -302,8 +302,6 @@
       }
       const infoBase = namesPtr || infoPtr;
       for (let i = 0; i < Math.min(iExtEntries, 63); i++) {
-        const inst = instruments[i];
-        if (!inst) continue;
         const oi = infoBase + i * iExtEntrsz;
         let nm = '';
         for (let k = 0; k < 40; k++) {
@@ -311,7 +309,14 @@
           if (!ch) break;
           nm += String.fromCharCode(ch);
         }
-        inst.name = nm.trim();
+        nm = nm.trim();
+        let inst = instruments[i];
+        if (!inst && nm) {
+          inst = MW.createInstrument('sample');
+          inst.missing = true;
+          instruments[i] = inst;
+        }
+        if (inst) inst.name = nm;
       }
       const aPtr = u32(dv, e + 12);
       const aLen = u32(dv, e + 16);

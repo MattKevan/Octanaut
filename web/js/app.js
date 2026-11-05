@@ -43,6 +43,8 @@
     saveFormat: 'mmd1',
     saveInfo: true,
     volTrack: 0,
+    padMap2: false,
+    midiAllOff: 'cc',
     midiInput: true,
     midiSendOut: false,
     midiInChannel: 0,
@@ -487,6 +489,41 @@
       afterEdit();
     },
 
+    noteEcho(dist, min) {
+      const s = app.selection;
+      if (!s) return MW.toast('Select a range first', true);
+      const b = block();
+      const l0 = Math.min(s.l0, s.l1), l1 = Math.max(s.l0, s.l1);
+      const t0 = Math.min(s.t0, s.t1), t1 = Math.max(s.t0, s.t1);
+      const hex = !!app.song.flags.volhex;
+      const enc = v => hex ? v : Math.floor(v / 10) * 16 + (v % 10);
+      let made = 0;
+      for (let l = l0; l <= l1; l++) {
+        for (let t = t0; t <= t1; t++) {
+          const src = b.rows[l][t];
+          if (!src || !src.note) continue;
+          let vol = src.ins && app.song.instruments[src.ins - 1]
+            ? app.song.instruments[src.ins - 1].volume ?? 64
+            : 64;
+          for (let k = 1; k < 64; k++) {
+            const line = l + k * dist;
+            if (line > l1) break;
+            vol = Math.floor(vol / 2);
+            if (vol < min) break;
+            const dst = b.rows[line][t];
+            if (!dst || dst.note || dst.ins) continue;
+            dst.note = src.note;
+            dst.ins = src.ins;
+            dst.cmd = 0x0c;
+            dst.dat = enc(vol);
+            made++;
+          }
+        }
+      }
+      afterEdit();
+      MW.toast(made ? 'Note echo: ' + made + ' notes' : 'No empty lines for the echo', !made);
+    },
+
     pasteRange() {
       if (clipboard.kind !== 'range') return MW.toast('Nothing copied', true);
       const b = block();
@@ -824,6 +861,7 @@
   /* programmable keys: Shift 0-9 insert a stored note or command */
   app.prog = app.prog || Array.from({ length: 10 }, () => ({ note: null, ins: null, cmd: null, dat: null }));
   let chordNotes = [];
+  app.chordStartTrack = 0;
   let chordTimer = 0;
 
   function isTypingTarget(e) {
@@ -913,6 +951,7 @@
   }
 
   function chordPress(note) {
+    if (!chordNotes.length) app.chordStartTrack = app.cursor.track;
     chordNotes.push(note);
     clearTimeout(chordTimer);
     chordTimer = setTimeout(flushChord, 380);
@@ -924,15 +963,15 @@
     chordNotes = [];
     if (!notes.length) return;
     const b = block();
-    let t = app.selectedTracks.some(Boolean) && !app.selectedTracks[app.cursor.track]
-      ? app.selectedTracks.indexOf(true)
-      : app.cursor.track;
+    let t = app.chordStartTrack;
+    if (t == null || t < 0 || t >= b.tracks) t = app.cursor.track;
     for (const n of notes) {
       if (t < 0 || t >= b.tracks) break;
       const c = b.rows[app.cursor.line][t];
       if (c) { c.note = n; c.ins = app.currentIns; }
       t = nextTrackFrom(t, b.tracks);
     }
+    app.cursor.track = app.chordStartTrack;
     advanceCursor();
     afterEdit();
   }
@@ -1169,13 +1208,39 @@
     }
 
     /* ---------------- numeric keypad ---------------- */
-    if (/^Numpad[0-9]$/.test(e.code)) {
+    if (/^Numpad[0-9]$/.test(e.code) || /^Numpad(Enter|Decimal|Add|Subtract|Divide|Multiply)$/.test(e.code)) {
       e.preventDefault();
-      const d = parseInt(e.code.slice(6), 10);
+      const d = /^Numpad[0-9]$/.test(e.code) ? parseInt(e.code.slice(6), 10) : -1;
       if (app.padMode === 'instr') {
-        const map = [12, 13, 14, 15, 8, 9, 10, 11, 4, 5];
-        setInstrument(map[d] + 1);
-      } else {
+        if (app.padMap2) {
+          if (e.code === 'NumpadAdd') setInstrument(app.currentIns + 1);
+          else if (e.code === 'NumpadSubtract') setInstrument(app.currentIns - 1);
+          else if (e.code === 'NumpadDivide') setInstrument(app.lastIns);
+          else if (e.code === 'NumpadMultiply') setInstrument(app.lastOccupiedIns || app.currentIns);
+          else if (d >= 0) setInstrument(d + 1);
+        } else {
+          const map = [12, 13, 14, 15, 8, 9, 10, 11, 4, 5];
+          if (d >= 0) setInstrument(map[d] + 1);
+        }
+      } else if (app.padMap2) {
+        const map = {
+          Numpad7: 0, Numpad8: 1, Numpad9: 2, NumpadSubtract: 3,
+          Numpad4: 4, Numpad5: 5, Numpad6: 6, NumpadAdd: 7,
+          Numpad1: 8, Numpad2: 9, Numpad3: 10,
+          Numpad0: 12, NumpadDecimal: 13, NumpadEnter: 15
+        };
+        if (e.code === 'NumpadDecimal') {
+          for (let t = 0; t < 16; t++) { app.mutedTracks[t] = true; MW.player.channels[t].muted = true; }
+        } else if (e.code === 'NumpadEnter') {
+          for (let t = 0; t < 16; t++) { app.mutedTracks[t] = false; MW.player.channels[t].muted = false; }
+        } else if (map[e.code] != null) {
+          const t = map[e.code];
+          app.mutedTracks[t] = !app.mutedTracks[t];
+          MW.player.channels[t].muted = app.mutedTracks[t];
+        }
+        MW.grid.render();
+        MW.touchStatus('mute', ['mutedTracks']);
+      } else if (d >= 0) {
         app.mutedTracks[d] = !app.mutedTracks[d];
         MW.player.channels[d].muted = app.mutedTracks[d];
         MW.grid.render();
@@ -1379,6 +1444,7 @@
     try {
       const chosen = format === 0 ? 'mmd0' : format === 1 ? 'mmd1' : (app.saveFormat || 'mmd1');
       if (chosen === 'st') { saveST(); return; }
+      const noInstr = chosen === 'mmd1n';
       const mmd1 = chosen !== 'mmd0';
       const list = (app.songList && app.songList.length > 1)
         ? app.songList
@@ -1390,14 +1456,16 @@
           : true;
         others = all ? list.filter(s => s !== app.song) : [];
       }
-      const buf = mmd1 ? MW.writeMMD1(app.song, others) : MW.writeMMD0(app.song, others);
+      const buf = mmd1
+        ? MW.writeMMD1(app.song, others, { instruments: !noInstr })
+        : MW.writeMMD0(app.song, others);
       const blob = new Blob([buf], { type: 'application/octet-stream' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = (app.song.name || 'untitled') + (mmd1 ? '.med' : '.mmd0');
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      MW.toast('Saved ' + (mmd1 ? 'MMD1 (.med)' : 'MMD0') + (others.length ? ` with ${others.length + 1} songs` : ''));
+      MW.toast('Saved ' + (mmd1 ? (noInstr ? 'MMD1 (.med, no instruments)' : 'MMD1 (.med)') : 'MMD0') + (others.length ? ` with ${others.length + 1} songs` : ''));
     } catch (err) {
       MW.toast('Save failed: ' + err.message, true);
     }
@@ -1749,7 +1817,7 @@
       'file-open': () => MW.requester.open(),
       'file-info': () => { app.saveInfo = !app.saveInfo; MW.panels.refresh(); },
       'fmt-mmd1': () => { app.saveFormat = 'mmd1'; MW.panels.refresh(); },
-      'fmt-mmd1n': () => MW.missing('MOD1 without instruments'),
+      'fmt-mmd1n': () => { app.saveFormat = 'mmd1n'; MW.panels.refresh(); },
       'fmt-mmd0': () => { app.saveFormat = 'mmd0'; MW.panels.refresh(); },
       'fmt-st': () => { app.saveFormat = 'st'; MW.panels.refresh(); },
       'file-save-song': () => saveModule(),
@@ -1846,6 +1914,7 @@
       'no16': () => { app.no16 = !app.no16; MW.grid.render(); MW.panels.refresh(); },
       'ptkey': () => { app.ptkey = !app.ptkey; MW.panels.refresh(); },
       'pad-mode': () => { app.padMode = app.padMode === 'track' ? 'instr' : 'track'; MW.panels.refresh(); },
+      'pad-map2': () => { app.padMap2 = !app.padMap2; MW.panels.refresh(); },
       'alt-pick-l': () => { const c = curCell(); if (c) { app.altL = { note: null, ins: c.ins, cmd: c.cmd, dat: c.dat }; MW.toast('Left Alt template set'); MW.panels.refresh(); } },
       'alt-pick-r': () => { const c = curCell(); if (c) { app.altR = { note: null, ins: c.ins, cmd: c.cmd, dat: c.dat }; MW.toast('Right Alt template set'); MW.panels.refresh(); } },
       'alt-clear': () => { app.altL = { note: null, ins: null, cmd: null, dat: null }; app.altR = { note: null, ins: null, cmd: null, dat: null }; MW.panels.refresh(); },
@@ -1855,17 +1924,28 @@
       'ins-lastused': () => setInstrument(app.lastIns),
       'ins-lastoccupied': () => {
         const list = app.song.instruments;
-        for (let i = list.length - 1; i >= 0; i--) if (list[i]) return setInstrument(i + 1);
+        for (let i = list.length - 1; i >= 0; i--) if (list[i]) {
+          app.lastOccupiedIns = i + 1;
+          return setInstrument(i + 1);
+        }
         setInstrument(1);
       },
       'ins-jump': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) { i.jump = !i.jump; MW.panels.refresh(); } },
       'pick-note': () => pickProgKey(app.progTarget),
+      'chord-rst': () => { chordNotes = []; app.chordStartTrack = app.cursor.track; MW.toast('Chord reset'); },
+      'note-echo': () => ops.noteEcho(
+        parseInt((document.getElementById('echo-dist') || {}).value, 10) || 2,
+        parseInt((document.getElementById('echo-min') || {}).value, 10) || 1
+      ),
       'prefs-save': () => { prefs.save(); MW.toast('Preferences saved'); },
       'midi-input': () => { app.midiInput = !app.midiInput; MW.panels.refresh(); },
       'midi-sendout': () => { app.midiSendOut = !app.midiSendOut; MW.panels.refresh(); },
       'midi-suppress': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) i.suppressOff = !i.suppressOff; MW.panels.refresh(); },
       'midi-reset-pb': () => { for (let c = 0; c < 16; c++) { midi.send([0xe0 | c, 0, 64]); midi.send([0xb0 | c, 1, 0]); } MW.toast('Pitch bend and modulation reset'); },
       'midi-reset-ff': () => { midi.send([0xff]); MW.toast('MIDI system reset sent'); },
+      'midi-sensing': () => { midi.sensingOn = midi.sensingOn === false; MW.panels.refresh(); },
+      'midi-alloff-cc': () => { app.midiAllOff = 'cc'; MW.panels.refresh(); },
+      'midi-alloff-note': () => { app.midiAllOff = 'note'; MW.panels.refresh(); },
       'file-save-iff': () => MW.saveIFF(),
       'samp-record': () => {
         const len = parseInt((document.getElementById('buffsize') || {}).value, 10) || 65536;
@@ -2155,7 +2235,7 @@
         this.inputs.forEach(input => { input.onmidimessage = e => this.onMessage(e); });
         if (this.sensing) clearInterval(this.sensing);
         this.sensing = setInterval(() => {
-          if (!this.enabled) return;
+          if (!this.enabled || this.sensingOn === false) return;
           for (let c = 0; c < 16; c++) this.send([0xfe]);
         }, 280);
         access.onstatechange = () => {
@@ -2228,7 +2308,13 @@
     MW.voicePreview(note, app.currentIns);
   };
   MW.midiPanic = () => {
-    for (let c = 0; c < 16; c++) midi.send([0xb0 | c, 123, 0]);
+    if (MW.app && MW.app.midiAllOff === 'note') {
+      for (let c = 0; c < 16; c++) {
+        for (let n = 0; n < 128; n++) midi.send([0x80 | c, n, 0]);
+      }
+    } else {
+      for (let c = 0; c < 16; c++) midi.send([0xb0 | c, 123, 0]);
+    }
   };
 
   let lastMidiNote = new Array(16).fill(-1);

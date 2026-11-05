@@ -50,6 +50,7 @@
   }
 
   MW.writeMMD0 = function (song, others) {
+    const withInstr = true;
     const songs = [song].concat(others || []);
     for (const s of songs) {
       for (const b of s.blocks) {
@@ -198,23 +199,24 @@
     }
 
     /* ---- instrument table and payloads, shared by every song ---- */
-    for (let i = 0; i < 63; i++) dv.setUint32(smplarrOff + i * 4, sampleOffsets[i] || 0, false);
-
     let jumpmask = 0;
     for (let i = 0; i < 32; i++) if (elements[i] && elements[i].jump) jumpmask |= (1 << i);
 
-    for (let i = 0; i < 63; i++) {
-      const inst = elements[i];
-      if (!inst) continue;
-      const at = sampleOffsets[i];
-      if (inst.type === 'synth' || inst.type === 'hybrid') {
-        writeSynth(dv, at, inst);
-      } else {
-        const data = inst.data || new Float32Array(0);
-        dv.setUint32(at, data.length, false);
-        dv.setInt16(at + 4, 0, false);
-        for (let k = 0; k < data.length; k++) {
-          dv.setInt8(at + 6 + k, Math.max(-128, Math.min(127, Math.round(data[k] * 127))));
+    if (withInstr) {
+      for (let i = 0; i < 63; i++) dv.setUint32(smplarrOff + i * 4, sampleOffsets[i] || 0, false);
+      for (let i = 0; i < 63; i++) {
+        const inst = elements[i];
+        if (!inst) continue;
+        const at = sampleOffsets[i];
+        if (inst.type === 'synth' || inst.type === 'hybrid') {
+          writeSynth(dv, at, inst);
+        } else {
+          const data = inst.data || new Float32Array(0);
+          dv.setUint32(at, data.length, false);
+          dv.setInt16(at + 4, 0, false);
+          for (let k = 0; k < data.length; k++) {
+            dv.setInt8(at + 6 + k, Math.max(-128, Math.min(127, Math.round(data[k] * 127))));
+          }
         }
       }
     }
@@ -274,7 +276,8 @@
    * a 16-bit track/line count, 4-byte cells with a full command byte, and
    * a BlockInfo struct for the line highlights and block name.
    */
-  MW.writeMMD1 = function (song, others) {
+  MW.writeMMD1 = function (song, others, options) {
+    const withInstr = !options || options.instruments !== false;
     const songs = [song].concat(others || []);
     const n = songs.length;
     const elements = song.instruments;
@@ -309,13 +312,13 @@
       blockInfo[i] = infos;
     }
 
-    const smplarrOff = cursor;
-    cursor += 63 * 4;
+    const smplarrOff = withInstr ? cursor : 0;
+    if (withInstr) cursor += 63 * 4;
 
     const sampleOffsets = [];
     for (let i = 0; i < 63; i++) {
       const inst = elements[i];
-      if (!inst) { sampleOffsets.push(0); continue; }
+      if (!withInstr || !inst) { sampleOffsets.push(0); continue; }
       sampleOffsets.push(cursor);
       cursor += (inst.type === 'synth' || inst.type === 'hybrid')
         ? synthSize(inst)
@@ -405,7 +408,7 @@
       for (let k = 0; k < 16; k++) dv.setUint8(p + k, s.trkvol[k] || 64);
       p += 16;
       dv.setUint8(p, s.mastervol || 64); p += 1;
-      dv.setUint8(p, 63); p += 1;
+      dv.setUint8(p, withInstr ? 63 : 0); p += 1;
 
       for (let b = 0; b < s.blocks.length; b++) {
         const blk = s.blocks[b];
@@ -449,23 +452,24 @@
     }
 
     /* ---- instrument table and payloads, shared by every song ---- */
-    for (let i = 0; i < 63; i++) dv.setUint32(smplarrOff + i * 4, sampleOffsets[i] || 0, false);
-
     let jumpmask = 0;
     for (let i = 0; i < 32; i++) if (elements[i] && elements[i].jump) jumpmask |= (1 << i);
 
-    for (let i = 0; i < 63; i++) {
-      const inst = elements[i];
-      if (!inst) continue;
-      const at = sampleOffsets[i];
-      if (inst.type === 'synth' || inst.type === 'hybrid') {
-        writeSynth(dv, at, inst);
-      } else {
-        const data = inst.data || new Float32Array(0);
-        dv.setUint32(at, data.length, false);
-        dv.setInt16(at + 4, 0, false);
-        for (let k = 0; k < data.length; k++) {
-          dv.setInt8(at + 6 + k, Math.max(-128, Math.min(127, Math.round(data[k] * 127))));
+    if (withInstr) {
+      for (let i = 0; i < 63; i++) dv.setUint32(smplarrOff + i * 4, sampleOffsets[i] || 0, false);
+      for (let i = 0; i < 63; i++) {
+        const inst = elements[i];
+        if (!inst) continue;
+        const at = sampleOffsets[i];
+        if (inst.type === 'synth' || inst.type === 'hybrid') {
+          writeSynth(dv, at, inst);
+        } else {
+          const data = inst.data || new Float32Array(0);
+          dv.setUint32(at, data.length, false);
+          dv.setInt16(at + 4, 0, false);
+          for (let k = 0; k < data.length; k++) {
+            dv.setInt8(at + 6 + k, Math.max(-128, Math.min(127, Math.round(data[k] * 127))));
+          }
         }
       }
     }

@@ -14,25 +14,25 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | Feature | Status | Notes |
 |---|---|---|
 | MOD1 (+instruments) save | yes | Writes `.med` with the MMD1 song struct, 4-byte cells, BlockInfo and expdata. Verified by re-import and libxmp. |
-| MOD1 (no instruments) save | no | Instrument names and MED_Paths lookup. |
+| MOD1 (no instruments) save | yes | Writes names without sample payloads; the loader creates placeholders for resolution. |
 | MOD0 (old) multi-song save | yes | Writes a proper nextmod chain. |
 | 3200-line blocks | yes | MMD1 writer, loader, model and block panel. MMD0 still caps at 256, with a clear error. |
 | Blocks 00–99 | part | No explicit 100-block cap; the status bar will show more. |
 | Octaves 1+2 to 9+A | yes | Panel buttons, note names and the model reach octave A. |
 | Instrument finetune -8..+7 | yes | Panel, engine and MMD1 expdata. MMD0 cannot store it. |
 | Last occupied instrument (`>|<`) | yes | Scans down from 1V. |
-| Keypad MAP2 maps | no | Track on/off and select-instrument only. |
+| Keypad MAP2 maps | yes | Track and instrument variants, including all-on/all-off and the extra instrument keys. |
 | Programmable key editor with `x` wildcards | part | Keys can be picked; there is no digit editor, and range pick stores one note. |
 | TRK ON SET / CLR | no | Per-track toggles only. |
 | Block name | yes | Stored in BlockInfo and editable in the Block panel. |
 | NRM 1/2 and 2/3 playback | no | No slowed real-time entry. |
-| Note echo (DIST / MIN) | no | Sample echo exists; pattern echo does not. |
+| Note echo (DIST / MIN) | yes | Range operation; fills empty lines with halved volume commands. |
 | Sample list / MED_Paths | part | Lists loaded instruments rather than a disk library. |
 | MIDI message editor and command 10 | no | |
 | MIDI input map editor | no | Input works without maps. |
 | External MIDI sync | no | Clock out only. |
 | MIDI dump, SEND OUT, SUPPR.N.OFF | no | |
-| All Off / Reset modes | part | Panic and reset exist; the two-way mode selectors do not. |
+| All Off / Reset modes | yes | Controller and note-off modes, plus PB+PRES and system reset. |
 | Sample editor freehand, RANGE ALL, zero search, D.PIXELS, dest-note pitch | part | Echo, filter, boost, noise, mix, fades and buffer undo are present. |
 | Synth draw modes, RANGE ALL, cut/copy/paste, DBL, REV, stretch, VOL.CHG, SPEED | part | Waveform copy, exchange, mix, add, undo and transform are present. |
 | Notation ghost tracks, hide instrument, saved settings | part | Show/hide and five presets exist; ghosting and saved settings do not. |
@@ -50,12 +50,11 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 
 The panels follow the V4 layouts, including controls whose features are still absent. These are the visible placeholders:
 
-- **Files:** ICON, DEL FILE, LOAD MSG, SAVE MSG, LOAD MAP, SAVE MAP, MOD1(NO INSTR). INFO toggles a flag, but the writer always includes the extra information block.
+- **Files:** ICON, DEL FILE, LOAD MSG, SAVE MSG, LOAD MAP, SAVE MAP. INFO toggles a flag, but the writer always includes the extra information block.
 - **Instr:** TYPE switches the instrument type but does not convert the waveform or sample data.
-- **Edit:** MAP2. The programmable-key definition is shown but cannot be edited digit by digit.
+- **Edit:** the programmable-key definition is shown but cannot be edited digit by digit.
 - **Misc:** RGB palette sliders, RES, UNDO, WB OPEN, CLOSE, PATHS, ADD, REM, LOADGFX, MOUSE2, QUIT, CONFIRM.
-- **MIDI:** EXT SYNC, the ACT.SENSING toggle, KEY-UP, the ALL OFF modes, the MIDI message editor and the input map editor.
-- **Range:** NOTE ECHO with DIST and MIN, RST, and PASTE SELECT (it currently behaves like PASTE).
+- **MIDI:** EXT SYNC, KEY-UP, the MIDI message editor and the input map editor.
 
 ---
 
@@ -68,7 +67,7 @@ The panels follow the V4 layouts, including controls whose features are still ab
 | Load instrument (raw, IFF, synth, hybrid) | yes | |
 | Load ST module | yes | Folded into Load; effects converted. |
 | Save MOD1 (+instruments) | yes | `.med` with samples included. |
-| Save MOD1 (no instruments) | no | Instrument names and MED_Paths lookup do not exist yet. |
+| Save MOD1 (no instruments) | yes | Writes instrument names only; placeholders load silently until samples are found. |
 | Save MOD0 (old) | yes | Multi-song nextmod chain. |
 | Save song + samples | yes | MMD0 already embeds the samples; that is the interoperable container. |
 | Save module (MMD0) | yes | Full writer, 7,680-cell round trip verified. |
@@ -141,7 +140,7 @@ The panels follow the V4 layouts, including controls whose features are still ab
 | Pick note / pick range / pick buffer | yes | Ctrl+Shift+digit picks the cursor note; the Edit panel picks from the range or the copy buffer. |
 | Clr key definition | yes | The Alt template clear. |
 | SPACE = DEL | yes | |
-| Keypad maps: track on/off, select instrument, MAP2 variants | part | Two of the four V4 maps. |
+| Keypad maps: track on/off, select instrument, MAP2 variants | yes | Both base maps and both MAP2 variants. |
 | TRK ON SET / CLR | no | Per-track toggles only. |
 | Cursor advance, six directions | yes | Ctrl+A cycles. |
 
@@ -265,6 +264,6 @@ The V4 gaps that matter most:
 2. **MIDI messages and maps.** No SysEx message editor, input map editor, external sync, dump or send-out. Basic note out and input work.
 3. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
 4. **Command coverage.** 05/06/07 (slide+fade, vibrato+fade, tremolo), 10 (MIDI message), 16 (block loop), 1C (MIDI preset), 1E (line delay) and the MIDI 0A/0C/0D forms are absent.
-5. **Editor polish.** Octaves 1+2 to 9+A, keypad MAP2, programmable-key wildcards and group entry, NRM, note echo, sample/synth range tools and notation ghosting.
+5. **Editor polish.** Programmable-key wildcards and group entry, NRM, sample/synth range tools and notation ghosting.
 6. **Filesystem-adjacent features.** INFO/ICON on save, delete file, absolute instrument names, paths add/remove and the RGB palette editor.
 7. **MP3 export.** WAV and AAC work without extra code; MP3 waits for a browser encoder or a bundled one.

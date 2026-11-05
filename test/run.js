@@ -147,6 +147,10 @@ check('MMD1 hold/decay', v4back.instruments[2].hold === 5 && v4back.instruments[
 check('MMD1 BPM mode', v4back.bpmMode === true && v4back.linesPerBeat === 4,
   v4back.bpmMode + '/' + v4back.linesPerBeat);
 
+const noInstr = MW.loadModule(MW.writeMMD1(v4, [], { instruments: false }));
+check('MMD1 no instruments keeps names', !!(noInstr.instruments[2] && noInstr.instruments[2].missing && noInstr.instruments[2].name === 'Test sample'),
+  noInstr.instruments[2] ? noInstr.instruments[2].name : 'none');
+
 const second = MW.createSong();
 second.name = 'second song';
 second.playseq = [0];

@@ -1,5 +1,5 @@
 import { render, type ComponentChildren } from 'preact';
-import { useEffect, useReducer, useState } from 'preact/hooks';
+import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
 
 const MW: any = (globalThis as any).MW;
 
@@ -50,6 +50,7 @@ function T(props: any) {
 function N(props: any) {
   return (
     <input
+      id={props.id}
       type="number"
       class={`${FIELD} ${props.cls || ''}`}
       value={props.value ?? 0}
@@ -75,15 +76,63 @@ function fmt2(n: number) {
 
 /* ---------------------------------------------------------------- Play */
 
+function TempoSlider(props: any) {
+  const ref = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const pct = MW.clamp((props.value - 1) / (props.max - 1), 0, 1) * 100;
+  const setFrom = (e: any) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const f = MW.clamp((e.clientX - r.left) / Math.max(1, r.width), 0, 1);
+    props.onChange(1 + f * (props.max - 1));
+  };
+  return (
+    <div
+      ref={ref}
+      class={`tslider ${props.cls || ''}`}
+      onPointerDown={(e: any) => {
+        dragging.current = true;
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        setFrom(e);
+      }}
+      onPointerMove={(e: any) => { if (dragging.current) setFrom(e); }}
+      onPointerUp={() => { dragging.current = false; }}
+      onPointerCancel={() => { dragging.current = false; }}
+    >
+      <div class="knob" style={{ left: `calc(${pct.toFixed(2)}% - 5px)` }} />
+    </div>
+  );
+}
+
+function PB(props: any) {
+  const cls = 'flex h-full items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper';
+  return (
+    <button
+      type="button"
+      data-act={props.act}
+      data-name={props.name}
+      class={`${cls} ${props.on ? 'on' : ''} ${props.cls || ''}`}
+      title={props.title}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </button>
+  );
+}
+
 function PlayPanel() {
   useKeys(['transport']);
   const app = MW.app;
   const song = app.song;
+  const [, force] = useReducer((n: number) => n + 1, 0);
+  const eq = app.eq || [true, true, true];
   const tempo = song.deftempo || 33;
   const tempo2 = song.tempo2 || 6;
-  const eq = app.eq || [true, true, true];
+
   const setTempo = (kind: string, value: number) => {
-    const v = MW.clamp(Math.round(value), 1, kind === 'tempo' ? 240 : 32);
+    const max = kind === 'tempo' ? 240 : 32;
+    const v = MW.clamp(Math.round(value), 1, max);
     if (kind === 'tempo') {
       song.deftempo = v;
       if (!MW.player.playing) MW.player.tempo = v;
@@ -91,60 +140,62 @@ function PlayPanel() {
       song.tempo2 = v;
       if (!MW.player.playing) MW.player.tempo2 = v;
     }
-    MW.panels.refresh();
+    force(0);
   };
   const stepTempo = (kind: string, d: number) =>
     setTempo(kind, (kind === 'tempo' ? song.deftempo : song.tempo2) + d);
-  const slider = (kind: string, value: number, max: number, cls: string) => (
-    <input
-      type="range"
-      min="1"
-      max={max}
-      value={value}
-      class={`h-[20px] min-w-0 ${cls}`}
-      onChange={(e: any) => setTempo(kind, +e.currentTarget.value)}
-    />
-  );
 
   return (
-    <div class="flex h-full flex-col gap-px">
-      <R>
-        {slider('tempo', tempo, 240, 'flex-[1.6]')}
-        <B onClick={() => stepTempo('tempo', -1)} cls="w-[20px]">&lt;</B>
-        <B onClick={() => stepTempo('tempo', 1)} cls="w-[20px]">&gt;</B>
-        {slider('tempo2', tempo2, 32, 'flex-1')}
-        <B onClick={() => stepTempo('tempo2', -1)} cls="w-[20px]">&lt;</B>
-        <B onClick={() => stepTempo('tempo2', 1)} cls="w-[20px]">&gt;</B>
-      </R>
-      <R>
-        <L cls="w-[34px]">VOL:</L>
-        <B act="vol-hex" on={!!song.flags.volhex} cls="w-[38px]">HEX</B>
-        <B act="vol-dec" on={!song.flags.volhex} cls="w-[38px]">DEC</B>
-        <B act="misc-filter" on={!!song.flags.filteron} cls="w-[62px]">FILTER</B>
-        <B act="eq-1" on={!!eq[0]} cls="flex-1">E1</B>
-        <B act="eq-2" on={!!eq[1]} cls="flex-1">E2</B>
-        <B act="eq-3" on={!!eq[2]} cls="flex-1">E3</B>
-        <B act="stslide" on={!!song.flags.stslide} cls="w-[40px]">STS</B>
-        <L cls="w-[34px]">SPD</L>
-        <span class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[11px] tabular-nums">
-          {String(tempo).padStart(3, '0')}/{fmt2(tempo2)}
+    <div class="playpanel">
+      <div class="flex h-[46px] shrink-0 items-stretch">
+        <TempoSlider kind="tempo" value={tempo} max={240} cls="flex-[1.68]" onChange={(v: number) => setTempo('tempo', v)} />
+        <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo', -1)} title="Slower">‹</PB>
+        <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo', 1)} title="Faster">›</PB>
+        <TempoSlider kind="tempo2" value={tempo2} max={32} cls="flex-1" onChange={(v: number) => setTempo('tempo2', v)} />
+        <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo2', -1)} title="Fewer pulses per line">‹</PB>
+        <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo2', 1)} title="More pulses per line">›</PB>
+      </div>
+
+      <div class="flex h-[33px] shrink-0 items-stretch">
+        <span class="flex w-[45px] shrink-0 items-center pl-1 text-[16px] leading-none">VOL:</span>
+        <PB act="vol-hex" on={!!song.flags.volhex} cls="w-[43px]">HEX</PB>
+        <PB act="vol-dec" on={!song.flags.volhex} cls="w-[46px]">DEC</PB>
+        <PB act="misc-filter" on={!!song.flags.filteron} cls="w-[78px]">FILTER</PB>
+        <PB act="eq-1" on={!!eq[0]} cls="min-w-0 flex-1">E1</PB>
+        <PB act="eq-2" on={!!eq[1]} cls="min-w-0 flex-1">E2</PB>
+        <PB act="eq-3" on={!!eq[2]} cls="min-w-0 flex-1">E3</PB>
+        <PB act="stslide" on={!!song.flags.stslide} cls="w-[55px]">STS</PB>
+        <span class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[58px]">SPD</span>
+        <span class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[100px]">
+          <b id="spd-readout" class="font-normal tabular-nums">{String(tempo).padStart(3, '0')}/{String(tempo2).padStart(2, '0')}</b>
         </span>
-      </R>
-      <R>
-        <L cls="w-[70px] justify-end">CH.MODE:</L>
-        <B act={app.depth === 'enhanced' ? 'depth-classic' : 'depth-enhanced'} on={app.depth === 'enhanced'} cls="w-[32px]">HQ</B>
-        <B onClick={() => MW.player.stop()} cls="w-[58px]">STOP</B>
-        <B onClick={() => MW.player.play(true)} cls="flex-[1.6]">PLAY SONG</B>
-        <B onClick={() => MW.player.play(false)} cls="flex-1">CONT. SONG</B>
-      </R>
-      <R>
-        {[4, 5, 6, 7, 8].map(n => (
-          <B key={n} act={`chmode-${n}`} on={song.channels === n} cls="flex-1">{n}</B>
-        ))}
-        <B onClick={() => MW.player.playBlock(app.cursor.block)} cls="flex-[1.6]">PLAY BLOCK</B>
-        <B act="play-on-note" on={!!app.playOnNote} cls="w-[24px]">D</B>
-        <B onClick={() => MW.player.playBlock(app.cursor.block)} cls="flex-1">CONT. BLOCK</B>
-      </R>
+      </div>
+
+      <div class="grid h-[55px] shrink-0 grid-cols-[130px_72px_minmax(0,1fr)]">
+        <div class="grid grid-rows-2">
+          <div class="flex items-stretch">
+            <span class="flex min-w-0 flex-1 items-center justify-end pr-2 text-[16px] leading-none">CH.MODE:</span>
+            <PB act={app.depth === 'enhanced' ? 'depth-classic' : 'depth-enhanced'} on={app.depth === 'enhanced'} cls="w-[34px]" title="High quality output">HQ</PB>
+          </div>
+          <div class="flex items-stretch">
+            {[4, 5, 6, 7, 8].map(n => (
+              <PB key={n} act={`chmode-${n}`} on={song.channels === n} cls="min-w-0 flex-1">{n}</PB>
+            ))}
+          </div>
+        </div>
+        <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper border-l-0" id="btn-stop" title="Stop (Space)" onClick={() => MW.player.stop()}>STOP</button>
+        <div class="grid grid-rows-2 border-l border-ink">
+          <div class="flex items-stretch">
+            <button class={`flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6] ${MW.player.playing ? 'playing' : ''}`} id="btn-play" title="Play song" onClick={() => MW.player.play(true)}>PLAY SONG</button>
+            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-cont" title="Continue from here" onClick={() => MW.player.play(false)}>CONT. SONG</button>
+          </div>
+          <div class="flex items-stretch">
+            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6]" id="btn-play-block" title="Play the current block" onClick={() => MW.player.playBlock(app.cursor.block)}>PLAY BLOCK</button>
+            <PB act="play-on-note" on={!!app.playOnNote} cls="w-[38px]" title="Play a note as you enter it">D</PB>
+            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-cont-block" title="Continue the block from the cursor" onClick={() => MW.player.playBlock(app.cursor.block)}>CONT. BLOCK</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -366,7 +417,7 @@ function EditPanel() {
         <L cls="w-[48px]">KEYPAD:</L>
         <B act="pad-mode" on={app.padMode === 'track'} cls="w-[74px]">TRK ON/OFF</B>
         <B act="pad-mode" on={app.padMode === 'instr'} cls="w-[70px]">SEL.INSTR</B>
-        <B act="missing" name="MAP2" cls="w-[42px]">MAP2</B>
+        <B act="pad-map2" on={!!app.padMap2} cls="w-[42px]">MAP2</B>
         <B act="alt-clear" cls="w-[22px]">C</B>
         <B act="alt-pick-l" cls="w-[22px]">L</B>
         <B act="alt-pick-r" cls="w-[22px]">R</B>
@@ -509,6 +560,8 @@ function RangePanel() {
   const app = MW.app;
   const b = app.song.blocks[app.cursor.block];
   const sel = app.selection;
+  const [echoDist, setEchoDist] = useState(2);
+  const [echoMin, setEchoMin] = useState(1);
   const rangeText = sel
     ? `${Math.min(sel.t0, sel.t1)}–${Math.max(sel.t0, sel.t1)} / ${Math.min(sel.l0, sel.l1)}–${Math.max(sel.l0, sel.l1)}`
     : '---';
@@ -535,7 +588,7 @@ function RangePanel() {
         <B act="rng-paste" cls="w-[46px]">PASTE</B>
         <B act="rng-paste" cls="w-[78px]">PASTE SELECT</B>
         <B act="chord-toggle" on={!!app.chordMode} cls="w-[48px]">CHORD</B>
-        <B act="missing" name="Chord reset" cls="w-[32px]">RST</B>
+        <B act="chord-rst" cls="w-[32px]">RST</B>
       </R>
       <R>
         <B act="sel-all" cls="w-[82px]">SELECT BLOCK</B>
@@ -551,11 +604,11 @@ function RangePanel() {
         <B act="mk-volslide" cls="w-[34px]">VOL</B>
       </R>
       <R>
-        <B act="missing" name="Note echo" cls="w-[64px]">NOTE ECHO</B>
+        <B act="note-echo" cls="w-[64px]">NOTE ECHO</B>
         <L cls="w-[34px]">DIST</L>
-        <N value={1} min={1} max={16} onChange={() => MW.missing('Note echo')} cls="w-[30px]" />
+        <N id="echo-dist" value={echoDist} min={1} max={16} onChange={setEchoDist} cls="w-[30px]" />
         <L cls="w-[30px]">MIN</L>
-        <N value={1} min={1} max={64} onChange={() => MW.missing('Note echo')} cls="w-[30px]" />
+        <N id="echo-min" value={echoMin} min={1} max={64} onChange={setEchoMin} cls="w-[30px]" />
         <L cls="w-[44px]">RANGE:</L>
         <span class="flex h-[20px] flex-1 items-center border border-ink bg-paper px-1 text-[10px]">{rangeText}</span>
       </R>
@@ -651,15 +704,15 @@ function MidiPanel() {
         <N value={app.midiInChannel || 0} min={0} max={16} onChange={(v: number) => { app.midiInChannel = v; }} cls="w-[32px]" />
         <B act="midi-sendout" on={!!app.midiSendOut} cls="w-[54px]">SEND OUT</B>
         <B act="midi-suppress" on={!!(inst && inst.suppressOff)} cls="w-[70px]">SUPPR.N.OFF</B>
-        <B act="missing" name="All off mode" cls="w-[30px]">OFF</B>
+        <B act="midi-alloff-cc" on={MW.app.midiAllOff !== 'note'} cls="w-[30px]">OFF</B>
       </R>
       <R>
         <B act="midi-sync" on={!!MW.player.sync} cls="w-[62px]">SEND SYNC</B>
         <B act="missing" name="External sync" cls="w-[58px]">EXT SYNC</B>
-        <B act="missing" name="Active sensing" on={true} cls="w-[70px]">ACT.SENSING</B>
+        <B act="midi-sensing" on={MW.midi.sensingOn !== false} cls="w-[70px]">ACT.SENSING</B>
         <L cls="w-[48px]">ALL OFF:</L>
-        <B act="midi-panic" cls="w-[58px]">$Bx7B00</B>
-        <B act="midi-panic" cls="w-[58px]">N.OFF:S</B>
+        <B act="midi-alloff-cc" on={MW.app.midiAllOff !== 'note'} cls="w-[58px]">$Bx7B00</B>
+        <B act="midi-alloff-note" on={MW.app.midiAllOff === 'note'} cls="w-[58px]">N.OFF:S</B>
       </R>
       <R>
         <L cls="w-[40px]">READ:</L>

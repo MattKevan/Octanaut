@@ -200,11 +200,9 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 
 ## Known gaps
 
-- **MOD1 (no instruments)** save is not implemented; `.med` always embeds the samples. MMD0 remains available for older players.
-- **MIDI messages and maps** are not implemented: no SysEx editor, input map, external sync, dump or send-out. Basic MIDI note output and input work.
+- **MIDI messages and maps** are not implemented: no SysEx editor, input map, external sync, dump or key-up. Basic MIDI note output, input, sync out and controller modes work.
 - **The sample list** shows loaded instruments rather than a `MED_Paths` library, so it cannot browse a disk collection or resolve missing names.
 - **MP3 export** depends on a browser audio encoder. Chromium exposes AAC but not MP3, so there the WAV and AAC buttons are the reliable pair.
-- **Octaves** stop at 4+5, where V4 reaches 9+A. The keypad has two maps, where V4 has four.
 - Browsers hold audio back until the page has been clicked once. Octanaut resumes the audio context on the first click or key press and says so if it is still blocked.
 - **Synthsound sequence editing** changes values and inserts/deletes lines, but does not let you type command names inline; the binary instruments round-trip unchanged through MMD0.
 - **The sample editor** has reverse, normalise, fades, crop, filter, boost, echo, noise, mix, buffer undo and loop setting. It has no freehand drawing, RANGE ALL, pitch-to-note, zero search or D.PIXELS.
@@ -239,9 +237,9 @@ app/
 
 The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.writeMMD0(song)` work without a DOM, which is how the demo modules were round-trip tested (7,680 cells, no differences).
 
-Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 31 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export, the store and the TSX panel components. The UI scripts can join them one file at a time.
+Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 32 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export, the store and the TSX panel components. The UI scripts can join them one file at a time.
 
-`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 113 features matching, 20 partial, 29 absent.
+`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 119 features matching, 18 partial, 25 absent.
 
 ## Command bytes
 
