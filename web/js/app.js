@@ -45,6 +45,14 @@
     volTrack: 0,
     padMap2: false,
     midiAllOff: 'cc',
+    midiMessages: [{ name: '', data: [] }],
+    midiMsgIndex: 0,
+    midiMsgAuto: true,
+    midiCapture: false,
+    extSync: false,
+    midiMapActive: false,
+    midiMapIndex: 60,
+    midiMap: null,
     midiInput: true,
     midiSendOut: false,
     midiInChannel: 0,
@@ -1932,6 +1940,54 @@
       },
       'ins-jump': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) { i.jump = !i.jump; MW.panels.refresh(); } },
       'pick-note': () => pickProgKey(app.progTarget),
+      'prog-prev': () => { app.progTarget = (app.progTarget + 9) % 10; MW.panels.refresh(); },
+      'prog-next': () => { app.progTarget = (app.progTarget + 1) % 10; MW.panels.refresh(); },
+      'midi-extsync': () => { app.extSync = !app.extSync; MW.panels.refresh(); },
+      'midi-map-active': () => {
+        if (!app.midiMap) app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
+        app.midiMapActive = !app.midiMapActive;
+        MW.panels.refresh();
+      },
+      'midi-map-new': () => {
+        app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
+        app.midiMapActive = true;
+        MW.toast('MIDI input map created');
+        MW.panels.refresh();
+      },
+      'midi-map-del': () => { app.midiMap = null; app.midiMapActive = false; MW.toast('MIDI input map deleted'); MW.panels.refresh(); },
+      'midi-map-reset': () => {
+        if (!app.midiMap) app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
+        app.midiMap[app.midiMapIndex] = { kind: 'note' };
+        MW.panels.refresh();
+      },
+      'midi-map-next': () => {
+        if (!app.midiMap) app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
+        const fns = MIDI_MAP_FUNCTIONS;
+        const cur = app.midiMap[app.midiMapIndex];
+        if (!cur || cur.kind !== 'fn') {
+          app.midiMap[app.midiMapIndex] = { kind: 'fn', fn: fns[0] };
+          MW.panels.refresh();
+          return;
+        }
+        const i = fns.indexOf(cur.fn);
+        const next = (i + 1) % fns.length;
+        app.midiMap[app.midiMapIndex] = { kind: 'fn', fn: fns[next] };
+        MW.panels.refresh();
+      },
+      'midi-map-prev': () => {
+        if (!app.midiMap) app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
+        const fns = MIDI_MAP_FUNCTIONS;
+        const cur = app.midiMap[app.midiMapIndex];
+        if (!cur || cur.kind !== 'fn') {
+          app.midiMap[app.midiMapIndex] = { kind: 'fn', fn: fns[fns.length - 1] };
+          MW.panels.refresh();
+          return;
+        }
+        const i = fns.indexOf(cur.fn);
+        const next = (i - 1 + fns.length) % fns.length;
+        app.midiMap[app.midiMapIndex] = { kind: 'fn', fn: fns[next] };
+        MW.panels.refresh();
+      },
       'chord-rst': () => { chordNotes = []; app.chordStartTrack = app.cursor.track; MW.toast('Chord reset'); },
       'note-echo': () => ops.noteEcho(
         parseInt((document.getElementById('echo-dist') || {}).value, 10) || 2,
@@ -1944,6 +2000,26 @@
       'midi-reset-pb': () => { for (let c = 0; c < 16; c++) { midi.send([0xe0 | c, 0, 64]); midi.send([0xb0 | c, 1, 0]); } MW.toast('Pitch bend and modulation reset'); },
       'midi-reset-ff': () => { midi.send([0xff]); MW.toast('MIDI system reset sent'); },
       'midi-sensing': () => { midi.sensingOn = midi.sensingOn === false; MW.panels.refresh(); },
+      'midi-msg-prev': () => { app.midiMsgIndex = Math.max(0, app.midiMsgIndex - 1); MW.panels.refresh(); },
+      'midi-msg-next': () => { app.midiMsgIndex = Math.min(app.midiMessages.length - 1, app.midiMsgIndex + 1); MW.panels.refresh(); },
+      'midi-msg-new': () => { app.midiMessages.push({ name: '', data: [] }); app.midiMsgIndex = app.midiMessages.length - 1; MW.panels.refresh(); },
+      'midi-msg-insert': () => { app.midiMessages.splice(app.midiMsgIndex, 0, { name: '', data: [] }); app.midiMsgIndex++; MW.panels.refresh(); },
+      'midi-msg-del': () => { if (app.midiMessages.length > 1) app.midiMessages.splice(app.midiMsgIndex, 1); app.midiMsgIndex = Math.min(app.midiMsgIndex, app.midiMessages.length - 1); MW.panels.refresh(); },
+      'midi-msg-clear': () => { const m = app.midiMessages[app.midiMsgIndex]; if (m) m.data = []; MW.panels.refresh(); },
+      'midi-msg-inc': () => { const m = app.midiMessages[app.midiMsgIndex]; if (m) m.data.push(0); MW.panels.refresh(); },
+      'midi-msg-dec': () => { const m = app.midiMessages[app.midiMsgIndex]; if (m && m.data.length) m.data.pop(); MW.panels.refresh(); },
+      'midi-msg-send': () => { const m = app.midiMessages[app.midiMsgIndex]; if (m && m.data.length) midi.send(m.data); },
+      'midi-msg-capture': () => {
+        app.midiCapture = !app.midiCapture;
+        if (app.midiCapture) {
+          const m = app.midiMessages[app.midiMsgIndex] || { name: '', data: [] };
+          m.data = [];
+          app.midiMessages[app.midiMsgIndex] = m;
+          MW.toast('Waiting for SysEx');
+        }
+        MW.panels.refresh();
+      },
+      'midi-msg-auto': () => { app.midiMsgAuto = !app.midiMsgAuto; MW.panels.refresh(); },
       'midi-alloff-cc': () => { app.midiAllOff = 'cc'; MW.panels.refresh(); },
       'midi-alloff-note': () => { app.midiAllOff = 'note'; MW.panels.refresh(); },
       'file-save-iff': () => MW.saveIFF(),
@@ -2216,6 +2292,44 @@
 
   /* ------------------------------------------------------------ midi */
 
+  const MIDI_MAP_FUNCTIONS = [
+    'Play song', 'Play blk', 'Cont song', 'Cont blk', 'Stop play',
+    'Curs up', 'Curs down', 'Curs left', 'Curs right',
+    'Prev trk', 'Next trk', 'Prev blk', 'Next blk',
+    'Edit', 'Spc', 'DEL', '-|-', 'Prev inst', 'Next inst', 'Chord', '1st', 'Last'
+  ];
+
+  function runMidiMapFunction(name) {
+    const a = MW.app;
+    const b = a.song.blocks[a.cursor.block];
+    switch (name) {
+      case 'Play song': MW.player.play(true); break;
+      case 'Play blk': MW.player.playBlock(a.cursor.block); break;
+      case 'Cont song': MW.player.play(false); break;
+      case 'Cont blk': MW.player.playBlock(a.cursor.block); break;
+      case 'Stop play': MW.player.stop(); break;
+      case 'Curs up': a.cursor.line = Math.max(0, a.cursor.line - 1); MW.grid.refreshLine(a.cursor.line); break;
+      case 'Curs down': a.cursor.line = Math.min(b.lines - 1, a.cursor.line + 1); MW.grid.refreshLine(a.cursor.line); break;
+      case 'Curs left': a.cursor.track = Math.max(0, a.cursor.track - 1); MW.grid.refreshLine(a.cursor.line); break;
+      case 'Curs right': a.cursor.track = Math.min(b.tracks - 1, a.cursor.track + 1); MW.grid.refreshLine(a.cursor.line); break;
+      case 'Prev trk': a.cursor.track = Math.max(0, a.cursor.track - 1); MW.grid.refreshLine(a.cursor.line); break;
+      case 'Next trk': a.cursor.track = Math.min(b.tracks - 1, a.cursor.track + 1); MW.grid.refreshLine(a.cursor.line); break;
+      case 'Prev blk': a.cursor.block = Math.max(0, a.cursor.block - 1); MW.grid.render(); break;
+      case 'Next blk': a.cursor.block = Math.min(a.song.blocks.length - 1, a.cursor.block + 1); MW.grid.render(); break;
+      case 'Edit': a.editMode = !a.editMode; MW.touchStatus('edit', ['editMode']); break;
+      case 'Spc': a.spaceAsDel = !a.spaceAsDel; MW.touchStatus('space', ['spaceAsDel']); break;
+      case 'Chord': a.chordMode = !a.chordMode; MW.touchStatus('chord', ['chordMode']); break;
+      case 'DEL': { const c = b.rows[a.cursor.line] && b.rows[a.cursor.line][a.cursor.track]; if (c) MW.clearCell(c); MW.grid.render(); break; }
+      case '-|-': { const c = b.rows[a.cursor.line] && b.rows[a.cursor.line][a.cursor.track]; if (c) { c.note = 0; c.ins = a.currentIns; } MW.grid.render(); break; }
+      case 'Prev inst': MW.setInstrument(a.currentIns - 1); break;
+      case 'Next inst': MW.setInstrument(a.currentIns + 1); break;
+      case '1st': a.cursor.line = 0; MW.grid.render(); break;
+      case 'Last': a.cursor.line = b.lines - 1; MW.grid.render(); break;
+      default: break;
+    }
+    MW.panels.refresh();
+  }
+
   const midi = MW.midi = {
     supported: !!(navigator.requestMIDIAccess),
     enabled: false,
@@ -2226,7 +2340,14 @@
     async enable() {
       if (!this.supported) return MW.toast('Web MIDI is not available in this browser', true);
       try {
-        const access = await navigator.requestMIDIAccess({ sysex: false });
+        let access;
+        try {
+          access = await navigator.requestMIDIAccess({ sysex: true });
+          this.sysex = true;
+        } catch (sysexErr) {
+          access = await navigator.requestMIDIAccess();
+          this.sysex = false;
+        }
         this.access = access;
         this.outputs = Array.from(access.outputs.values());
         this.inputs = Array.from(access.inputs.values());
@@ -2256,8 +2377,20 @@
 
     onMessage(e) {
       const d = e.data;
-      if (!d || d.length < 3) return;
+      if (!d || !d.length) return;
       const app = MW.app;
+      if (d[0] === 0xf0) {
+        if (app.midiCapture) {
+          const m = app.midiMessages[app.midiMsgIndex];
+          if (m) {
+            m.data = Array.from(d);
+            if (app.midiMsgAuto && m.data[m.data.length - 1] === 0xf7) app.midiCapture = false;
+            MW.panels.refresh();
+          }
+        }
+        return;
+      }
+      if (d.length < 3) return;
       if (!app.midiInput) return;
       const incoming = d[0] & 0x0f;
       if (app.midiInChannel && incoming !== app.midiInChannel - 1) return;
@@ -2267,6 +2400,11 @@
       const vel = d[2];
 
       if (type === 0x90 && vel > 0) {
+        if (app.midiMapActive && app.midiMap) {
+          const entry = app.midiMap[note];
+          if (entry && entry.kind === 'fn') { runMidiMapFunction(entry.fn); return; }
+          if (entry && entry.kind === 'note') { MW.midiNoteIn(MW.clamp(note - 23, 1, 120), vel); return; }
+        }
         const med = MW.clamp(note - 23, 1, 120);
         MW.midiNoteIn(med, vel);
       } else if (type === 0x80 || (type === 0x90 && vel === 0)) {

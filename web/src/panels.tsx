@@ -262,8 +262,25 @@ function InstrPanel() {
     MW.panels.refresh();
   };
   const setType = (type: string) => setInst(i => {
+    if ((type === 'synth' || type === 'hybrid') && !i.synth) {
+      i.synth = MW.createSynth();
+      const data = i.data || new Float32Array(0);
+      const wave = new Float32Array(64);
+      for (let k = 0; k < wave.length; k++) wave[k] = data[k] || 0;
+      i.synth.waveforms = [wave];
+      i.synth.voltbl = [0x40, 0xff];
+      i.synth.wftbl = [0x00, 0xff];
+    }
+    if (type === 'sample' && i.synth) {
+      const rendered = MW.renderSynth(i, 44100, 50, 2);
+      if (rendered) {
+        i.data = Float32Array.from(rendered);
+        i.dataR = null;
+        i.bits16 = false;
+        i.stereo16 = false;
+      }
+    }
     i.type = type;
-    if ((type === 'synth' || type === 'hybrid') && !i.synth) i.synth = MW.createSynth();
   });
   return (
     <div class="flex h-full flex-col gap-px">
@@ -394,9 +411,6 @@ function EditPanel() {
   useKeys(['editMode', 'spaceAsDel', 'chordMode', 'octave', 'advance']);
   const app = MW.app;
   const def = app.prog && app.prog[app.progTarget];
-  const defText = def
-    ? `${MW.noteName(def.note || 0, app.hb)} ${MW.insName(def.ins || 0)} ${MW.hex(def.cmd || 0)}${MW.hex(def.dat || 0)}`
-    : '--- 00000';
   const toggleTrack = (t: number) => {
     app.mutedTracks[t] = !app.mutedTracks[t];
     MW.player.channels[t].muted = app.mutedTracks[t];
@@ -421,8 +435,18 @@ function EditPanel() {
         <B act="alt-clear" cls="w-[22px]">C</B>
         <B act="alt-pick-l" cls="w-[22px]">L</B>
         <B act="alt-pick-r" cls="w-[22px]">R</B>
-        <span class="flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]">{app.progTarget}</span>
-        <span class="flex h-[20px] flex-1 items-center justify-center border border-ink bg-paper px-1 text-[10px] tabular-nums">= {defText}</span>
+        <B act="prog-prev" cls="w-[16px]">&lt;</B>
+        <span class="flex h-[20px] w-[20px] items-center justify-center border border-ink bg-paper text-[11px]">{app.progTarget}</span>
+        <B act="prog-next" cls="w-[16px]">&gt;</B>
+        <span class="flex h-[20px] w-[12px] items-center justify-center text-[10px]">=</span>
+        <input value={MW.noteName(def ? def.note || 0 : 0, app.hb)} class={`${FIELD} w-[36px] text-center`}
+          onInput={(e: any) => { if (!def) return; def.note = MW.noteIndex(e.currentTarget.value); }} />
+        <input value={MW.insName(def ? def.ins || 0 : 0)} class={`${FIELD} w-[30px] text-center`}
+          onInput={(e: any) => { if (!def) return; def.ins = parseInt(e.currentTarget.value, 32) || 0; }} />
+        <input value={(def ? def.cmd || 0 : 0).toString(16).toUpperCase().padStart(2, '0')} class={`${FIELD} w-[28px] text-center`}
+          onInput={(e: any) => { if (!def) return; def.cmd = parseInt(e.currentTarget.value, 16) || 0; }} />
+        <input value={(def ? def.dat || 0 : 0).toString(16).toUpperCase().padStart(2, '0')} class={`${FIELD} w-[28px] text-center`}
+          onInput={(e: any) => { if (!def) return; def.dat = parseInt(e.currentTarget.value, 16) || 0; }} />
         <B act="edit-space" on={!!app.spaceAsDel} cls="w-[72px]">SPACE=DEL</B>
       </R>
       <R>
@@ -672,8 +696,17 @@ function MidiPanel() {
   useKeys(['currentIns']);
   const app = MW.app;
   const inst = app.song.instruments[app.currentIns - 1];
+  const msg = app.midiMessages && app.midiMessages[app.midiMsgIndex] ? app.midiMessages[app.midiMsgIndex] : { name: '', data: [] };
+  const hexData = (msg.data || []).map((b: number) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+  const setHex = (v: string) => {
+    const bytes = (v.match(/[0-9a-fA-F]{2}/g) || []).map((x: string) => parseInt(x, 16) & 0xff);
+    msg.data = bytes;
+    MW.panels.refresh();
+  };
   const midi = MW.midi || { supported: false, enabled: false, outputs: [], inputs: [] };
   const ch = inst ? inst.midiChannel || 0 : 0;
+  const mapEntry = app.midiMap && app.midiMap[app.midiMapIndex];
+  const mapName = mapEntry && mapEntry.kind === 'fn' ? mapEntry.fn : 'note';
   const setCh = (n: number) => {
     const i = app.song.instruments[app.currentIns - 1];
     if (i) { i.midiChannel = n; MW.panels.refresh(); }
@@ -708,7 +741,7 @@ function MidiPanel() {
       </R>
       <R>
         <B act="midi-sync" on={!!MW.player.sync} cls="w-[62px]">SEND SYNC</B>
-        <B act="missing" name="External sync" cls="w-[58px]">EXT SYNC</B>
+        <B act="midi-extsync" on={!!app.extSync} cls="w-[58px]">EXT SYNC</B>
         <B act="midi-sensing" on={MW.midi.sensingOn !== false} cls="w-[70px]">ACT.SENSING</B>
         <L cls="w-[48px]">ALL OFF:</L>
         <B act="midi-alloff-cc" on={MW.app.midiAllOff !== 'note'} cls="w-[58px]">$Bx7B00</B>
@@ -726,29 +759,41 @@ function MidiPanel() {
       </R>
       <R>
         <L cls="w-[42px]">MSG #:</L>
-        <span class="flex h-[20px] w-[32px] items-center justify-center border border-ink bg-paper text-[11px]">0</span>
-        <B act="missing" name="MIDI message editor" cls="w-[34px]">NEW</B>
-        <B act="missing" name="MIDI message editor" cls="w-[52px]">N.HERE</B>
-        <B act="missing" name="MIDI message editor" cls="w-[34px]">DEL</B>
-        <B act="missing" name="MIDI message editor" cls="w-[44px]">CLEAR</B>
+        <B act="midi-msg-prev" cls="w-[20px]">&lt;</B>
+        <span class="flex h-[20px] w-[32px] items-center justify-center border border-ink bg-paper text-[11px]">{(app.midiMsgIndex || 0) + 1}/{app.midiMessages.length}</span>
+        <B act="midi-msg-next" cls="w-[20px]">&gt;</B>
+        <B act="midi-msg-new" cls="w-[34px]">NEW</B>
+        <B act="midi-msg-insert" cls="w-[52px]">N.HERE</B>
+        <B act="midi-msg-del" cls="w-[34px]">DEL</B>
+        <B act="midi-msg-clear" cls="w-[44px]">CLEAR</B>
         <L cls="w-[54px]">MSG SIZE:</L>
-        <span class="flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]">0</span>
-        <B act="missing" name="MIDI message editor" cls="w-[40px]">CAPT.</B>
-        <B act="missing" name="MIDI message editor" cls="w-[42px]">SEND</B>
+        <B act="midi-msg-dec" cls="w-[20px]">&lt;</B>
+        <span class="flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]">{msg.data.length}</span>
+        <B act="midi-msg-inc" cls="w-[20px]">&gt;</B>
+        <B act="midi-msg-capture" on={!!app.midiCapture} cls="w-[40px]">CAPT.</B>
+        <B act="midi-msg-send" cls="w-[42px]">SEND</B>
       </R>
       <R>
-        <B act="missing" name="MIDI message editor" cls="w-[92px]">AUTO-TERMINATE</B>
+        <B act="midi-msg-auto" on={app.midiMsgAuto !== false} cls="w-[92px]">AUTO-TERMINATE</B>
         <L cls="w-[38px]">NAME:</L>
-        <span class="flex h-[20px] flex-1 items-center border border-ink bg-paper px-1 text-[10px] opacity-60"> </span>
+        <T value={msg.name || ''} maxlength={40} onInput={(v: string) => { msg.name = v; }} cls="flex-1" />
+      </R>
+      <R>
+        <L cls="w-[36px]">DATA:</L>
+        <T value={hexData} onInput={setHex} cls="flex-1" placeholder="F0 ... F7" />
       </R>
       <R>
         <L cls="w-[30px]">MAP:</L>
-        <B act="missing" name="MIDI input map" cls="w-[44px]">ACTIVE</B>
-        <B act="missing" name="MIDI input map" cls="w-[42px]">RESET</B>
+        <B act="midi-map-active" on={!!app.midiMapActive} cls="w-[44px]">ACTIVE</B>
+        <B act="midi-map-reset" cls="w-[42px]">RESET</B>
         <L cls="w-[40px]">FUNCT:</L>
-        <B act="missing" name="MIDI input map" cls="w-[24px]">N</B>
-        <B act="missing" name="MIDI input map" cls="w-[32px]">NEW</B>
-        <B act="missing" name="MIDI input map" cls="w-[32px]">DEL</B>
+        <B act="midi-map-prev" cls="w-[20px]">&lt;</B>
+        <span class="flex h-[20px] w-[72px] items-center justify-center border border-ink bg-paper text-[10px]">{mapName}</span>
+        <B act="midi-map-next" cls="w-[20px]">&gt;</B>
+        <B act="midi-map-new" cls="w-[32px]">NEW</B>
+        <B act="midi-map-del" cls="w-[32px]">DEL</B>
+        <L cls="w-[26px]">KEY</L>
+        <N value={app.midiMapIndex} min={0} max={127} onChange={(v: number) => { app.midiMapIndex = v; MW.panels.refresh(); }} cls="w-[38px]" />
       </R>
     </div>
   );

@@ -28,18 +28,18 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | NRM 1/2 and 2/3 playback | no | No slowed real-time entry. |
 | Note echo (DIST / MIN) | yes | Range operation; fills empty lines with halved volume commands. |
 | Sample list / MED_Paths | part | Lists loaded instruments rather than a disk library. |
-| MIDI message editor and command 10 | no | |
-| MIDI input map editor | no | Input works without maps. |
-| External MIDI sync | no | Clock out only. |
-| MIDI dump, SEND OUT, SUPPR.N.OFF | no | |
+| MIDI message editor and command 10 | part | Edit, send and capture SysEx; messages are not yet saved in MMD1. |
+| MIDI input map editor | part | One key at a time can be assigned a note or a transport/edit function; there is no 128-row list. |
+| External MIDI sync | part | Start, continue and stop follow MIDI transport; clock tempo is not followed. |
+| MIDI dump, SEND OUT, SUPPR.N.OFF | part | Send-out and note-off suppression work; dump save/load is absent. |
 | All Off / Reset modes | yes | Controller and note-off modes, plus PB+PRES and system reset. |
 | Sample editor freehand, RANGE ALL, zero search, D.PIXELS, dest-note pitch | part | Echo, filter, boost, noise, mix, fades and buffer undo are present. |
 | Synth draw modes, RANGE ALL, cut/copy/paste, DBL, REV, stretch, VOL.CHG, SPEED | part | Waveform copy, exchange, mix, add, undo and transform are present. |
 | Notation ghost tracks, hide instrument, saved settings | part | Show/hide and five presets exist; ghosting and saved settings do not. |
 | Print HEADER / TEXT / FILE / BLKS | part | Notation print with form feeds exists. |
-| Commands 05, 06, 07 | no | 05 is old vibrato; 06 and 07 are absent. |
-| Commands 10, 16, 1C, 1E | no | MIDI message, block loop, MIDI preset, line delay. |
-| MIDI commands 0A, 0C, 0D | no | Aftertouch, velocity, channel pressure. |
+| Commands 05, 06, 07 | yes | 05 keeps old vibrato unless a portamento target is set, then slides and fades; 06 and 07 are present. |
+| Commands 10, 16, 1C, 1E | yes | MIDI message, block loop, MIDI preset and line delay. |
+| MIDI commands 0A, 0C, 0D | yes | Poly aftertouch, velocity and channel pressure. |
 | FF8 / FF9 filter | yes | Sets the filter flag and the biquad. |
 | INFO / ICON on save | no | |
 | Delete file | no | Browser leaves this to the OS. |
@@ -51,10 +51,9 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 The panels follow the V4 layouts, including controls whose features are still absent. These are the visible placeholders:
 
 - **Files:** ICON, DEL FILE, LOAD MSG, SAVE MSG, LOAD MAP, SAVE MAP. INFO toggles a flag, but the writer always includes the extra information block.
-- **Instr:** TYPE switches the instrument type but does not convert the waveform or sample data.
-- **Edit:** the programmable-key definition is shown but cannot be edited digit by digit.
+- **Edit:** programmable keys can be edited field by field, but `x` wildcards are not supported.
 - **Misc:** RGB palette sliders, RES, UNDO, WB OPEN, CLOSE, PATHS, ADD, REM, LOADGFX, MOUSE2, QUIT, CONFIRM.
-- **MIDI:** EXT SYNC, KEY-UP, the MIDI message editor and the input map editor.
+- **MIDI:** KEY-UP, dump save/load and clock-following tempo. The input map assigns one key at a time; SysEx messages are not saved in MMD1 yet.
 
 ---
 
@@ -232,7 +231,7 @@ The panels follow the V4 layouts, including controls whose features are still ab
 | Note-off suppression | yes | |
 | Reset, panic | yes | |
 | Active sensing, sync, local control | part | Active sensing and 24 PPQN clock out; local control on/off. External sync is not implemented. |
-| MIDI message editor and command 10 | no | |
+| MIDI message editor and command 10 | part | Edit, send and capture SysEx; messages are not yet saved in MMD1. |
 | MIDI input map editor | no | |
 | MIDI dump save / load | no | |
 | SEND OUT, SUPPR.N.OFF | no | |

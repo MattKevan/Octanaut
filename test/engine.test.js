@@ -93,3 +93,45 @@ test('FF8 and FF9 switch the low-pass filter flag', () => {
   player.startEffect(ch, 0, null);
   assert.equal(player.song.flags.filteron, 1);
 });
+
+test('MIDI program change, aftertouch and channel pressure are sent', () => {
+  const calls = [];
+  global.MW.midi = { enabled: true, send: bytes => calls.push(bytes) };
+  player.song = song();
+  const ch = { cmd: 0x1c, dat: 5, note: 60, inst: { midiChannel: 2, midiPreset: 0 } };
+  player.startEffect(ch, 0, null);
+  ch.cmd = 0x0a; ch.dat = 40;
+  player.startEffect(ch, 0, null);
+  ch.cmd = 0x0d; ch.dat = 12;
+  player.startEffect(ch, 0, null);
+  assert.deepEqual(calls, [
+    [0xc1, 5],
+    [0xa1, 60, 40],
+    [0xd1, 12]
+  ]);
+});
+
+test('command 10 sends the stored MIDI message', () => {
+  const calls = [];
+  global.MW.midi = { enabled: true, send: bytes => calls.push(bytes) };
+  global.MW.app = { midiMessages: [{ data: [0xf0, 0x7e, 0xf7] }] };
+  player.startEffect({ cmd: 0x10, dat: 0 }, 0, null);
+  assert.deepEqual(calls, [[0xf0, 0x7e, 0xf7]]);
+});
+
+test('command 16 loops back to the marked line', () => {
+  player.song = song();
+  player.line = 4;
+  player.loopStart = -1;
+  player.loopLine = null;
+  player.startEffect({ cmd: 0x16, dat: 0 }, 0, null);
+  player.line = 6;
+  player.startEffect({ cmd: 0x16, dat: 2 }, 0, null);
+  assert.equal(player.loopStart, 4);
+  assert.equal(player.loopLine, 4);
+});
+
+test('command 1E delays the current line', () => {
+  player.startEffect({ cmd: 0x1e, dat: 3 }, 0, null);
+  assert.equal(player.lineDelay, 3);
+});

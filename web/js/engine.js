@@ -257,6 +257,11 @@
     jumpNext: false,
     pendingSeq: null,
     pendingLine: null,
+    loopStart: -1,
+    loopLine: null,
+    loopCount: 0,
+    lineDelay: 0,
+    delayLine: false,
 
     authentic: false,
     follow: false,
@@ -389,7 +394,8 @@
       if (!block) { this.stop(); return; }
 
       if (this.tick === 0) {
-        this.readLine(block, time);
+        this.readLine(block, time, this.delayLine);
+        this.delayLine = false;
         if (this.onRow) this.onRow({ block: this.blockIdx, line: this.line, seq: this.seqPos });
       }
 
@@ -430,6 +436,18 @@
           return;
         }
 
+        if (this.loopLine != null) {
+          this.line = this.loopLine;
+          this.loopLine = null;
+          this.tick = 0;
+          return;
+        }
+        if (this.lineDelay > 0) {
+          this.lineDelay--;
+          this.delayLine = true;
+          this.tick = 0;
+          return;
+        }
         if (this.line >= block.lines) {
           this.line = 0;
           if (!this.blockOnly) this.advanceSeq();
@@ -458,11 +476,16 @@
       this.jumpNext = false;
       this.pendingSeq = null;
       this.pendingLine = null;
+      this.loopStart = -1;
+      this.loopLine = null;
+      this.loopCount = 0;
+      this.lineDelay = 0;
+      this.delayLine = false;
     },
 
     /* ---------------------------------------------------------- line decode */
 
-    readLine(block, time) {
+    readLine(block, time, effectsOnly) {
       const nch = Math.min(16, block.tracks);
       for (let i = 0; i < nch; i++) {
         const ch = this.channels[i];
@@ -474,7 +497,7 @@
 
         if (cell.ins) ch.inst = this.song.instruments[cell.ins - 1] || ch.inst;
 
-        if (cell.note) {
+        if (cell.note && !effectsOnly) {
           if (cell.cmd === 0x03) {
             ch.pendingTarget = cell.note;
           } else if (cell.cmd === 0x0f && cell.dat === 0xf2) {
@@ -601,6 +624,7 @@
       ch.vibPos = 0;
       ch.decayLeft = -1;
       ch.volume = inst.volume == null ? 64 : inst.volume;
+      ch.volOffset = 0;
 
       const hold = cell && cell.cmd === 8 ? (cell.dat & 0x0f) : (inst.hold || 0);
       const decay = cell && cell.cmd === 8 ? (cell.dat >> 4) : (inst.decay || 0);
@@ -686,7 +710,7 @@
       const hw = this.authentic && this.song.channels > 4 ? this.hwVol[ch.idx % 4] / 64 : 1;
       const halve = this.authentic && this.song.channels > 4 ? 0.5 : 1;
       const mute = ch.muted ? 0 : 1;
-      const v = (ch.volume / 64) * instVol * trackVol * master * hw * halve * mute;
+      const v = (Math.max(0, Math.min(64, ch.volume + (ch.volOffset || 0))) / 64) * instVol * trackVol * master * hw * halve * mute;
       return Math.min(1, Math.max(0, v)) * 0.26;
     },
 
@@ -781,6 +805,45 @@
 
         /* ---- Med's extended commands (0x10 and up, MMD1 and later) ---- */
 
+        case 0x10: {
+          const messages = (MW.app && MW.app.midiMessages) || [];
+          const message = messages[ch.dat];
+          if (message && MW.midi) MW.midi.send(message.data);
+          break;
+        }
+        case 0x16:
+          if (ch.dat === 0) {
+            this.loopStart = this.line;
+            this.loopCount = 0;
+          } else if (this.loopStart >= 0) {
+            if (!this.loopCount) this.loopCount = ch.dat;
+            if (this.loopCount > 1) {
+              this.loopCount--;
+              this.loopLine = this.loopStart;
+            } else {
+              this.loopCount = 0;
+            }
+          }
+          break;
+        case 0x1c:
+          if (inst && inst.midiChannel && MW.midi) {
+            MW.midi.send([0xc0 | (inst.midiChannel - 1), ch.dat & 0x7f]);
+            inst.midiPreset = ch.dat & 0x7f;
+          }
+          break;
+        case 0x0a:
+          if (inst && inst.midiChannel && MW.midi) {
+            MW.midi.send([0xa0 | (inst.midiChannel - 1), (ch.note || 0) & 0x7f, ch.dat & 0x7f]);
+          }
+          break;
+        case 0x0d:
+          if (inst && inst.midiChannel && MW.midi) {
+            MW.midi.send([0xd0 | (inst.midiChannel - 1), ch.dat & 0x7f]);
+          }
+          break;
+        case 0x1e:
+          this.lineDelay = ch.dat;
+          break;
         case 0x11:          // slide pitch up once
           ch.period = Math.max(28, ch.period - ch.dat);
           if (ch.src) ch.src.playbackRate.setValueAtTime(this.rateFor(ch), time);
@@ -858,9 +921,34 @@
           rate = this.rateFor(ch) * (1 + (SINE[ch.vibPos | 0] * (ch.vibDepth || 0) * 3) / 1200);
           break;
         case 0x05:
-          if (ch.dat) ch.vibDepth = ch.dat;
-          ch.vibPos = (ch.vibPos + 2) % 64;
-          rate = this.rateFor(ch) * (1 + (SINE[ch.vibPos | 0] * (ch.vibDepth || 0)) / 1400);
+          if (ch.target) {
+            const sp = ch.portaSpeed || 1;
+            if (ch.period < ch.target) ch.period = Math.min(ch.target, ch.period + sp);
+            else if (ch.period > ch.target) ch.period = Math.max(ch.target, ch.period - sp);
+            rate = this.rateFor(ch);
+            const up = ch.dat >> 4, dn = ch.dat & 0x0f;
+            if (up) ch.volume = Math.min(64, ch.volume + up);
+            else if (dn) ch.volume = Math.max(0, ch.volume - dn);
+          } else {
+            if (ch.dat) ch.vibDepth = ch.dat;
+            ch.vibPos = (ch.vibPos + 2) % 64;
+            rate = this.rateFor(ch) * (1 + (SINE[ch.vibPos | 0] * (ch.vibDepth || 0)) / 1400);
+          }
+          break;
+        case 0x06:
+          if (ch.dat) { ch.vibSpeed = ch.dat >> 4; ch.vibDepth = ch.dat & 0x0f; }
+          ch.vibPos = (ch.vibPos + (ch.vibSpeed || 1)) % 64;
+          rate = this.rateFor(ch) * (1 + (SINE[ch.vibPos | 0] * (ch.vibDepth || 0) * 3) / 1200);
+          if (ch.dat) {
+            const up = ch.dat >> 4, dn = ch.dat & 0x0f;
+            if (up) ch.volume = Math.min(64, ch.volume + up);
+            else if (dn) ch.volume = Math.max(0, ch.volume - dn);
+          }
+          break;
+        case 0x07:
+          if (ch.dat) { ch.tremSpeed = ch.dat >> 4; ch.tremDepth = ch.dat & 0x0f; }
+          ch.tremPos = ((ch.tremPos || 0) + (ch.tremSpeed || 1)) % 64;
+          ch.volOffset = Math.round(SINE[ch.tremPos | 0] * (ch.tremDepth || 0) * 0.35);
           break;
         case 0x14:              // vibrato, ProTracker depth
           if (ch.dat) { ch.vibSpeed = ch.dat >> 4; ch.vibDepth = (ch.dat & 0x0f) * 2; }
