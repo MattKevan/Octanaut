@@ -1,1 +1,1391 @@
-"use strict";var OctanautPanels=(()=>{var v,Te,Je,D,le,te,Ee,J,Se,pe,oe,Ze,G=Symbol.for("pv"),ne={},se=[],et=/^m(i|n|o|s|text|space)$/,ie=Array.isArray,Le=se.slice,H=Object.assign;function U(t){t&&t.parentNode&&t.remove()}function Z(t,n,s,c,o){var a={type:t,props:n,key:s,ref:c,__k:null,__:null,__b:0,__e:null,__c:null,constructor:G,__v:o||++Te,__i:-1,__u:0};return!o&&v.vnode&&v.vnode(a),a}function W(t){return t.children}function ee(t,n){this.props=t,this.context=n,this.__g=0}function F(t,n){if(n==null)return t.__&&F(t.__,t.__i+1);for(var s;n<t.__k.length;n++)if((s=t.__k[n])&&s.__e)return s.__e;return typeof t.type!="function"||t.props.__P?null:F(t)}function Re(t){if((t=t.__)&&t.__c&&!t.props.__P)return t.__e=null,t.__k.some(function(n){return n&&(t.__e=n.__e)}),Re(t)}function Be(t){(8&t.__g||(t.__g|=8,D.push(t),te++))&&le==v.debounceRendering||((le=v.debounceRendering)||queueMicrotask)(Pe)}function Pe(){var t,n,s,c,o,a,r,p,_;try{for(n=1;D.length;)D.length>n&&D.sort(Ee),t=D.shift(),n=D.length,8&t.__g&&(c=void 0,o=void 0,a=(o=(s=t).__v).__e,r=[],p=[],(_=s.__P)&&((c=H({constructor:G},o)).__v=o.__v+1,v.vnode&&v.vnode(c),ue(_,c,o,s.__n,_.namespaceURI,32&o.__u?[a]:null,r,a||F(o),32&o.__u,p),c.__v=o.__v,c.__.__k[c.__i]=c,Ne(r,c,p),o.__=o.__e=null,c.__e!=a&&Re(c)))}finally{(te=D.length)&&(le||queueMicrotask)(Pe)}}function Ae(t,n,s,c,o,a,r,p,_,m,u){var d,w,i,g,S,y,b=c.__k||se,k=n.length;for(_=tt(s,n,b,_,k),d=0;d<k;d++)(i=s.__k[d])!=null&&(w=~i.__i&&b[i.__i]||ne,i.__i=d,y=ue(t,i,w,o,a,r,p,_,m,u),g=i.__e,(w.ref!=i.ref||8&w.__u)&&(w.ref&&_e(w.ref,null,i,w),i.ref&&u.push(i.ref,i.__c||g,i)),S=S||g,4&i.__u?(_=Me(i,_,t,!w.__v),w.__e&&(w.__e=null)):typeof i.type=="function"&&y!==void 0?_=y:g&&(_=g.nextSibling),i.__u&=-21);return s.__e=S,_}function tt(t,n,s,c,o){var a,r,p,_,m,u,d,w,i,g=s.length,S=g,y=0,b=0,k=t.__k=Array(o);for(a=0;a<o;a++)(r=n[a])!=null&&typeof r!="boolean"&&typeof r!="function"?(typeof r!="object"||r.constructor===String?r=k[a]=Z(null,r):ie(r)?r=k[a]=Z(W,{children:r}):r.constructor===G&&r.__b?r=k[a]=Z(r.type,r.props,r.key,r.ref,r.__v):k[a]=r,_=a+y,r.__=t,r.__b=t.__b+1,p=null,~(m=r.__i=nt(r,s,_,S))&&(S--,(p=s[m])&&(p.__u|=2)),p&&p.__v?(r.__u|=16,m==_-1?y--:m==_+1?y++:m!=_&&(m>_?y--:y++,b=1)):(~m||(o>g?y--:o<g&&y++),typeof r.type!="function"&&(r.__u|=4))):k[a]=null;if(b){for(u=[],d=[],a=0;a<o;a++)if((r=k[a])&&16&r.__u){for(y=0,w=u.length;y<w;)u[i=y+w>>1]<r.__i?y=i+1:w=i;u[y]=r.__i,d[a]=y+1}for(y=u.length;a--;)d[a]&&(d[a]==y?y--:k[a].__u|=4)}if(S)for(a=0;a<g;a++)!(p=s[a])||2&p.__u||(p.__e==c&&(c=F(p)),xe(p,p));return c}function Me(t,n,s,c){var o,a,r,p;if(typeof t.type=="function"){if(t.props.__P)return n;if(o=t.__k)for(a=0;a<o.length;a++)o[a]&&(o[a].__=t,n=Me(o[a],n,s,!1));return n}for(n&&!n.parentNode&&(n=F(t))&&!n.parentNode&&(n=null),r=t.__e,p=n;p&&p.nodeType==8;)p=p.nextSibling;for(r!=p&&(!c&&s.moveBefore&&r.parentNode?s.moveBefore(r,n):s.insertBefore(r,n||null)),n=r;(n=n&&n.nextSibling)&&n.nodeType==8&&!n.data.startsWith("$s"););return n}function nt(t,n,s,c){var o,a=t.key,r=t.type,p=n[s],_=p&&!(2&p.__u);if(p===null&&a==null||_&&a==p.key&&r==p.type)return s;if(c>(_?1:0)){for(o=s-1;o>=0;o--)if((p=n[o])&&!(2&p.__u)&&a==p.key&&r==p.type)return o;for(o=s+1;o<n.length;o++)if((p=n[o])&&!(2&p.__u)&&a==p.key&&r==p.type)return o}return-1}function Ce(t,n,s){s==null&&(s=""),n[0]=="-"?t.setProperty(n,s):t[n]=s}function Q(t,n,s,c,o){var a,r;if(n=="style")if(typeof s=="string")t.style.cssText=s;else{if(typeof c=="string"&&(t.style.cssText=c=""),c)for(n in c)s&&n in s||Ce(t.style,n);if(s)for(n in s)c&&s[n]==c[n]||Ce(t.style,n,s[n])}else if(n[0]=="o"&&n[1]=="n")(t.__e||(t.__e={}))[n]=s,s&&c||(r=oe[n]||(oe[n]=st(n)),(t.__a||(t.__a={}))[n]=pe,a=n!=(n=n.replace(Se,"$1")),(n=n.slice(2))[0]<"a"&&(n=n.toLowerCase()),s?t.addEventListener(n,r,a):t.removeEventListener(n,r,a));else{if(o=="http://www.w3.org/2000/svg")n=n.replace(/xlink(H|:h)/,"h").replace(/sName$/,"s");else if(n!="width"&&n!="height"&&n!="href"&&n!="list"&&n!="form"&&n!="tabIndex"&&n!="download"&&n!="rowSpan"&&n!="colSpan"&&n!="role"&&n!="popover"&&n in t)try{return void(t[n]=s??"")}catch{}if(typeof s=="function")return;s==null||s===!1&&n[4]!="-"?t.removeAttribute(n):t.setAttribute(n,n=="popover"&&s==1?"":s)}}function st(t){return function(n){var s=this.__e;if(s){if(s=s[t],n[J]==null)n[J]=pe++;else if(n[J]<this.__a[t])return;return s(v.event?v.event(n):n)}}}function ue(t,n,s,c,o,a,r,p,_,m){var u,d,w,i,g,S,y,b,k,L,B,C,ke,z,K,j,O,$,I=n.type;if(n.constructor!==G)return null;128&s.__u&&(_=32&s.__u,u=s.__c.__z)&&(n.__u|=_,d=a=[],u.nodeType==8?p=re(u,a):a.push(u),p=a[0]||p),(u=v.__b)&&u(n);e:if(typeof I=="function"){w=r.length;try{if(b=n.props,k=(u=I.prototype)&&u.render,L=(u=I.contextType)&&c[u.__c],B=u?L?L.props.value:u.__:c,(i=s.__c)?(n.__c=i,2&i.__g&&(i.__g|=1)):(k?n.__c=i=new I(b,B):(n.__c=i=new ee(b,B),i.constructor=I,i.render=at),L&&L.sub(i),i.state||(i.state={}),i.__n=c,i.__g|=8,i.__h=[],i.__k=[]),k&&(i.__s||(i.__s=i.state),I.getDerivedStateFromProps&&(i.__s==i.state&&(i.__s=H({},i.__s)),H(i.__s,I.getDerivedStateFromProps(b,i.__s)))),g=i.props,S=i.state,i.__v=n,s.__c){if(b!==g&&k&&!I.getDerivedStateFromProps&&i.componentWillReceiveProps&&i.componentWillReceiveProps(b,B),n.__v==s.__v&&!(8&i.__g)||!(4&i.__g)&&i.shouldComponentUpdate&&i.shouldComponentUpdate(b,i.__s,B)===!1){n.__v!=s.__v&&(i.props=b,i.state=i.__s,i.__g&=-9),n.__e=s.__e,n.__k=s.__k,n.__k.some(function(M){M&&(M.__=n)}),se.push.apply(i.__h,i.__k),i.__k=[],i.__h.length&&r.push(i),p=F(s);break e}i.componentWillUpdate&&i.componentWillUpdate(b,i.__s,B),k&&i.componentDidUpdate&&i.__h.push(function(){i.componentDidUpdate(g,S,y)})}else k&&!I.getDerivedStateFromProps&&i.componentWillMount&&i.componentWillMount(),k&&i.componentDidMount&&i.__h.push(i.componentDidMount);if(i.context=B,i.props=b,i.__P=t,i.__g&=-5,C=v.__r,ke=0,k)i.state=i.__s,i.__g&=-9,C&&C(n),u=i.render(i.props,i.state,i.context),se.push.apply(i.__h,i.__k),i.__k=[];else do i.__g&=-9,C&&C(n),u=i.render(i.props,i.state,i.context),i.state=i.__s;while(8&i.__g&&++ke<25);i.state=i.__s,i.getChildContext&&(c=H({},c,i.getChildContext())),k&&s.__c&&i.getSnapshotBeforeUpdate&&(y=i.getSnapshotBeforeUpdate(g,S)),z=u&&u.type===W&&u.key==null?u.props.children:u,b.__P&&(u=p,o=(t=b.__P).namespaceURI,_=a=null,s.props&&s.props.__P!=t&&(s.__k.some(function(M){M&&xe(M,M)}),s.__k=null),p=s.__k?F(s,0):null),p=Ae(t,ie(z)?z:[z],n,s,c,o,a,r,p,_,m),b.__P&&(n.__e=null,p=u),n.__u&=-161,d&&d.some(U),i.__h.length&&r.push(i),1&i.__g&&(i.__g&=-4)}catch(M){if(r.length=w,n.__v=null,_||a)if(M.then){if(K=0,n.__u|=128|_,a){for(~(O=a.indexOf(p||void 0))||(O=a.length);($=a[O-1])&&$.nodeType==8;)O--;for(;O<a.length;O++)if($=a[O]){if(a[O]=null,$.nodeType==8){if($.data.startsWith("$s"))K++||(j=$);else if(K&&$.data.startsWith("/$s")&&!--K)break}else if(!K)break}}if(!j){for(;p&&p.nodeType==8&&p.nextSibling;)p=p.nextSibling;j=p}(u=re(j=n.__c.__z||(n.__c.__z=j)))?(n.__e=j,p=u):n.__e=p,p=p&&p.nextSibling}else a&&a.some(U);else n.__e=s.__e;n.__k||(n.__k=s.__k||[]),M.then||Ie(n),v.__e(M,n,s)}}else p=n.__e=ct(s.__e,n,s,c,o,a,r,_,m,t);return(u=v.diffed)&&u(n),p}function re(t,n){if(t&&t.nodeType==8&&t.data.startsWith("$s"))for(var s=1;t=t.nextSibling;){if(t.nodeType==8){if(t.data.startsWith("$s"))s++;else if(t.data.startsWith("/$s")&&!--s)return t}n&&n.push(t)}}function Ie(t){t&&(t.__c&&(t.__c.__g|=4),t.__k&&t.__k.some(Ie))}function Ne(t,n,s){for(var c=0;c<s.length;)_e(s[c++],s[c++],s[c++]);v.__c&&v.__c(n,t),t.some(function(o){try{t=o.__h,o.__h=[],t.some(function(a){a.call(o)})}catch(a){v.__e(a,o.__v)}})}function ct(t,n,s,c,o,a,r,p,_,m){var u,d,w,i,g,S,y,b,k,L=s.props||ne,B=n.props,C=n.type;if(C=="svg"?o="http://www.w3.org/2000/svg":C=="math"?o="http://www.w3.org/1998/Math/MathML":o||(o="http://www.w3.org/1999/xhtml"),a){for(u=0;u<a.length;u++)if((g=a[u])&&(C?g.localName==C:g.nodeType==3)){t=g,a[u]=null;break}}if(!t){if(b=m.ownerDocument||document,!C)return b.createTextNode(B);t=b.createElementNS(o,C,B.is&&B),p&&(v.__m&&v.__m(n,a),p=!1),a=null}if(C){if(m=C=="template"&&t.content||t,a=C=="textarea"&&B.defaultValue!=null?null:a&&Le.call(m.childNodes),!p&&a)for(L={},u=0;u<t.attributes.length;u++)L[(g=t.attributes[u]).name]=g.value;for(u in L)g=L[u],u=="dangerouslySetInnerHTML"?w=g:u=="children"||u in B||u=="value"&&"defaultValue"in B||u=="checked"&&"defaultChecked"in B||Q(t,u,null,g,o);for(u in k=1&s.__u,B)g=B[u],u=="children"?i=g:u=="dangerouslySetInnerHTML"?d=g:u=="value"?S=g:u=="checked"?y=g:p&&typeof g!="function"||!(L[u]!==g||k&&g!=null)||Q(t,u,g,L[u],o);d?(p||w&&(d.__html==w.__html||d.__html==t.innerHTML)||(t.innerHTML=d.__html),n.__k=[]):(w&&(t.textContent=""),(C=="foreignObject"||o=="http://www.w3.org/1998/Math/MathML"&&et.test(C))&&(o="http://www.w3.org/1999/xhtml"),Ae(m,ie(i)?i:[i],n,s,c,o,a,r,a?a[0]:s.__k&&F(s,0),p,_),a&&a.some(U)),p&&C!="textarea"||(u="value",C=="progress"&&S==null?t.removeAttribute(u):S==null||S===t[u]&&(C!="progress"||S)||Q(t,u,S,L[u],o),u="checked",y!=null&&y!=t[u]&&Q(t,u,y,L[u],o))}else L===B||p&&t.data==B||(t.data=B);return t}function _e(t,n,s,c){try{typeof t=="function"?n?n.__x=t(n)||1:c&&(c=c.__c||c.__e)&&(n=c.__x)&&(c.__x=null,typeof n=="function"?n():t(null)):t.current=n}catch(o){v.__e(o,s)}}function xe(t,n,s){var c,o,a,r;if(v.unmount&&v.unmount(t),!(c=t.ref)||c.current&&c.current!=t.__e||_e(c,null,n,t),c=t.__c){if(c.componentWillUnmount)try{c.componentWillUnmount()}catch(p){v.__e(p,n)}c.__P=c.__n=null}if(c=t.__k)for(r=0;r<c.length;r++)c[r]&&xe(c[r],n,typeof t.type!="function"||s&&!t.props.__P);!s&&(c=t.__c)&&(c=c.__z)&&(o=re(c,a=[]))&&(c==t.__e&&a.some(U),U(o),U(c)),(c=t.__e)&&(s||U(c),c.__e&&(c.__e=null)),t.__e=t.__c=t.__=null}function at(t,n,s){return this.constructor(t,s)}function Oe(t,n){var s,c,o,a;v.__&&v.__(t,n),n.nodeType==9&&(n=n.documentElement),c=(s=t&&32&t.__u)?null:n.__k,n.__k=Z(W,{children:[t]}),o=[],a=[],ue(n,n.__k,c||ne,ne,n.namespaceURI,c?null:n.firstChild?Le.call(n.childNodes):null,o,c?c.__e:n.firstChild,s,a),Ne(o,n.__k,a),n.__k.props.children=null}v={__e:function(t,n,s,c){for(var o,a,r;n=n.__;)if((o=n.__c)&&!(1&o.__g)){o.__g|=4;try{if((r=(a=o.constructor)&&a.getDerivedStateFromError)&&o.setState(a.getDerivedStateFromError(t)),o.componentDidCatch&&(o.componentDidCatch(t,c||{}),r=1),r&&8&o.__g)return void(o.__g|=2)}catch(p){t=p}}throw te=0,t}},Te=0,Je=function(t){return t!=null&&t.constructor===G},ee.prototype.setState=function(t,n){var s=this.__s;s&&s!=this.state||(s=this.__s=H({},this.state)),typeof t=="function"&&(t=t(H({},s),this.props)),t&&(H(s,t),this.__v&&(n&&this.__k.push(n),Be(this)))},ee.prototype.forceUpdate=function(t){this.__v&&(this.__g|=4,t&&this.__h.push(t),Be(this))},ee.prototype.render=W,D=[],te=0,Ee=function(t,n){return t.__v.__b-n.__v.__b},J=Symbol(),Se=/(PointerCapture)$|Capture$/i,pe=0,oe={},Ze=0;var Y,E,fe,De,de=Object.is,ce=0,Ge=[],me=[],T=v,Fe=T.__b,$e=T.__r,Ue=T.diffed,He=T.__c,je=T.unmount,We=T.__;function ge(t,n){T.__h&&T.__h(E,t,ce||n),ce=0;var s=E.__H||(E.__H={__:[],__h:[]});return t>=s.__.length&&s.__.push({}),s.__[t]}function ae(t){return ce=1,X(Ye,t)}function X(t,n,s){var c=ge(Y++,2);if(c.t=t,!c.__c&&(c.__=[s?s(n):Ye(void 0,n),function(a){var r=c.__N?c.__N[0]:c.__[0],p=c.t(r,a);de(r,p)||(c.__N=[p,c.__[1]],c.__c.setState({}))}],c.__c=E,!E.__f)){E.__f=!0;var o=E.shouldComponentUpdate;E.shouldComponentUpdate=function(a,r,p){var _=this.__H;if(!_)return!0;var m=!1,u=this.props!=a;if(_.__.some(function(w){w.__N&&(m=!0,de(w.__[0],w.__N[0])||(u=!0))}),o){var d=o.call(this,a,r,p);return m?d||u:d}return!m||u}}return c.__}function we(t,n){var s=ge(Y++,3);!T.__s&&qe(s.__H,n)&&(s.__P=!0,s.__=t,s.u=n,E.__H.__h.push(s))}function ve(t){return ce=5,lt(function(){return{current:t}},[])}function lt(t,n){var s=ge(Y++,7);return qe(s.__H,n)&&(s.__=t(),s.__H=n),s.__}function ot(){var t;do{for(;t=me.shift();)try{q(t)}catch(s){T.__e(s,{__:(t=t.__P)&&t.__v})}for(;t=Ge.shift();){var n=t.__H;if(t.__P&&n)try{n.__h.some(q),n.__h.some(he),n.__h=[]}catch(s){n.__h=[],T.__e(s,t.__v)}}}while(me.length)}T.__b=function(t){E=null,Fe&&Fe(t)},T.__=function(t,n){t&&n.__k&&n.__k.__m&&(t.__m=n.__k.__m),We&&We(t,n)},T.__r=function(t){$e&&$e(t),Y=0;var n=(E=t.__c).__H;n&&(fe==E?E.__h=[]:(n.__h.some(q),n.__h.some(he),Y=0),n.__h=[],n.__.some(function(s){s.__N&&(s.__=s.__N),s.u=s.__N=void 0})),fe=E},T.diffed=function(t){Ue&&Ue(t);var n=t.__c;n&&n.__H&&(n.__H.__h.length&&Ke(Ge.push(n)),n.__H.__.some(function(s){s.u&&(s.__H=s.u)})),fe=E=null},T.__c=function(t,n){n.some(function(s){try{s.__h.some(q),s.__h=s.__h.filter(function(c){return!c.__||he(c)})}catch(c){s.__h=[function(){throw c}]}}),He&&He(t,n)},T.unmount=function(t){je&&je(t);var n,s,c=t.__c;c&&c.__H&&(c.__H.__.some(function(o){try{if(o.__P&&o.__c){if(s===void 0){for(s=t.__;s&&(!s.__c||!s.__c.__P);)s=s.__;s=s&&s.__c}o.__P=s,Ke(me.push(o))}else q(o)}catch(a){n=a}}),c.__H=void 0,n&&T.__e(n,c.__v))};var Ve=typeof requestAnimationFrame=="function";function rt(t){var n,s=function(){clearTimeout(c),Ve&&cancelAnimationFrame(n),setTimeout(t)},c=setTimeout(s,35);Ve&&(n=requestAnimationFrame(s))}function Ke(t){t!=1&&De==T.requestAnimationFrame||((De=T.requestAnimationFrame)||rt)(ot)}function q(t){var n=E,s=t.__c;typeof s=="function"&&(t.__c=void 0,s()),E=n}function he(t){var n=E;t.__c=t.__(),E=n}function qe(t,n){return!t||t.length!=n.length||n.some(function(s,c){return!de(s,t[c])})}function Ye(t,n){return typeof n=="function"?n(t):n}var pt=Symbol.for("pv"),it=0;function e(t,n,s,c,o,a){n||(n={});var r,p,_=n;if("ref"in _&&typeof t!="function")for(p in _={},n)p=="ref"?r=n[p]:_[p]=n[p];var m={type:t,props:_,key:s,ref:r,__k:null,__:null,__b:0,__e:null,__c:null,constructor:pt,__v:--it,__i:-1,__u:0};return(o||a)&&(m.__source=o,m.__self=a),v.vnode&&v.vnode(m),m}var x=globalThis.MW,ut="flex h-[20px] min-w-0 items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper",_t="flex h-[20px] shrink-0 items-center px-1 text-[10px] uppercase leading-none whitespace-nowrap",P="h-[20px] min-w-0 border border-ink bg-paper px-1 text-[11px] leading-none text-ink outline-none",xt="flex items-stretch gap-px";function l(t){let{act:n,on:s,cls:c,children:o,title:a,name:r,onClick:p,disabled:_}=t;return e("button",{type:"button",title:a,"data-act":n,"data-name":r,disabled:_,class:`${ut} ${s?"on":""} ${_?"opacity-40":""} ${c||""}`,onClick:p,children:o})}function f(t){return e("span",{class:`${_t} ${t.cls||""}`,children:t.children})}function h(t){return e("div",{class:`${xt} ${t.cls||""}`,children:t.children})}function V(t){return e("input",{class:`${P} ${t.cls||""}`,value:t.value??"",placeholder:t.placeholder,maxlength:t.maxlength,onInput:n=>t.onInput&&t.onInput(n.currentTarget.value)})}function A(t){return e("input",{id:t.id,type:"number",class:`${P} ${t.cls||""}`,value:t.value??0,min:t.min,max:t.max,onChange:n=>t.onChange&&t.onChange(parseInt(n.currentTarget.value,10)||0)})}function N(t){let[,n]=X(c=>c+1,0),s=t.join("|");we(()=>{if(x.store)return x.store.subscribe(t,n)},[s])}function Xe(t){let n=ve(null),s=ve(!1),c=x.clamp((t.value-1)/(t.max-1),0,1)*100,o=a=>{let r=n.current;if(!r)return;let p=r.getBoundingClientRect(),_=x.clamp((a.clientX-p.left)/Math.max(1,p.width),0,1);t.onChange(1+_*(t.max-1))};return e("div",{ref:n,class:`tslider ${t.cls||""}`,onPointerDown:a=>{s.current=!0;try{a.currentTarget.setPointerCapture(a.pointerId)}catch{}o(a)},onPointerMove:a=>{s.current&&o(a)},onPointerUp:()=>{s.current=!1},onPointerCancel:()=>{s.current=!1},children:e("div",{class:"knob",style:{left:`calc(${c.toFixed(2)}% - 5px)`}})})}function R(t){return e("button",{type:"button","data-act":t.act,"data-name":t.name,class:`flex h-full items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper ${t.on?"on":""} ${t.cls||""}`,title:t.title,onClick:t.onClick,children:t.children})}function Qe(){N(["transport"]);let t=x.app,n=t.song,[,s]=X(_=>_+1,0),c=t.eq||[!0,!0,!0],o=n.deftempo||33,a=n.tempo2||6,r=(_,m)=>{let u=_==="tempo"?240:32,d=x.clamp(Math.round(m),1,u);_==="tempo"?(n.deftempo=d,x.player.playing||(x.player.tempo=d)):(n.tempo2=d,x.player.playing||(x.player.tempo2=d)),s(0)},p=(_,m)=>r(_,(_==="tempo"?n.deftempo:n.tempo2)+m);return e("div",{class:"playpanel",children:[e("div",{class:"flex h-[46px] shrink-0 items-stretch",children:[e(Xe,{kind:"tempo",value:o,max:240,cls:"flex-[1.68]",onChange:_=>r("tempo",_)}),e(R,{cls:"w-[24px] shrink-0 text-[16px]",onClick:()=>p("tempo",-1),title:"Slower",children:"\u2039"}),e(R,{cls:"w-[24px] shrink-0 text-[16px]",onClick:()=>p("tempo",1),title:"Faster",children:"\u203A"}),e(Xe,{kind:"tempo2",value:a,max:32,cls:"flex-1",onChange:_=>r("tempo2",_)}),e(R,{cls:"w-[24px] shrink-0 text-[16px]",onClick:()=>p("tempo2",-1),title:"Fewer pulses per line",children:"\u2039"}),e(R,{cls:"w-[24px] shrink-0 text-[16px]",onClick:()=>p("tempo2",1),title:"More pulses per line",children:"\u203A"})]}),e("div",{class:"flex h-[33px] shrink-0 items-stretch",children:[e("span",{class:"flex w-[45px] shrink-0 items-center pl-1 text-[16px] leading-none",children:"VOL:"}),e(R,{act:"vol-hex",on:!!n.flags.volhex,cls:"w-[43px]",children:"HEX"}),e(R,{act:"vol-dec",on:!n.flags.volhex,cls:"w-[46px]",children:"DEC"}),e(R,{act:"misc-filter",on:!!n.flags.filteron,cls:"w-[78px]",children:"FILTER"}),e(R,{act:"eq-1",on:!!c[0],cls:"min-w-0 flex-1",children:"E1"}),e(R,{act:"eq-2",on:!!c[1],cls:"min-w-0 flex-1",children:"E2"}),e(R,{act:"eq-3",on:!!c[2],cls:"min-w-0 flex-1",children:"E3"}),e(R,{act:"stslide",on:!!n.flags.stslide,cls:"w-[55px]",children:"STS"}),e("span",{class:"flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[58px]",children:"SPD"}),e("span",{class:"flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[100px]",children:e("b",{id:"spd-readout",class:"font-normal tabular-nums",children:[String(o).padStart(3,"0"),"/",String(a).padStart(2,"0")]})})]}),e("div",{class:"grid h-[55px] shrink-0 grid-cols-[130px_72px_minmax(0,1fr)]",children:[e("div",{class:"grid grid-rows-2",children:[e("div",{class:"flex items-stretch",children:[e("span",{class:"flex min-w-0 flex-1 items-center justify-end pr-2 text-[16px] leading-none",children:"CH.MODE:"}),e(R,{act:t.depth==="enhanced"?"depth-classic":"depth-enhanced",on:t.depth==="enhanced",cls:"w-[34px]",title:"High quality output",children:"HQ"})]}),e("div",{class:"flex items-stretch",children:[4,5,6,7,8].map(_=>e(R,{act:`chmode-${_}`,on:n.channels===_,cls:"min-w-0 flex-1",children:_},_))})]}),e("button",{class:"flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper border-l-0",id:"btn-stop",title:"Stop (Space)",onClick:()=>x.player.stop(),children:"STOP"}),e("div",{class:"grid grid-rows-2 border-l border-ink",children:[e("div",{class:"flex items-stretch",children:[e("button",{class:`flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6] ${x.player.playing?"playing":""}`,id:"btn-play",title:"Play song",onClick:()=>x.player.play(!0),children:"PLAY SONG"}),e("button",{class:"flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1",id:"btn-cont",title:"Continue from here",onClick:()=>x.player.play(!1),children:"CONT. SONG"})]}),e("div",{class:"flex items-stretch",children:[e("button",{class:"flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6]",id:"btn-play-block",title:"Play the current block",onClick:()=>x.player.playBlock(t.cursor.block),children:"PLAY BLOCK"}),e(R,{act:"play-on-note",on:!!t.playOnNote,cls:"w-[38px]",title:"Play a note as you enter it",children:"D"}),e("button",{class:"flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1",id:"btn-cont-block",title:"Continue the block from the cursor",onClick:()=>x.player.playBlock(t.cursor.block),children:"CONT. BLOCK"})]})]})]})]})}function ft(){N(["song"]);let t=x.app,n=t.saveFormat||"mmd1";return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e(f,{cls:"w-[82px] justify-end",children:"SAVE FORMAT:"}),e(l,{act:"file-info",on:!!t.saveInfo,cls:"w-[46px]",children:"INFO"}),e(l,{act:"file-open",cls:"flex-1",children:"LOAD SONG"}),e(l,{act:"ins-open",cls:"flex-1",children:"LOAD INSTR"}),e(l,{act:"file-del",cls:"w-[58px]",children:"DEL FILE"}),e(l,{act:"file-load-msg",cls:"w-[62px]",children:"LOAD MSG"}),e(l,{act:"file-load-map",cls:"w-[42px]",children:"MAP"})]}),e(h,{children:[e(f,{cls:"w-[82px]"}),e(l,{act:"missing",name:"Amiga icon files",disabled:!0,cls:"w-[46px]",children:"ICON"}),e(l,{act:"file-save-song",cls:"flex-1",children:"SAVE SONG"}),e(l,{act:"file-save-iff",cls:"flex-1",children:"SAVE INSTR"}),e(l,{act:"file-save-msg",cls:"w-[62px]",children:"SAVE MSG"}),e(l,{act:"file-save-map",cls:"w-[42px]",children:"MAP"})]}),e(h,{children:[e(l,{act:"fmt-mmd1",on:n==="mmd1",cls:"w-[82px]",children:"MOD1(+INSTR)"}),e(f,{cls:"w-[32px]",children:"DIR:"}),e("span",{class:"flex h-[20px] flex-1 items-center border border-ink bg-paper px-1 text-[10px] opacity-60",children:"browser"})]}),e(h,{children:[e(l,{act:"fmt-mmd1n",on:n==="mmd1n",cls:"w-[82px]",children:"MOD1(NO INSTR)"}),e(f,{cls:"w-[32px]",children:"FILE:"}),e(V,{value:t.song.name||"",maxlength:40,onInput:s=>{t.song.name=s},cls:"flex-1"})]}),e(h,{children:[e(l,{act:"fmt-mmd0",on:n==="mmd0",cls:"w-[82px]",children:"MOD0 (OLD)"}),e(l,{act:"fmt-st",on:n==="st",cls:"w-[82px]",children:"ST-MODULE"}),e(f,{cls:"w-[42px]",children:"EXPORT"}),e(l,{act:"audio-wav",cls:"w-[42px]",children:"WAV"}),e(l,{act:"audio-aac",cls:"w-[42px]",children:"AAC"}),e(l,{act:"audio-mp3",cls:"w-[42px]",children:"MP3"}),e(l,{act:"file-demo",cls:"flex-1",children:"DEMO"})]})]})}function dt(){N(["currentIns"]);let t=x.app,n=t.song.instruments[t.currentIns-1],s=n?n.volume??64:64,c=a=>{let r=t.song.instruments[t.currentIns-1];r&&(a(r),x.panels.refresh())},o=a=>c(r=>{if((a==="synth"||a==="hybrid")&&!r.synth){r.synth=x.createSynth();let p=r.data||new Float32Array(0),_=new Float32Array(64);for(let m=0;m<_.length;m++)_[m]=p[m]||0;r.synth.waveforms=[_],r.synth.voltbl=[64,255],r.synth.wftbl=[0,255]}if(a==="sample"&&r.synth){let p=x.renderSynth(r,44100,50,2);p&&(r.data=Float32Array.from(p),r.dataR=null,r.bits16=!1,r.stereo16=!1)}r.type=a});return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e("span",{class:"flex h-[20px] w-[24px] items-center justify-center border border-ink bg-paper text-[10px]",children:x.insName(t.currentIns)}),e(V,{value:n&&n.name||"",maxlength:39,onInput:a=>c(r=>{r.name=a}),cls:"flex-1"}),e(f,{cls:"w-[36px]",children:"LEN:"}),e("span",{class:"flex h-[20px] w-[64px] items-center justify-end border border-ink bg-paper px-1 text-[11px] tabular-nums",children:n&&n.data?n.data.length:0})]}),e(h,{children:[e(l,{act:"ins-first",cls:"w-[24px]",children:"|<"}),e(l,{act:"ins-prev",cls:"w-[24px]",children:"<"}),e(l,{act:"ins-next",cls:"w-[24px]",children:">"}),e(l,{act:"ins-last",cls:"w-[24px]",children:">|"}),e(l,{act:"ins-lastoccupied",cls:"w-[30px]",children:">|<"}),e(f,{cls:"w-[52px]",children:"TRANSPOSE"}),e(l,{onClick:()=>c(a=>{a.transpose=Math.max(-48,(a.transpose||0)-1)}),cls:"w-[16px]",children:"-"}),e("span",{class:"flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]",children:n&&n.transpose||0}),e(l,{onClick:()=>c(a=>{a.transpose=Math.min(48,(a.transpose||0)+1)}),cls:"w-[16px]",children:"+"}),e(f,{cls:"w-[46px]",children:"FINETUNE"}),e(l,{onClick:()=>c(a=>{a.finetune=Math.max(-8,(a.finetune||0)-1)}),cls:"w-[16px]",children:"-"}),e("span",{class:"flex h-[20px] w-[26px] items-center justify-center border border-ink bg-paper text-[11px]",children:n&&n.finetune||0}),e(l,{onClick:()=>c(a=>{a.finetune=Math.min(7,(a.finetune||0)+1)}),cls:"w-[16px]",children:"+"}),e(f,{cls:"w-[32px]",children:"HLD:"}),e(A,{value:n&&n.hold||0,min:0,max:255,onChange:a=>c(r=>{r.hold=a}),cls:"w-[34px]"}),e(f,{cls:"w-[32px]",children:"R/B:"}),e(A,{value:n&&n.loop||0,min:0,onChange:a=>c(r=>{r.loop=a}),cls:"w-[52px]"})]}),e(h,{children:[e(l,{act:"ins-kill",cls:"w-[54px]",children:"FLUSH"}),e(l,{act:"ins-open",cls:"w-[46px]",children:"LOAD"}),e(f,{cls:"w-[32px]",children:"DEC:"}),e(A,{value:n&&n.decay||0,min:0,max:255,onChange:a=>c(r=>{r.decay=a}),cls:"w-[34px]"}),e(f,{cls:"w-[32px]",children:"R/L:"}),e(A,{value:n&&n.looplen||0,min:0,onChange:a=>c(r=>{r.looplen=a}),cls:"w-[52px]"})]}),e(h,{children:[e(f,{cls:"w-[42px]",children:"TYPE:"}),e(l,{onClick:()=>o("sample"),on:n&&n.type==="sample",cls:"w-[58px]",children:"SAMPLE"}),e(l,{onClick:()=>o("synth"),on:n&&n.type==="synth",cls:"w-[52px]",children:"SYNTH"}),e(l,{onClick:()=>o("hybrid"),on:n&&n.type==="hybrid",cls:"w-[54px]",children:"HYBRID"}),e(f,{cls:"w-[34px]",children:"VOL:"}),e("span",{class:"flex h-[20px] w-[50px] items-center justify-center border border-ink bg-paper text-[11px] tabular-nums",children:[s,"/",s.toString(16).toUpperCase().padStart(2,"0")]}),e(l,{onClick:()=>c(a=>{a.volume=Math.max(0,(a.volume??64)-1)}),cls:"w-[18px]",children:"<"}),e("input",{type:"range",min:"0",max:"64",value:s,class:"h-[20px] min-w-0 flex-1",onChange:a=>c(r=>{r.volume=+a.currentTarget.value})}),e(l,{onClick:()=>c(a=>{a.volume=Math.min(64,(a.volume??64)+1)}),cls:"w-[18px]",children:">"})]})]})}function mt(){let t=x.app,n=t.song.blocks[t.cursor.block],[s,c]=ae(2),o=a=>x.ops.setLines(x.clamp(a,1,3200));return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e(f,{cls:"w-[30px]",children:"TRK:"}),e(l,{act:"trk-cut",cls:"w-[42px]",children:"CUT"}),e(l,{act:"trk-copy",cls:"w-[46px]",children:"COPY"}),e(l,{act:"trk-paste",cls:"w-[46px]",children:"PASTE"}),e(l,{act:"trk-swap",cls:"w-[46px]",children:"SWAP"}),e(l,{act:"track-ins",cls:"w-[58px]",children:"INS.TRK"}),e(f,{cls:"w-[36px]",children:"TRKS:"}),[4,8,12,16].map(a=>e(l,{act:`blk-tracks-${a}`,on:n.tracks===a,cls:"w-[28px]",children:a},a))]}),e(h,{children:[e(f,{cls:"w-[30px]",children:"BLK:"}),e(l,{act:"blk-cut",cls:"w-[42px]",children:"CUT"}),e(l,{act:"blk-copy",cls:"w-[46px]",children:"COPY"}),e(l,{act:"blk-paste",cls:"w-[46px]",children:"PASTE"}),e(l,{act:"blk-swap",cls:"w-[46px]",children:"SWAP"}),e(l,{act:"track-del",cls:"w-[58px]",children:"DEL.TRK"}),e(f,{cls:"w-[38px]",children:"LINES:"}),e(A,{value:n.lines,min:1,max:3200,onChange:o,cls:"w-[46px]"}),e(l,{onClick:()=>o(n.lines-1),cls:"w-[18px]",children:"<"}),e(l,{onClick:()=>o(n.lines+1),cls:"w-[18px]",children:">"}),e(l,{onClick:()=>o(n.lines-10),cls:"w-[20px]",children:"<<"}),e(l,{onClick:()=>o(n.lines+10),cls:"w-[20px]",children:">>"})]}),e(h,{children:[e(l,{act:"blk-expand",cls:"w-[54px]",children:"EXPAND"}),e("input",{type:"number",min:"2",max:"9",value:s,class:`${P} w-[28px]`,onChange:a=>c(parseInt(a.currentTarget.value,10)||2)}),e(l,{act:"blk-shrink",cls:"w-[54px]",children:"SHRINK"}),e(l,{act:"line-ins",cls:"w-[44px]",children:"INS.L."}),e(l,{act:"line-del",cls:"w-[44px]",children:"DEL.L."}),e(l,{act:"del-buffer",cls:"w-[58px]",children:"DEL BUFF"}),[1,2,3,4,8,16].map(a=>e(l,{act:`hl-${a}`,cls:"w-[20px]",children:a},a)),e(l,{act:"hl-clear",cls:"w-[20px]",children:"C"})]}),e(h,{children:[e(l,{act:"blk-new",cls:"w-[64px]",children:"NEW BLOCK"}),e(l,{act:"blk-new-def",cls:"w-[34px]",children:"DEF"}),e(l,{act:"blk-new-here",cls:"w-[64px]",children:"NEW HERE"}),e(l,{act:"blk-new-here-def",cls:"w-[34px]",children:"DEF"}),e(l,{act:"blk-del-last",cls:"w-[70px]",children:"DELETE LAST"}),e(l,{act:"blk-del",cls:"w-[70px]",children:"DELETE THIS"}),e(l,{act:"blk-split",cls:"w-[42px]",children:"SPLIT"}),e(l,{act:"blk-join",cls:"w-[42px]",children:"JOIN"})]}),e(h,{children:[e(f,{cls:"w-[42px]",children:"NAME:"}),e(V,{value:n.name||"",maxlength:40,onInput:a=>{n.name=a},cls:"flex-1"})]})]})}function ht(){N(["editMode","spaceAsDel","chordMode","octave","advance"]);let t=x.app,n=t.prog&&t.prog[t.progTarget],s=c=>{t.mutedTracks[c]=!t.mutedTracks[c],x.player.channels[c].muted=t.mutedTracks[c],x.grid.render(),x.panels.refresh()};return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e(f,{cls:"w-[54px]",children:"TRK ON:"}),Array.from({length:16},(c,o)=>e(l,{onClick:()=>s(o),on:!t.mutedTracks[o],cls:"flex-1 px-0",children:o.toString(16).toUpperCase()},o)),e(l,{onClick:()=>{for(let c=0;c<16;c++)t.mutedTracks[c]=!1,x.player.channels[c].muted=!1;x.grid.render()},cls:"w-[34px]",children:"SET"}),e(l,{onClick:()=>{for(let c=0;c<16;c++)t.mutedTracks[c]=!0,x.player.channels[c].muted=!0;x.grid.render()},cls:"w-[34px]",children:"CLR"})]}),e(h,{children:[e(f,{cls:"w-[48px]",children:"KEYPAD:"}),e(l,{act:"pad-mode",on:t.padMode==="track",cls:"w-[74px]",children:"TRK ON/OFF"}),e(l,{act:"pad-mode",on:t.padMode==="instr",cls:"w-[70px]",children:"SEL.INSTR"}),e(l,{act:"pad-map2",on:!!t.padMap2,cls:"w-[42px]",children:"MAP2"}),e(l,{act:"alt-clear",cls:"w-[22px]",children:"C"}),e(l,{act:"alt-pick-l",cls:"w-[22px]",children:"L"}),e(l,{act:"alt-pick-r",cls:"w-[22px]",children:"R"}),e(l,{act:"prog-prev",cls:"w-[16px]",children:"<"}),e("span",{class:"flex h-[20px] w-[20px] items-center justify-center border border-ink bg-paper text-[11px]",children:t.progTarget}),e(l,{act:"prog-next",cls:"w-[16px]",children:">"}),e("span",{class:"flex h-[20px] w-[12px] items-center justify-center text-[10px]",children:"="}),e("input",{value:x.noteName(n&&n.note||0,t.hb),class:`${P} w-[36px] text-center`,onInput:c=>{n&&(n.note=x.noteIndex(c.currentTarget.value))}}),e("input",{value:x.insName(n&&n.ins||0),class:`${P} w-[30px] text-center`,onInput:c=>{n&&(n.ins=parseInt(c.currentTarget.value,32)||0)}}),e("input",{value:(n&&n.cmd||0).toString(16).toUpperCase().padStart(2,"0"),class:`${P} w-[28px] text-center`,onInput:c=>{n&&(n.cmd=parseInt(c.currentTarget.value,16)||0)}}),e("input",{value:(n&&n.dat||0).toString(16).toUpperCase().padStart(2,"0"),class:`${P} w-[28px] text-center`,onInput:c=>{n&&(n.dat=parseInt(c.currentTarget.value,16)||0)}}),e(l,{act:"edit-space",on:!!t.spaceAsDel,cls:"w-[72px]",children:"SPACE=DEL"})]}),e(h,{children:[e(f,{cls:"w-[48px]",children:"OCTAVE:"}),Array.from({length:9},(c,o)=>e(l,{act:`oct-${o}`,on:t.octave===o,cls:"w-[26px]",children:o+1},o)),e(l,{act:"edit-toggle",on:!!t.editMode,cls:"w-[58px]",children:"EDIT ON"})]}),e(h,{children:[e(f,{cls:"w-[34px]",children:"ADV."}),[["up","\u2191"],["down","\u2193"],["nexttrk","\xBB"],["prevtrk","\xAB"],["right",">"],["left","<"]].map(([c,o])=>e(l,{act:`adv-${c}`,on:t.advance===c,cls:"w-[24px]",children:o},c)),e(f,{cls:"w-[34px]",children:"PICK:"}),e(l,{act:"pick-note",cls:"w-[42px]",children:"NOTE"}),e(l,{act:"pick-range",cls:"w-[44px]",children:"RANGE"}),e(l,{act:"pick-buffer",cls:"w-[34px]",children:"BUF"}),e(f,{cls:"w-[26px]",children:"SPC"}),e(A,{value:t.step,min:1,max:16,onChange:c=>{t.step=c},cls:"w-[34px]"})]})]})}function gt(){N(["song"]);let t=x.app,n=t.paletteRGB||{r:136,g:136,b:136},s=(c,o)=>{t.paletteRGB[c]=o,x.runAction("pal-set")};return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e(f,{cls:"w-[16px]",children:"R"}),e("input",{type:"range",min:"0",max:"255",value:n.r,class:"h-[20px] w-[120px]",onChange:c=>s("r",+c.currentTarget.value)}),e("span",{class:`${P} w-[28px] text-center`,children:n.r}),[0,1,2,3,4,5,6,7].map(c=>e(l,{onClick:()=>x.missing("RGB palette"),cls:`w-[18px] ${c===0?"bg-ink":""}`,children:" "},c)),e(l,{act:"pal-reset",cls:"w-[34px]",children:"RES"}),e(l,{act:"pal-undo",cls:"w-[38px]",children:"UNDO"})]}),e(h,{children:[e(f,{cls:"w-[16px]",children:"G"}),e("input",{type:"range",min:"0",max:"255",value:n.g,class:"h-[20px] w-[120px]",onChange:c=>s("g",+c.currentTarget.value)}),e("span",{class:`${P} w-[28px] text-center`,children:n.g}),e(l,{act:"ptkey",on:!!t.ptkey,cls:"w-[46px]",children:"PTKEY"}),e(l,{act:"missing",name:"Workbench",disabled:!0,cls:"w-[44px]",children:"WB OPEN"}),e(l,{act:"missing",name:"Workbench",disabled:!0,cls:"w-[44px]",children:"CLOSE"})]}),e(h,{children:[e(f,{cls:"w-[16px]",children:"B"}),e("input",{type:"range",min:"0",max:"255",value:n.b,class:"h-[20px] w-[120px]",onChange:c=>s("b",+c.currentTarget.value)}),e("span",{class:`${P} w-[28px] text-center`,children:n.b}),e(l,{act:"name-flat",on:!!t.hb,cls:"w-[44px]",children:"H\u2194B"}),e(l,{act:"missing",name:"Load graphics",disabled:!0,cls:"w-[58px]",children:"LOADGFX"}),e(l,{act:"missing",name:"Mouse pointer",disabled:!0,cls:"w-[50px]",children:"MOUSE2"})]}),e(h,{children:[e(l,{act:"paths-info",cls:"w-[52px]",children:"PATHS"}),e(l,{act:"paths-add",cls:"w-[34px]",children:"ADD"}),e(l,{act:"paths-rem",cls:"w-[34px]",children:"REM"}),e(l,{act:"misc-clear-all",cls:"w-[70px]",children:"CLEAR ALL"}),e(l,{act:"misc-clear",cls:"w-[106px]",children:"CLEAR SONG ONLY"}),e(l,{act:"quit-app",cls:"w-[38px]",children:"QUIT"}),e(l,{act:"confirm-toggle",on:t.confirmOn!==!1,cls:"w-[54px]",children:"CONFIRM"})]}),e(h,{children:[e(l,{act:"no16",on:!!t.no16,cls:"w-[42px]",children:"NO16"}),e(l,{act:"dep2",on:!!t.dep2,cls:"w-[42px]",children:"DEP2"}),e(l,{act:"prefs-save",cls:"w-[72px]",children:"SAVE PREFS"}),e(l,{act:"prefs-reset",cls:"w-[72px]",children:"FORGET"}),e(l,{act:"pal-cycle",cls:"w-[46px]",children:"COLOUR"})]})]})}function wt(){N(["song"]);let t=x.app,n=t.song,s=t.volTrack||0,c=p=>{t.volTrack=p,x.panels.refresh()},o=(p,_)=>{n.trkvol[p]=x.clamp(_,0,64),x.panels.refresh()},a=p=>{n.mastervol=x.clamp(p,0,64),x.panels.refresh()},r=[];for(let p=0;p<16;p++)r.push(e(l,{onClick:()=>c(p),on:s===p,cls:"flex-1 px-0",children:[p.toString(16).toUpperCase(),":",String(n.trkvol[p]||64).padStart(2,"0")]},p));return e("div",{class:"flex h-full flex-col gap-px",children:e("div",{class:"flex items-start gap-2",children:[e("div",{class:"flex flex-1 flex-col gap-px",children:[e(f,{children:"THE RELATIVE VOLUMES OF TRACKS 0\u201315:"}),e(h,{children:r.slice(0,8)}),e(h,{children:r.slice(8)}),e(h,{children:[e(f,{cls:"w-[36px]",children:[s.toString(16).toUpperCase(),":"]}),e("span",{class:"flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]",children:n.trkvol[s]||64}),e(l,{onClick:()=>o(s,(n.trkvol[s]||64)-10),cls:"w-[24px]",children:"\xAB"}),e(l,{onClick:()=>o(s,(n.trkvol[s]||64)-1),cls:"w-[22px]",children:"\u2039"}),e(l,{onClick:()=>o(s,(n.trkvol[s]||64)+1),cls:"w-[22px]",children:"\u203A"}),e(l,{onClick:()=>o(s,(n.trkvol[s]||64)+10),cls:"w-[24px]",children:"\xBB"}),e(f,{cls:"w-[44px]",children:"MASTER"}),e("span",{class:"flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]",children:n.mastervol}),e(l,{onClick:()=>a(n.mastervol-10),cls:"w-[24px]",children:"\xAB"}),e(l,{onClick:()=>a(n.mastervol-1),cls:"w-[22px]",children:"\u2039"}),e(l,{onClick:()=>a(n.mastervol+1),cls:"w-[22px]",children:"\u203A"}),e(l,{onClick:()=>a(n.mastervol+10),cls:"w-[24px]",children:"\xBB"})]})]}),e("div",{class:"w-[210px] shrink-0 border border-ink p-2 text-center text-[10px] leading-tight",children:[e("div",{children:"OCTANAUT"}),e("div",{children:"BROWSER TRACKER"}),e("div",{class:"my-1",children:"\u2014"}),e("div",{children:"EIGHT CHANNELS"}),e("div",{children:"MED MODULES"})]})]})})}function vt(){N(["selection","selectedTracks"]);let t=x.app,n=t.song.blocks[t.cursor.block],s=t.selection,[c,o]=ae(2),[a,r]=ae(1),p=s?`${Math.min(s.t0,s.t1)}\u2013${Math.max(s.t0,s.t1)} / ${Math.min(s.l0,s.l1)}\u2013${Math.max(s.l0,s.l1)}`:"---",_=()=>{t.selection={l0:0,l1:n.lines-1,t0:t.cursor.track,t1:t.cursor.track},x.grid.render(),x.touchStatus("selection",["selection"])};return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e(f,{cls:"w-[48px]",children:"SELECT:"}),Array.from({length:16},(m,u)=>e(l,{onClick:()=>{t.selectedTracks[u]=!t.selectedTracks[u],x.touchStatus("selection",["selectedTracks"])},on:!!t.selectedTracks[u],cls:"flex-1 px-0",children:u.toString(16).toUpperCase()},u)),e(l,{onClick:()=>{for(let m=0;m<16;m++)t.selectedTracks[m]=!0;x.touchStatus("selection",["selectedTracks"])},cls:"w-[30px]",children:"SET"}),e(l,{onClick:()=>{for(let m=0;m<16;m++)t.selectedTracks[m]=!1;x.touchStatus("selection",["selectedTracks"])},cls:"w-[30px]",children:"CLR"})]}),e(h,{children:[e(l,{onClick:_,cls:"w-[82px]",children:"SELECT TRACK"}),e(l,{act:"rng-cut",cls:"w-[42px]",children:"CUT"}),e(l,{act:"rng-copy",cls:"w-[46px]",children:"COPY"}),e(l,{act:"rng-paste",cls:"w-[46px]",children:"PASTE"}),e(l,{act:"rng-paste",cls:"w-[78px]",children:"PASTE SELECT"}),e(l,{act:"chord-toggle",on:!!t.chordMode,cls:"w-[48px]",children:"CHORD"}),e(l,{act:"chord-rst",cls:"w-[32px]",children:"RST"})]}),e(h,{children:[e(l,{act:"sel-all",cls:"w-[82px]",children:"SELECT BLOCK"}),e(l,{act:"rng-clear",cls:"w-[46px]",children:"CLEAR"}),e(l,{act:"sel-cancel",cls:"w-[52px]",children:"CANCEL"}),e(f,{cls:"w-[54px]",children:"SPREAD:"}),e(l,{act:"spread-2",cls:"w-[20px]",children:"2"}),e(l,{act:"spread-3",cls:"w-[20px]",children:"3"}),e(l,{act:"spread-4",cls:"w-[20px]",children:"4"}),e(f,{cls:"w-[44px]",children:"SLIDE:"}),e(l,{act:"mk-slide1",cls:"w-[20px]",children:"1"}),e(l,{act:"mk-slide2",cls:"w-[20px]",children:"2"}),e(l,{act:"mk-volslide",cls:"w-[34px]",children:"VOL"})]}),e(h,{children:[e(l,{act:"note-echo",cls:"w-[64px]",children:"NOTE ECHO"}),e(f,{cls:"w-[34px]",children:"DIST"}),e(A,{id:"echo-dist",value:c,min:1,max:16,onChange:o,cls:"w-[30px]"}),e(f,{cls:"w-[30px]",children:"MIN"}),e(A,{id:"echo-min",value:a,min:1,max:64,onChange:r,cls:"w-[30px]"}),e(f,{cls:"w-[44px]",children:"RANGE:"}),e("span",{class:"flex h-[20px] flex-1 items-center border border-ink bg-paper px-1 text-[10px]",children:p})]})]})}function yt(){N(["cursor","currentIns"]);let t=x.app,n=t.transposeScope||"block",s=t.transposeInstrScope||"all",c=o=>{t.song.playtransp=x.clamp(o,-24,24),x.panels.refresh()};return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e(f,{cls:"w-[48px]",children:"AFFECT:"}),[["song","SONG"],["block","BLOCK"],["track","TRACK"],["sel","SEL.TRKS"],["range","RANGE"]].map(([o,a])=>e(l,{act:`scope-${o}`,on:n===o,cls:"flex-1",children:a},o)),e(f,{cls:"w-[42px]",children:"INSTR:"}),e(l,{act:"instscope-all",on:s==="all",cls:"w-[40px]",children:"ALL"}),e(l,{act:"instscope-curr",on:s==="curr",cls:"w-[46px]",children:"CURR"})]}),e(h,{children:[e(f,{cls:"w-[40px]",children:"INSTR:"}),e(f,{cls:"w-[40px]",children:"NOTE:"}),e("input",{id:"tr-from",type:"number",min:"1",max:"120",value:"1",class:`${P} w-[40px]`}),e(l,{act:"note-change",cls:"w-[26px]",children:"\u2192"}),e("input",{id:"tr-to",type:"number",min:"1",max:"120",value:"1",class:`${P} w-[40px]`}),e(l,{act:"note-exchange",cls:"w-[26px]",children:"\u21C4"}),e(l,{act:"tr-up",cls:"w-[38px]",children:"1/2\u2191"}),e(l,{act:"tr-down",cls:"w-[38px]",children:"1/2\u2193"}),e(l,{act:"tr-up12",cls:"w-[38px]",children:"OCT\u2191"}),e(l,{act:"tr-down12",cls:"w-[38px]",children:"OCT\u2193"})]}),e(h,{children:[e(l,{act:"ins-delete",cls:"w-[34px]",children:"DEL"}),e("input",{id:"tr-ins-from",type:"number",min:"1",max:"63",value:t.currentIns,class:`${P} w-[36px]`}),e(l,{act:"ins-change",cls:"w-[26px]",children:"\u2192"}),e("input",{id:"tr-ins-to",type:"number",min:"1",max:"63",value:"1",class:`${P} w-[36px]`}),e(l,{act:"ins-exchange",cls:"w-[26px]",children:"\u21C4"}),e(f,{cls:"w-[100px]",children:"PLAY TRANSPOSE:"}),e("input",{type:"range",min:"-24",max:"24",value:t.song.playtransp||0,class:"h-[20px] min-w-0 flex-1",onChange:o=>c(+o.currentTarget.value)}),e("span",{class:"flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]",children:t.song.playtransp||0})]}),e(h,{children:[e(f,{cls:"w-[34px]",children:"TEXT:"}),e(V,{value:t.song.annotation||"",onInput:o=>{t.song.annotation=o},cls:"flex-1"})]})]})}function bt(){N(["currentIns"]);let t=x.app,n=t.song.instruments[t.currentIns-1],s=t.midiMessages&&t.midiMessages[t.midiMsgIndex]?t.midiMessages[t.midiMsgIndex]:{name:"",data:[]},c=(s.data||[]).map(u=>u.toString(16).toUpperCase().padStart(2,"0")).join(" "),o=u=>{let d=(u.match(/[0-9a-fA-F]{2}/g)||[]).map(w=>parseInt(w,16)&255);s.data=d,x.panels.refresh()},a=x.midi||{supported:!1,enabled:!1,outputs:[],inputs:[]},r=n&&n.midiChannel||0,p=t.midiMap&&t.midiMap[t.midiMapIndex],_=p&&p.kind==="fn"?p.fn:"note",m=u=>{let d=t.song.instruments[t.currentIns-1];d&&(d.midiChannel=u,x.panels.refresh())};return e("div",{class:"flex h-full flex-col gap-px",children:[e(h,{children:[e(f,{cls:"w-[52px]",children:"MIDI CH:"}),e(l,{onClick:()=>m(0),on:r===0,cls:"w-[54px]",children:"NO MIDI"}),Array.from({length:16},(u,d)=>e(l,{onClick:()=>m(d+1),on:r===d+1,cls:"flex-1 px-0",children:d+1},d))]}),e(h,{children:[e(f,{cls:"w-[82px]",children:"MIDI PRESET #:"}),e(A,{value:n&&n.midiPreset||0,min:0,max:128,onChange:u=>{let d=t.song.instruments[t.currentIns-1];d&&(d.midiPreset=u)},cls:"w-[40px]"}),e("select",{class:"h-[20px] min-w-0 flex-1 border border-ink bg-paper px-1 text-[10px]",onChange:u=>{a.outputs[u.currentTarget.value]&&(a.port=a.outputs[u.currentTarget.value])},children:[a.outputs.map((u,d)=>e("option",{value:d,children:u.name})),!a.outputs.length&&e("option",{children:"no outputs"})]})]}),e(h,{children:[e(l,{act:"midi-enable",on:!!a.enabled,cls:"w-[72px]",children:"MIDI ACTIVE"}),e(l,{act:"midi-input",on:!!t.midiInput,cls:"w-[44px]",children:"INPUT"}),e(f,{cls:"w-[52px]",children:"CHANNEL"}),e(A,{value:t.midiInChannel||0,min:0,max:16,onChange:u=>{t.midiInChannel=u},cls:"w-[32px]"}),e(l,{act:"midi-sendout",on:!!t.midiSendOut,cls:"w-[54px]",children:"SEND OUT"}),e(l,{act:"midi-suppress",on:!!(n&&n.suppressOff),cls:"w-[70px]",children:"SUPPR.N.OFF"}),e(l,{act:"midi-alloff-cc",on:x.app.midiAllOff!=="note",cls:"w-[30px]",children:"OFF"})]}),e(h,{children:[e(l,{act:"midi-sync",on:!!x.player.sync,cls:"w-[62px]",children:"SEND SYNC"}),e(l,{act:"midi-extsync",on:!!t.extSync,cls:"w-[58px]",children:"EXT SYNC"}),e(l,{act:"midi-sensing",on:x.midi.sensingOn!==!1,cls:"w-[70px]",children:"ACT.SENSING"}),e(f,{cls:"w-[48px]",children:"ALL OFF:"}),e(l,{act:"midi-alloff-cc",on:x.app.midiAllOff!=="note",cls:"w-[58px]",children:"$Bx7B00"}),e(l,{act:"midi-alloff-note",on:x.app.midiAllOff==="note",cls:"w-[58px]",children:"N.OFF:S"})]}),e(h,{children:[e(f,{cls:"w-[40px]",children:"READ:"}),e(l,{act:"midi-keyup",on:!!t.midiKeyUp,cls:"w-[48px]",children:"KEY-UP"}),e(l,{act:"midi-vel",on:!!t.readVelocity,cls:"w-[48px]",children:"VOLUME"}),e(f,{cls:"w-[44px]",children:"RESET:"}),e(l,{act:"midi-reset-pb",cls:"w-[54px]",children:"PB+PRES"}),e(l,{act:"midi-reset-ff",cls:"w-[34px]",children:"$FF"}),e(l,{act:"midi-lc-on",cls:"w-[54px]",children:"LOC.CTRL"}),e(l,{act:"midi-lc-off",cls:"w-[34px]",children:"OFF"})]}),e(h,{children:[e(f,{cls:"w-[42px]",children:"MSG #:"}),e(l,{act:"midi-msg-prev",cls:"w-[20px]",children:"<"}),e("span",{class:"flex h-[20px] w-[32px] items-center justify-center border border-ink bg-paper text-[11px]",children:[(t.midiMsgIndex||0)+1,"/",t.midiMessages.length]}),e(l,{act:"midi-msg-next",cls:"w-[20px]",children:">"}),e(l,{act:"midi-msg-new",cls:"w-[34px]",children:"NEW"}),e(l,{act:"midi-msg-insert",cls:"w-[52px]",children:"N.HERE"}),e(l,{act:"midi-msg-del",cls:"w-[34px]",children:"DEL"}),e(l,{act:"midi-msg-clear",cls:"w-[44px]",children:"CLEAR"}),e(f,{cls:"w-[54px]",children:"MSG SIZE:"}),e(l,{act:"midi-msg-dec",cls:"w-[20px]",children:"<"}),e("span",{class:"flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]",children:s.data.length}),e(l,{act:"midi-msg-inc",cls:"w-[20px]",children:">"}),e(l,{act:"midi-msg-capture",on:!!t.midiCapture,cls:"w-[40px]",children:"CAPT."}),e(l,{act:"midi-msg-send",cls:"w-[42px]",children:"SEND"})]}),e(h,{children:[e(l,{act:"midi-msg-auto",on:t.midiMsgAuto!==!1,cls:"w-[92px]",children:"AUTO-TERMINATE"}),e(f,{cls:"w-[38px]",children:"NAME:"}),e(V,{value:s.name||"",maxlength:40,onInput:u=>{s.name=u},cls:"flex-1"})]}),e(h,{children:[e(f,{cls:"w-[36px]",children:"DATA:"}),e(V,{value:c,onInput:o,cls:"flex-1",placeholder:"F0 ... F7"})]}),e(h,{children:[e(f,{cls:"w-[30px]",children:"MAP:"}),e(l,{act:"midi-map-active",on:!!t.midiMapActive,cls:"w-[44px]",children:"ACTIVE"}),e(l,{act:"midi-map-reset",cls:"w-[42px]",children:"RESET"}),e(f,{cls:"w-[40px]",children:"FUNCT:"}),e(l,{act:"midi-map-prev",cls:"w-[20px]",children:"<"}),e("span",{class:"flex h-[20px] w-[72px] items-center justify-center border border-ink bg-paper text-[10px]",children:_}),e(l,{act:"midi-map-next",cls:"w-[20px]",children:">"}),e(l,{act:"midi-map-new",cls:"w-[32px]",children:"NEW"}),e(l,{act:"midi-map-del",cls:"w-[32px]",children:"DEL"}),e(l,{act:"midi-dump-save",cls:"w-[52px]",children:"SAVE DUMP"}),e(l,{act:"midi-dump-load",cls:"w-[52px]",children:"LOAD DUMP"}),e(f,{cls:"w-[26px]",children:"KEY"}),e(A,{value:t.midiMapIndex,min:0,max:127,onChange:u=>{t.midiMapIndex=u,x.panels.refresh()},cls:"w-[38px]"})]}),e("div",{class:"max-h-[84px] overflow-auto border border-ink bg-paper",children:Array.from({length:128},(u,d)=>{let w=t.midiMap&&t.midiMap[d],i=w&&w.kind==="fn"?w.fn:"note";return e("button",{type:"button",class:`flex w-full items-center gap-2 px-1 text-left text-[10px] leading-[14px] ${d===t.midiMapIndex?"bg-ink text-paper":""}`,onClick:()=>{t.midiMapIndex=d,x.panels.refresh()},children:[e("span",{class:"w-[26px] text-right",children:d}),e("span",{class:"w-[34px]",children:x.noteName(d-23,t.hb)}),e("span",{children:i})]},d)})})]})}var kt={play:Qe,files:ft,instr:dt,block:mt,edit:ht,misc:gt,vol:wt,range:vt,transp:yt,midi:bt},ye="play",be=new Set,ze=()=>be.forEach(t=>t());function Bt(){let[,t]=X(s=>s+1,0);we(()=>{let s=()=>t(0);return be.add(s),()=>{be.delete(s)}},[]);let n=kt[ye]||Qe;return e(n,{})}x.panels={get current(){return ye},mount(t){Oe(e(Bt,{}),t);let n=document.querySelector(".deck-left");n&&(n.style.display="block")},show(t){ye=t,document.querySelectorAll("#rail button").forEach(s=>{s.classList.toggle("active",s.dataset.panel===t)});let n=document.querySelector(".deck-left");n&&(n.style.display=t==="play"?"block":"none"),ze()},refresh(){ze()}};})();
+"use strict";
+var OctanautPanels = (() => {
+  // node_modules/preact/dist/preact.mjs
+  var n;
+  var t;
+  var r;
+  var i;
+  var u;
+  var f;
+  var e;
+  var o;
+  var l;
+  var c;
+  var a;
+  var s;
+  var h = /* @__PURE__ */ Symbol.for("pv");
+  var p = {};
+  var v = [];
+  var y = /^m(i|n|o|s|text|space)$/;
+  var w = Array.isArray;
+  var d = v.slice;
+  var _ = Object.assign;
+  function g(n2) {
+    n2 && n2.parentNode && n2.remove();
+  }
+  function m(r3, i3, u3, f4, e3) {
+    var o4 = { type: r3, props: i3, key: u3, ref: f4, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: h, __v: e3 || ++t, __i: -1, __u: 0 };
+    return !e3 && n.vnode && n.vnode(o4), o4;
+  }
+  function M(n2) {
+    return n2.children;
+  }
+  function x(n2, t3) {
+    this.props = n2, this.context = t3, this.__g = 0;
+  }
+  function S(n2, t3) {
+    if (null == t3) return n2.__ && S(n2.__, n2.__i + 1);
+    for (var r3; t3 < n2.__k.length; t3++) if ((r3 = n2.__k[t3]) && r3.__e) return r3.__e;
+    return "function" != typeof n2.type || n2.props.__P ? null : S(n2);
+  }
+  function C(n2) {
+    if ((n2 = n2.__) && n2.__c && !n2.props.__P) return n2.__e = null, n2.__k.some(function(t3) {
+      return t3 && (n2.__e = t3.__e);
+    }), C(n2);
+  }
+  function j(t3) {
+    (8 & t3.__g || (t3.__g |= 8, i.push(t3), f++)) && u == n.debounceRendering || ((u = n.debounceRendering) || queueMicrotask)(L);
+  }
+  function L() {
+    var t3, r3, o4, l3, c3, a4, s3, p3, v3;
+    try {
+      for (r3 = 1; i.length; ) i.length > r3 && i.sort(e), t3 = i.shift(), r3 = i.length, 8 & t3.__g && (l3 = void 0, c3 = void 0, a4 = (c3 = (o4 = t3).__v).__e, s3 = [], p3 = [], (v3 = o4.__P) && ((l3 = _({ constructor: h }, c3)).__v = c3.__v + 1, n.vnode && n.vnode(l3), V(v3, l3, c3, o4.__n, v3.namespaceURI, 32 & c3.__u ? [a4] : null, s3, a4 || S(c3), 32 & c3.__u, p3), l3.__v = c3.__v, l3.__.__k[l3.__i] = l3, D(s3, l3, p3), c3.__ = c3.__e = null, l3.__e != a4 && C(l3)));
+    } finally {
+      (f = i.length) && (u || queueMicrotask)(L);
+    }
+  }
+  function H(n2, t3, r3, i3, u3, f4, e3, o4, l3, c3, a4) {
+    var s3, h3, y3, w3, d3, _3, g3 = i3.__k || v, k2 = t3.length;
+    for (l3 = I(r3, t3, g3, l3, k2), s3 = 0; s3 < k2; s3++) null != (y3 = r3.__k[s3]) && (h3 = ~y3.__i && g3[y3.__i] || p, y3.__i = s3, _3 = V(n2, y3, h3, u3, f4, e3, o4, l3, c3, a4), w3 = y3.__e, (h3.ref != y3.ref || 8 & h3.__u) && (h3.ref && F(h3.ref, null, y3, h3), y3.ref && a4.push(y3.ref, y3.__c || w3, y3)), d3 = d3 || w3, 4 & y3.__u ? (l3 = q(y3, l3, n2, !h3.__v), h3.__e && (h3.__e = null)) : "function" == typeof y3.type && void 0 !== _3 ? l3 = _3 : w3 && (l3 = w3.nextSibling), y3.__u &= -21);
+    return r3.__e = d3, l3;
+  }
+  function I(n2, t3, r3, i3, u3) {
+    var f4, e3, o4, l3, c3, a4, s3, p3, v3, y3 = r3.length, d3 = y3, _3 = 0, g3 = 0, k2 = n2.__k = Array(u3);
+    for (f4 = 0; f4 < u3; f4++) null != (e3 = t3[f4]) && "boolean" != typeof e3 && "function" != typeof e3 ? ("object" != typeof e3 || e3.constructor === String ? e3 = k2[f4] = m(null, e3) : w(e3) ? e3 = k2[f4] = m(M, { children: e3 }) : e3.constructor === h && e3.__b ? e3 = k2[f4] = m(e3.type, e3.props, e3.key, e3.ref, e3.__v) : k2[f4] = e3, l3 = f4 + _3, e3.__ = n2, e3.__b = n2.__b + 1, o4 = null, ~(c3 = e3.__i = O(e3, r3, l3, d3)) && (d3--, (o4 = r3[c3]) && (o4.__u |= 2)), o4 && o4.__v ? (e3.__u |= 16, c3 == l3 - 1 ? _3-- : c3 == l3 + 1 ? _3++ : c3 != l3 && (c3 > l3 ? _3-- : _3++, g3 = 1)) : (~c3 || (u3 > y3 ? _3-- : u3 < y3 && _3++), "function" != typeof e3.type && (e3.__u |= 4))) : k2[f4] = null;
+    if (g3) {
+      for (a4 = [], s3 = [], f4 = 0; f4 < u3; f4++) if ((e3 = k2[f4]) && 16 & e3.__u) {
+        for (_3 = 0, p3 = a4.length; _3 < p3; ) a4[v3 = _3 + p3 >> 1] < e3.__i ? _3 = v3 + 1 : p3 = v3;
+        a4[_3] = e3.__i, s3[f4] = _3 + 1;
+      }
+      for (_3 = a4.length; f4--; ) s3[f4] && (s3[f4] == _3 ? _3-- : k2[f4].__u |= 4);
+    }
+    if (d3) for (f4 = 0; f4 < y3; f4++) !(o4 = r3[f4]) || 2 & o4.__u || (o4.__e == i3 && (i3 = S(o4)), G(o4, o4));
+    return i3;
+  }
+  function q(n2, t3, r3, i3) {
+    var u3, f4, e3, o4;
+    if ("function" == typeof n2.type) {
+      if (n2.props.__P) return t3;
+      if (u3 = n2.__k) for (f4 = 0; f4 < u3.length; f4++) u3[f4] && (u3[f4].__ = n2, t3 = q(u3[f4], t3, r3, false));
+      return t3;
+    }
+    for (t3 && !t3.parentNode && (t3 = S(n2)) && !t3.parentNode && (t3 = null), e3 = n2.__e, o4 = t3; o4 && 8 == o4.nodeType; ) o4 = o4.nextSibling;
+    for (e3 != o4 && (!i3 && r3.moveBefore && e3.parentNode ? r3.moveBefore(e3, t3) : r3.insertBefore(e3, t3 || null)), t3 = e3; (t3 = t3 && t3.nextSibling) && 8 == t3.nodeType && !t3.data.startsWith("$s"); ) ;
+    return t3;
+  }
+  function O(n2, t3, r3, i3) {
+    var u3, f4 = n2.key, e3 = n2.type, o4 = t3[r3], l3 = o4 && !(2 & o4.__u);
+    if (null === o4 && null == f4 || l3 && f4 == o4.key && e3 == o4.type) return r3;
+    if (i3 > (l3 ? 1 : 0)) {
+      for (u3 = r3 - 1; u3 >= 0; u3--) if ((o4 = t3[u3]) && !(2 & o4.__u) && f4 == o4.key && e3 == o4.type) return u3;
+      for (u3 = r3 + 1; u3 < t3.length; u3++) if ((o4 = t3[u3]) && !(2 & o4.__u) && f4 == o4.key && e3 == o4.type) return u3;
+    }
+    return -1;
+  }
+  function P(n2, t3, r3) {
+    null == r3 && (r3 = ""), "-" == t3[0] ? n2.setProperty(t3, r3) : n2[t3] = r3;
+  }
+  function T(n2, t3, r3, i3, u3) {
+    var f4, e3;
+    if ("style" == t3) if ("string" == typeof r3) n2.style.cssText = r3;
+    else {
+      if ("string" == typeof i3 && (n2.style.cssText = i3 = ""), i3) for (t3 in i3) r3 && t3 in r3 || P(n2.style, t3);
+      if (r3) for (t3 in r3) i3 && r3[t3] == i3[t3] || P(n2.style, t3, r3[t3]);
+    }
+    else if ("o" == t3[0] && "n" == t3[1]) (n2.__e || (n2.__e = {}))[t3] = r3, r3 && i3 || (e3 = a[t3] || (a[t3] = N(t3)), (n2.__a || (n2.__a = {}))[t3] = c, f4 = t3 != (t3 = t3.replace(l, "$1")), (t3 = t3.slice(2))[0] < "a" && (t3 = t3.toLowerCase()), r3 ? n2.addEventListener(t3, e3, f4) : n2.removeEventListener(t3, e3, f4));
+    else {
+      if ("http://www.w3.org/2000/svg" == u3) t3 = t3.replace(/xlink(H|:h)/, "h").replace(/sName$/, "s");
+      else if ("width" != t3 && "height" != t3 && "href" != t3 && "list" != t3 && "form" != t3 && "tabIndex" != t3 && "download" != t3 && "rowSpan" != t3 && "colSpan" != t3 && "role" != t3 && "popover" != t3 && t3 in n2) try {
+        return void (n2[t3] = null == r3 ? "" : r3);
+      } catch (n3) {
+      }
+      if ("function" == typeof r3) return;
+      null == r3 || false === r3 && "-" != t3[4] ? n2.removeAttribute(t3) : n2.setAttribute(t3, "popover" == t3 && 1 == r3 ? "" : r3);
+    }
+  }
+  function N(t3) {
+    return function(r3) {
+      var i3 = this.__e;
+      if (i3) {
+        if (i3 = i3[t3], null == r3[o]) r3[o] = c++;
+        else if (r3[o] < this.__a[t3]) return;
+        return i3(n.event ? n.event(r3) : r3);
+      }
+    };
+  }
+  function V(t3, r3, i3, u3, f4, e3, o4, l3, c3, a4) {
+    var s3, p3, y3, d3, k2, b, m3, $, C3, j2, L3, I2, q2, A2, O2, P2, T4, N3, V2 = r3.type;
+    if (r3.constructor !== h) return null;
+    128 & i3.__u && (c3 = 32 & i3.__u, s3 = i3.__c.__z) && (r3.__u |= c3, p3 = e3 = [], 8 == s3.nodeType ? l3 = z(s3, e3) : e3.push(s3), l3 = e3[0] || l3), (s3 = n.__b) && s3(r3);
+    n: if ("function" == typeof V2) {
+      y3 = o4.length;
+      try {
+        if ($ = r3.props, C3 = (s3 = V2.prototype) && s3.render, j2 = (s3 = V2.contextType) && u3[s3.__c], L3 = s3 ? j2 ? j2.props.value : s3.__ : u3, (d3 = i3.__c) ? (r3.__c = d3, 2 & d3.__g && (d3.__g |= 1)) : (C3 ? r3.__c = d3 = new V2($, L3) : (r3.__c = d3 = new x($, L3), d3.constructor = V2, d3.render = J), j2 && j2.sub(d3), d3.state || (d3.state = {}), d3.__n = u3, d3.__g |= 8, d3.__h = [], d3.__k = []), C3 && (d3.__s || (d3.__s = d3.state), V2.getDerivedStateFromProps && (d3.__s == d3.state && (d3.__s = _({}, d3.__s)), _(d3.__s, V2.getDerivedStateFromProps($, d3.__s)))), k2 = d3.props, b = d3.state, d3.__v = r3, i3.__c) {
+          if ($ !== k2 && C3 && !V2.getDerivedStateFromProps && d3.componentWillReceiveProps && d3.componentWillReceiveProps($, L3), r3.__v == i3.__v && !(8 & d3.__g) || !(4 & d3.__g) && d3.shouldComponentUpdate && false === d3.shouldComponentUpdate($, d3.__s, L3)) {
+            r3.__v != i3.__v && (d3.props = $, d3.state = d3.__s, d3.__g &= -9), r3.__e = i3.__e, r3.__k = i3.__k, r3.__k.some(function(n2) {
+              n2 && (n2.__ = r3);
+            }), v.push.apply(d3.__h, d3.__k), d3.__k = [], d3.__h.length && o4.push(d3), l3 = S(i3);
+            break n;
+          }
+          d3.componentWillUpdate && d3.componentWillUpdate($, d3.__s, L3), C3 && d3.componentDidUpdate && d3.__h.push(function() {
+            d3.componentDidUpdate(k2, b, m3);
+          });
+        } else C3 && !V2.getDerivedStateFromProps && d3.componentWillMount && d3.componentWillMount(), C3 && d3.componentDidMount && d3.__h.push(d3.componentDidMount);
+        if (d3.context = L3, d3.props = $, d3.__P = t3, d3.__g &= -5, I2 = n.__r, q2 = 0, C3) d3.state = d3.__s, d3.__g &= -9, I2 && I2(r3), s3 = d3.render(d3.props, d3.state, d3.context), v.push.apply(d3.__h, d3.__k), d3.__k = [];
+        else do {
+          d3.__g &= -9, I2 && I2(r3), s3 = d3.render(d3.props, d3.state, d3.context), d3.state = d3.__s;
+        } while (8 & d3.__g && ++q2 < 25);
+        d3.state = d3.__s, d3.getChildContext && (u3 = _({}, u3, d3.getChildContext())), C3 && i3.__c && d3.getSnapshotBeforeUpdate && (m3 = d3.getSnapshotBeforeUpdate(k2, b)), A2 = s3 && s3.type === M && null == s3.key ? s3.props.children : s3, $.__P && (s3 = l3, f4 = (t3 = $.__P).namespaceURI, c3 = e3 = null, i3.props && i3.props.__P != t3 && (i3.__k.some(function(n2) {
+          n2 && G(n2, n2);
+        }), i3.__k = null), l3 = i3.__k ? S(i3, 0) : null), l3 = H(t3, w(A2) ? A2 : [A2], r3, i3, u3, f4, e3, o4, l3, c3, a4), $.__P && (r3.__e = null, l3 = s3), r3.__u &= -161, p3 && p3.some(g), d3.__h.length && o4.push(d3), 1 & d3.__g && (d3.__g &= -4);
+      } catch (t4) {
+        if (o4.length = y3, r3.__v = null, c3 || e3) if (t4.then) {
+          if (O2 = 0, r3.__u |= 128 | c3, e3) {
+            for (~(T4 = e3.indexOf(l3 || void 0)) || (T4 = e3.length); (N3 = e3[T4 - 1]) && 8 == N3.nodeType; ) T4--;
+            for (; T4 < e3.length; T4++) if (N3 = e3[T4]) {
+              if (e3[T4] = null, 8 == N3.nodeType) {
+                if (N3.data.startsWith("$s")) O2++ || (P2 = N3);
+                else if (O2 && N3.data.startsWith("/$s") && !--O2) break;
+              } else if (!O2) break;
+            }
+          }
+          if (!P2) {
+            for (; l3 && 8 == l3.nodeType && l3.nextSibling; ) l3 = l3.nextSibling;
+            P2 = l3;
+          }
+          (s3 = z(P2 = r3.__c.__z || (r3.__c.__z = P2))) ? (r3.__e = P2, l3 = s3) : r3.__e = l3, l3 = l3 && l3.nextSibling;
+        } else e3 && e3.some(g);
+        else r3.__e = i3.__e;
+        r3.__k || (r3.__k = i3.__k || []), t4.then || B(r3), n.__e(t4, r3, i3);
+      }
+    } else l3 = r3.__e = E(i3.__e, r3, i3, u3, f4, e3, o4, c3, a4, t3);
+    return (s3 = n.diffed) && s3(r3), l3;
+  }
+  function z(n2, t3) {
+    if (n2 && 8 == n2.nodeType && n2.data.startsWith("$s")) for (var r3 = 1; n2 = n2.nextSibling; ) {
+      if (8 == n2.nodeType) {
+        if (n2.data.startsWith("$s")) r3++;
+        else if (n2.data.startsWith("/$s") && !--r3) return n2;
+      }
+      t3 && t3.push(n2);
+    }
+  }
+  function B(n2) {
+    n2 && (n2.__c && (n2.__c.__g |= 4), n2.__k && n2.__k.some(B));
+  }
+  function D(t3, r3, i3) {
+    for (var u3 = 0; u3 < i3.length; ) F(i3[u3++], i3[u3++], i3[u3++]);
+    n.__c && n.__c(r3, t3), t3.some(function(r4) {
+      try {
+        t3 = r4.__h, r4.__h = [], t3.some(function(n2) {
+          n2.call(r4);
+        });
+      } catch (t4) {
+        n.__e(t4, r4.__v);
+      }
+    });
+  }
+  function E(t3, r3, i3, u3, f4, e3, o4, l3, c3, a4) {
+    var s3, h3, v3, _3, k2, b, m3, $, M2, x2 = i3.props || p, C3 = r3.props, j2 = r3.type;
+    if ("svg" == j2 ? f4 = "http://www.w3.org/2000/svg" : "math" == j2 ? f4 = "http://www.w3.org/1998/Math/MathML" : f4 || (f4 = "http://www.w3.org/1999/xhtml"), e3) {
+      for (s3 = 0; s3 < e3.length; s3++) if ((k2 = e3[s3]) && (j2 ? k2.localName == j2 : 3 == k2.nodeType)) {
+        t3 = k2, e3[s3] = null;
+        break;
+      }
+    }
+    if (!t3) {
+      if ($ = a4.ownerDocument || document, !j2) return $.createTextNode(C3);
+      t3 = $.createElementNS(f4, j2, C3.is && C3), l3 && (n.__m && n.__m(r3, e3), l3 = false), e3 = null;
+    }
+    if (j2) {
+      if (a4 = "template" == j2 && t3.content || t3, e3 = "textarea" == j2 && null != C3.defaultValue ? null : e3 && d.call(a4.childNodes), !l3 && e3) for (x2 = {}, s3 = 0; s3 < t3.attributes.length; s3++) x2[(k2 = t3.attributes[s3]).name] = k2.value;
+      for (s3 in x2) k2 = x2[s3], "dangerouslySetInnerHTML" == s3 ? v3 = k2 : "children" == s3 || s3 in C3 || "value" == s3 && "defaultValue" in C3 || "checked" == s3 && "defaultChecked" in C3 || T(t3, s3, null, k2, f4);
+      for (s3 in M2 = 1 & i3.__u, C3) k2 = C3[s3], "children" == s3 ? _3 = k2 : "dangerouslySetInnerHTML" == s3 ? h3 = k2 : "value" == s3 ? b = k2 : "checked" == s3 ? m3 = k2 : l3 && "function" != typeof k2 || !(x2[s3] !== k2 || M2 && null != k2) || T(t3, s3, k2, x2[s3], f4);
+      h3 ? (l3 || v3 && (h3.__html == v3.__html || h3.__html == t3.innerHTML) || (t3.innerHTML = h3.__html), r3.__k = []) : (v3 && (t3.textContent = ""), ("foreignObject" == j2 || "http://www.w3.org/1998/Math/MathML" == f4 && y.test(j2)) && (f4 = "http://www.w3.org/1999/xhtml"), H(a4, w(_3) ? _3 : [_3], r3, i3, u3, f4, e3, o4, e3 ? e3[0] : i3.__k && S(i3, 0), l3, c3), e3 && e3.some(g)), l3 && "textarea" != j2 || (s3 = "value", "progress" == j2 && null == b ? t3.removeAttribute(s3) : null == b || b === t3[s3] && ("progress" != j2 || b) || T(t3, s3, b, x2[s3], f4), s3 = "checked", null != m3 && m3 != t3[s3] && T(t3, s3, m3, x2[s3], f4));
+    } else x2 === C3 || l3 && t3.data == C3 || (t3.data = C3);
+    return t3;
+  }
+  function F(t3, r3, i3, u3) {
+    try {
+      "function" == typeof t3 ? r3 ? r3.__x = t3(r3) || 1 : u3 && (u3 = u3.__c || u3.__e) && (r3 = u3.__x) && (u3.__x = null, "function" == typeof r3 ? r3() : t3(null)) : t3.current = r3;
+    } catch (t4) {
+      n.__e(t4, i3);
+    }
+  }
+  function G(t3, r3, i3) {
+    var u3, f4, e3, o4;
+    if (n.unmount && n.unmount(t3), !(u3 = t3.ref) || u3.current && u3.current != t3.__e || F(u3, null, r3, t3), u3 = t3.__c) {
+      if (u3.componentWillUnmount) try {
+        u3.componentWillUnmount();
+      } catch (t4) {
+        n.__e(t4, r3);
+      }
+      u3.__P = u3.__n = null;
+    }
+    if (u3 = t3.__k) for (o4 = 0; o4 < u3.length; o4++) u3[o4] && G(u3[o4], r3, "function" != typeof t3.type || i3 && !t3.props.__P);
+    !i3 && (u3 = t3.__c) && (u3 = u3.__z) && (f4 = z(u3, e3 = [])) && (u3 == t3.__e && e3.some(g), g(f4), g(u3)), (u3 = t3.__e) && (i3 || g(u3), u3.__e && (u3.__e = null)), t3.__e = t3.__c = t3.__ = null;
+  }
+  function J(n2, t3, r3) {
+    return this.constructor(n2, r3);
+  }
+  function K(t3, r3) {
+    var i3, u3, f4, e3;
+    n.__ && n.__(t3, r3), 9 == r3.nodeType && (r3 = r3.documentElement), u3 = (i3 = t3 && 32 & t3.__u) ? null : r3.__k, r3.__k = m(M, { children: [t3] }), f4 = [], e3 = [], V(r3, r3.__k, u3 || p, p, r3.namespaceURI, u3 ? null : r3.firstChild ? d.call(r3.childNodes) : null, f4, u3 ? u3.__e : r3.firstChild, i3, e3), D(f4, r3.__k, e3), r3.__k.props.children = null;
+  }
+  n = { __e: function(n2, t3, r3, i3) {
+    for (var u3, e3, o4; t3 = t3.__; ) if ((u3 = t3.__c) && !(1 & u3.__g)) {
+      u3.__g |= 4;
+      try {
+        if ((o4 = (e3 = u3.constructor) && e3.getDerivedStateFromError) && u3.setState(e3.getDerivedStateFromError(n2)), u3.componentDidCatch && (u3.componentDidCatch(n2, i3 || {}), o4 = 1), o4 && 8 & u3.__g) return void (u3.__g |= 2);
+      } catch (t4) {
+        n2 = t4;
+      }
+    }
+    throw f = 0, n2;
+  } }, t = 0, r = function(n2) {
+    return null != n2 && n2.constructor === h;
+  }, x.prototype.setState = function(n2, t3) {
+    var r3 = this.__s;
+    r3 && r3 != this.state || (r3 = this.__s = _({}, this.state)), "function" == typeof n2 && (n2 = n2(_({}, r3), this.props)), n2 && (_(r3, n2), this.__v && (t3 && this.__k.push(t3), j(this)));
+  }, x.prototype.forceUpdate = function(n2) {
+    this.__v && (this.__g |= 4, n2 && this.__h.push(n2), j(this));
+  }, x.prototype.render = M, i = [], f = 0, e = function(n2, t3) {
+    return n2.__v.__b - t3.__v.__b;
+  }, o = /* @__PURE__ */ Symbol(), l = /(PointerCapture)$|Capture$/i, c = 0, a = {}, s = 0;
+
+  // node_modules/preact/hooks/dist/hooks.mjs
+  var t2;
+  var r2;
+  var u2;
+  var i2;
+  var o2 = Object.is;
+  var f2 = 0;
+  var c2 = [];
+  var e2 = [];
+  var a2 = n;
+  var v2 = a2.__b;
+  var l2 = a2.__r;
+  var m2 = a2.diffed;
+  var h2 = a2.__c;
+  var s2 = a2.unmount;
+  var p2 = a2.__;
+  function y2(n2, t3) {
+    a2.__h && a2.__h(r2, n2, f2 || t3), f2 = 0;
+    var u3 = r2.__H || (r2.__H = { __: [], __h: [] });
+    return n2 >= u3.__.length && u3.__.push({}), u3.__[n2];
+  }
+  function d2(n2) {
+    return f2 = 1, _2(G2, n2);
+  }
+  function _2(n2, u3, i3) {
+    var f4 = y2(t2++, 2);
+    if (f4.t = n2, !f4.__c && (f4.__ = [i3 ? i3(u3) : G2(void 0, u3), function(n3) {
+      var t3 = f4.__N ? f4.__N[0] : f4.__[0], r3 = f4.t(t3, n3);
+      o2(t3, r3) || (f4.__N = [r3, f4.__[1]], f4.__c.setState({}));
+    }], f4.__c = r2, !r2.__f)) {
+      r2.__f = true;
+      var c3 = r2.shouldComponentUpdate;
+      r2.shouldComponentUpdate = function(n3, t3, r3) {
+        var u4 = this.__H;
+        if (!u4) return true;
+        var i4 = false, f5 = this.props != n3;
+        if (u4.__.some(function(n4) {
+          n4.__N && (i4 = true, o2(n4.__[0], n4.__N[0]) || (f5 = true));
+        }), c3) {
+          var e3 = c3.call(this, n3, t3, r3);
+          return i4 ? e3 || f5 : e3;
+        }
+        return !i4 || f5;
+      };
+    }
+    return f4.__;
+  }
+  function A(n2, u3) {
+    var i3 = y2(t2++, 3);
+    !a2.__s && E2(i3.__H, u3) && (i3.__P = true, i3.__ = n2, i3.u = u3, r2.__H.__h.push(i3));
+  }
+  function T2(n2) {
+    return f2 = 5, w2(function() {
+      return { current: n2 };
+    }, []);
+  }
+  function w2(n2, r3) {
+    var u3 = y2(t2++, 7);
+    return E2(u3.__H, r3) && (u3.__ = n2(), u3.__H = r3), u3.__;
+  }
+  function g2() {
+    var n2;
+    do {
+      for (; n2 = e2.shift(); ) try {
+        C2(n2);
+      } catch (t4) {
+        a2.__e(t4, { __: (n2 = n2.__P) && n2.__v });
+      }
+      for (; n2 = c2.shift(); ) {
+        var t3 = n2.__H;
+        if (n2.__P && t3) try {
+          t3.__h.some(C2), t3.__h.some(D2), t3.__h = [];
+        } catch (r3) {
+          t3.__h = [], a2.__e(r3, n2.__v);
+        }
+      }
+    } while (e2.length);
+  }
+  a2.__b = function(n2) {
+    r2 = null, v2 && v2(n2);
+  }, a2.__ = function(n2, t3) {
+    n2 && t3.__k && t3.__k.__m && (n2.__m = t3.__k.__m), p2 && p2(n2, t3);
+  }, a2.__r = function(n2) {
+    l2 && l2(n2), t2 = 0;
+    var i3 = (r2 = n2.__c).__H;
+    i3 && (u2 == r2 ? r2.__h = [] : (i3.__h.some(C2), i3.__h.some(D2), t2 = 0), i3.__h = [], i3.__.some(function(n3) {
+      n3.__N && (n3.__ = n3.__N), n3.u = n3.__N = void 0;
+    })), u2 = r2;
+  }, a2.diffed = function(n2) {
+    m2 && m2(n2);
+    var t3 = n2.__c;
+    t3 && t3.__H && (t3.__H.__h.length && B2(c2.push(t3)), t3.__H.__.some(function(n3) {
+      n3.u && (n3.__H = n3.u);
+    })), u2 = r2 = null;
+  }, a2.__c = function(n2, t3) {
+    t3.some(function(n3) {
+      try {
+        n3.__h.some(C2), n3.__h = n3.__h.filter(function(n4) {
+          return !n4.__ || D2(n4);
+        });
+      } catch (t4) {
+        n3.__h = [function() {
+          throw t4;
+        }];
+      }
+    }), h2 && h2(n2, t3);
+  }, a2.unmount = function(n2) {
+    s2 && s2(n2);
+    var t3, r3, u3 = n2.__c;
+    u3 && u3.__H && (u3.__H.__.some(function(u4) {
+      try {
+        if (u4.__P && u4.__c) {
+          if (void 0 === r3) {
+            for (r3 = n2.__; r3 && (!r3.__c || !r3.__c.__P); ) r3 = r3.__;
+            r3 = r3 && r3.__c;
+          }
+          u4.__P = r3, B2(e2.push(u4));
+        } else C2(u4);
+      } catch (n3) {
+        t3 = n3;
+      }
+    }), u3.__H = void 0, t3 && a2.__e(t3, u3.__v));
+  };
+  var k = "function" == typeof requestAnimationFrame;
+  function z2(n2) {
+    var t3, r3 = function() {
+      clearTimeout(u3), k && cancelAnimationFrame(t3), setTimeout(n2);
+    }, u3 = setTimeout(r3, 35);
+    k && (t3 = requestAnimationFrame(r3));
+  }
+  function B2(n2) {
+    1 != n2 && i2 == a2.requestAnimationFrame || ((i2 = a2.requestAnimationFrame) || z2)(g2);
+  }
+  function C2(n2) {
+    var t3 = r2, u3 = n2.__c;
+    "function" == typeof u3 && (n2.__c = void 0, u3()), r2 = t3;
+  }
+  function D2(n2) {
+    var t3 = r2;
+    n2.__c = n2.__(), r2 = t3;
+  }
+  function E2(n2, t3) {
+    return !n2 || n2.length != t3.length || t3.some(function(t4, r3) {
+      return !o2(t4, n2[r3]);
+    });
+  }
+  function G2(n2, t3) {
+    return "function" == typeof t3 ? t3(n2) : t3;
+  }
+
+  // node_modules/preact/jsx-runtime/dist/jsxRuntime.mjs
+  var f3 = /* @__PURE__ */ Symbol.for("pv");
+  var o3 = 0;
+  function a3(t3, e3, n2, u3, a4, i3) {
+    e3 || (e3 = {});
+    var c3, l3, p3 = e3;
+    if ("ref" in p3 && "function" != typeof t3) for (l3 in p3 = {}, e3) "ref" == l3 ? c3 = e3[l3] : p3[l3] = e3[l3];
+    var s3 = { type: t3, props: p3, key: n2, ref: c3, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: f3, __v: --o3, __i: -1, __u: 0 };
+    return (a4 || i3) && (s3.__source = a4, s3.__self = i3), n.vnode && n.vnode(s3), s3;
+  }
+
+  // web/src/panels.tsx
+  var MW = globalThis.MW;
+  var BTN = "flex h-[20px] min-w-0 items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper";
+  var LAB = "flex h-[20px] shrink-0 items-center px-1 text-[10px] uppercase leading-none whitespace-nowrap";
+  var FIELD = "h-[20px] min-w-0 border border-ink bg-paper px-1 text-[11px] leading-none text-ink outline-none";
+  var ROW = "flex items-stretch gap-px";
+  function B3(props) {
+    const { act, on, cls, children, title, name, onClick, disabled } = props;
+    return /* @__PURE__ */ a3(
+      "button",
+      {
+        type: "button",
+        title,
+        "data-act": act,
+        "data-name": name,
+        disabled,
+        class: `${BTN} ${on ? "on" : ""} ${disabled ? "opacity-40" : ""} ${cls || ""}`,
+        onClick,
+        children
+      }
+    );
+  }
+  function L2(props) {
+    return /* @__PURE__ */ a3("span", { class: `${LAB} ${props.cls || ""}`, children: props.children });
+  }
+  function R(props) {
+    return /* @__PURE__ */ a3("div", { class: `${ROW} ${props.cls || ""}`, children: props.children });
+  }
+  function T3(props) {
+    return /* @__PURE__ */ a3(
+      "input",
+      {
+        class: `${FIELD} ${props.cls || ""}`,
+        value: props.value ?? "",
+        placeholder: props.placeholder,
+        maxlength: props.maxlength,
+        onInput: (e3) => props.onInput && props.onInput(e3.currentTarget.value)
+      }
+    );
+  }
+  function N2(props) {
+    return /* @__PURE__ */ a3(
+      "input",
+      {
+        id: props.id,
+        type: "number",
+        class: `${FIELD} ${props.cls || ""}`,
+        value: props.value ?? 0,
+        min: props.min,
+        max: props.max,
+        onChange: (e3) => props.onChange && props.onChange(parseInt(e3.currentTarget.value, 10) || 0)
+      }
+    );
+  }
+  function useKeys(keys) {
+    const [, force] = _2((n2) => n2 + 1, 0);
+    const key = keys.join("|");
+    A(() => {
+      if (!MW.store) return;
+      return MW.store.subscribe(keys, force);
+    }, [key]);
+  }
+  function TempoSlider(props) {
+    const ref = T2(null);
+    const dragging = T2(false);
+    const pct = MW.clamp((props.value - 1) / (props.max - 1), 0, 1) * 100;
+    const setFrom = (e3) => {
+      const el = ref.current;
+      if (!el) return;
+      const r3 = el.getBoundingClientRect();
+      const f4 = MW.clamp((e3.clientX - r3.left) / Math.max(1, r3.width), 0, 1);
+      props.onChange(1 + f4 * (props.max - 1));
+    };
+    return /* @__PURE__ */ a3(
+      "div",
+      {
+        ref,
+        class: `tslider ${props.cls || ""}`,
+        onPointerDown: (e3) => {
+          dragging.current = true;
+          try {
+            e3.currentTarget.setPointerCapture(e3.pointerId);
+          } catch (err) {
+          }
+          setFrom(e3);
+        },
+        onPointerMove: (e3) => {
+          if (dragging.current) setFrom(e3);
+        },
+        onPointerUp: () => {
+          dragging.current = false;
+        },
+        onPointerCancel: () => {
+          dragging.current = false;
+        },
+        children: /* @__PURE__ */ a3("div", { class: "knob", style: { left: `calc(${pct.toFixed(2)}% - 5px)` } })
+      }
+    );
+  }
+  function PB(props) {
+    const cls = "flex h-full items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper";
+    return /* @__PURE__ */ a3(
+      "button",
+      {
+        type: "button",
+        "data-act": props.act,
+        "data-name": props.name,
+        class: `${cls} ${props.on ? "on" : ""} ${props.cls || ""}`,
+        title: props.title,
+        onClick: props.onClick,
+        children: props.children
+      }
+    );
+  }
+  function PlayPanel() {
+    useKeys(["transport"]);
+    const app = MW.app;
+    const song = app.song;
+    const [, force] = _2((n2) => n2 + 1, 0);
+    const eq = app.eq || [true, true, true];
+    const tempo = song.deftempo || 33;
+    const tempo2 = song.tempo2 || 6;
+    const setTempo = (kind, value) => {
+      const max = kind === "tempo" ? 240 : 32;
+      const v3 = MW.clamp(Math.round(value), 1, max);
+      if (kind === "tempo") {
+        song.deftempo = v3;
+        if (!MW.player.playing) MW.player.tempo = v3;
+      } else {
+        song.tempo2 = v3;
+        if (!MW.player.playing) MW.player.tempo2 = v3;
+      }
+      force(0);
+    };
+    const stepTempo = (kind, d3) => setTempo(kind, (kind === "tempo" ? song.deftempo : song.tempo2) + d3);
+    return /* @__PURE__ */ a3("div", { class: "playpanel", children: [
+      /* @__PURE__ */ a3("div", { class: "flex h-[46px] shrink-0 items-stretch", children: [
+        /* @__PURE__ */ a3(TempoSlider, { kind: "tempo", value: tempo, max: 240, cls: "flex-[1.68]", onChange: (v3) => setTempo("tempo", v3) }),
+        /* @__PURE__ */ a3(PB, { cls: "w-[24px] shrink-0 text-[16px]", onClick: () => stepTempo("tempo", -1), title: "Slower", children: "\u2039" }),
+        /* @__PURE__ */ a3(PB, { cls: "w-[24px] shrink-0 text-[16px]", onClick: () => stepTempo("tempo", 1), title: "Faster", children: "\u203A" }),
+        /* @__PURE__ */ a3(TempoSlider, { kind: "tempo2", value: tempo2, max: 32, cls: "flex-1", onChange: (v3) => setTempo("tempo2", v3) }),
+        /* @__PURE__ */ a3(PB, { cls: "w-[24px] shrink-0 text-[16px]", onClick: () => stepTempo("tempo2", -1), title: "Fewer pulses per line", children: "\u2039" }),
+        /* @__PURE__ */ a3(PB, { cls: "w-[24px] shrink-0 text-[16px]", onClick: () => stepTempo("tempo2", 1), title: "More pulses per line", children: "\u203A" })
+      ] }),
+      /* @__PURE__ */ a3("div", { class: "flex h-[33px] shrink-0 items-stretch", children: [
+        /* @__PURE__ */ a3("span", { class: "flex w-[45px] shrink-0 items-center pl-1 text-[16px] leading-none", children: "VOL:" }),
+        /* @__PURE__ */ a3(PB, { act: "vol-hex", on: !!song.flags.volhex, cls: "w-[43px]", children: "HEX" }),
+        /* @__PURE__ */ a3(PB, { act: "vol-dec", on: !song.flags.volhex, cls: "w-[46px]", children: "DEC" }),
+        /* @__PURE__ */ a3(PB, { act: "misc-filter", on: !!song.flags.filteron, cls: "w-[78px]", children: "FILTER" }),
+        /* @__PURE__ */ a3(PB, { act: "eq-1", on: !!eq[0], cls: "min-w-0 flex-1", children: "E1" }),
+        /* @__PURE__ */ a3(PB, { act: "eq-2", on: !!eq[1], cls: "min-w-0 flex-1", children: "E2" }),
+        /* @__PURE__ */ a3(PB, { act: "eq-3", on: !!eq[2], cls: "min-w-0 flex-1", children: "E3" }),
+        /* @__PURE__ */ a3(PB, { act: "stslide", on: !!song.flags.stslide, cls: "w-[55px]", children: "STS" }),
+        /* @__PURE__ */ a3("span", { class: "flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[58px]", children: "SPD" }),
+        /* @__PURE__ */ a3("span", { class: "flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[100px]", children: /* @__PURE__ */ a3("b", { id: "spd-readout", class: "font-normal tabular-nums", children: [
+          String(tempo).padStart(3, "0"),
+          "/",
+          String(tempo2).padStart(2, "0")
+        ] }) })
+      ] }),
+      /* @__PURE__ */ a3("div", { class: "grid h-[55px] shrink-0 grid-cols-[130px_72px_minmax(0,1fr)]", children: [
+        /* @__PURE__ */ a3("div", { class: "grid grid-rows-2", children: [
+          /* @__PURE__ */ a3("div", { class: "flex items-stretch", children: [
+            /* @__PURE__ */ a3("span", { class: "flex min-w-0 flex-1 items-center justify-end pr-2 text-[16px] leading-none", children: "CH.MODE:" }),
+            /* @__PURE__ */ a3(PB, { act: app.depth === "enhanced" ? "depth-classic" : "depth-enhanced", on: app.depth === "enhanced", cls: "w-[34px]", title: "High quality output", children: "HQ" })
+          ] }),
+          /* @__PURE__ */ a3("div", { class: "flex items-stretch", children: [4, 5, 6, 7, 8].map((n2) => /* @__PURE__ */ a3(PB, { act: `chmode-${n2}`, on: song.channels === n2, cls: "min-w-0 flex-1", children: n2 }, n2)) })
+        ] }),
+        /* @__PURE__ */ a3("button", { class: "flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper border-l-0", id: "btn-stop", title: "Stop (Space)", onClick: () => MW.player.stop(), children: "STOP" }),
+        /* @__PURE__ */ a3("div", { class: "grid grid-rows-2 border-l border-ink", children: [
+          /* @__PURE__ */ a3("div", { class: "flex items-stretch", children: [
+            /* @__PURE__ */ a3("button", { class: `flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6] ${MW.player.playing ? "playing" : ""}`, id: "btn-play", title: "Play song", onClick: () => MW.player.play(true), children: "PLAY SONG" }),
+            /* @__PURE__ */ a3("button", { class: "flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1", id: "btn-cont", title: "Continue from here", onClick: () => MW.player.play(false), children: "CONT. SONG" })
+          ] }),
+          /* @__PURE__ */ a3("div", { class: "flex items-stretch", children: [
+            /* @__PURE__ */ a3("button", { class: "flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6]", id: "btn-play-block", title: "Play the current block", onClick: () => MW.player.playBlock(app.cursor.block), children: "PLAY BLOCK" }),
+            /* @__PURE__ */ a3(PB, { act: "play-on-note", on: !!app.playOnNote, cls: "w-[38px]", title: "Play a note as you enter it", children: "D" }),
+            /* @__PURE__ */ a3("button", { class: "flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1", id: "btn-cont-block", title: "Continue the block from the cursor", onClick: () => MW.player.playBlock(app.cursor.block), children: "CONT. BLOCK" })
+          ] })
+        ] })
+      ] })
+    ] });
+  }
+  function FilesPanel() {
+    useKeys(["song"]);
+    const app = MW.app;
+    const fmt = app.saveFormat || "mmd1";
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[82px] justify-end", children: "SAVE FORMAT:" }),
+        /* @__PURE__ */ a3(B3, { act: "file-info", on: !!app.saveInfo, cls: "w-[46px]", children: "INFO" }),
+        /* @__PURE__ */ a3(B3, { act: "file-open", cls: "flex-1", children: "LOAD SONG" }),
+        /* @__PURE__ */ a3(B3, { act: "ins-open", cls: "flex-1", children: "LOAD INSTR" }),
+        /* @__PURE__ */ a3(B3, { act: "file-del", cls: "w-[58px]", children: "DEL FILE" }),
+        /* @__PURE__ */ a3(B3, { act: "file-load-msg", cls: "w-[62px]", children: "LOAD MSG" }),
+        /* @__PURE__ */ a3(B3, { act: "file-load-map", cls: "w-[42px]", children: "MAP" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[82px]" }),
+        /* @__PURE__ */ a3(B3, { act: "missing", name: "Amiga icon files", disabled: true, cls: "w-[46px]", children: "ICON" }),
+        /* @__PURE__ */ a3(B3, { act: "file-save-song", cls: "flex-1", children: "SAVE SONG" }),
+        /* @__PURE__ */ a3(B3, { act: "file-save-iff", cls: "flex-1", children: "SAVE INSTR" }),
+        /* @__PURE__ */ a3(B3, { act: "file-save-msg", cls: "w-[62px]", children: "SAVE MSG" }),
+        /* @__PURE__ */ a3(B3, { act: "file-save-map", cls: "w-[42px]", children: "MAP" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "fmt-mmd1", on: fmt === "mmd1", cls: "w-[82px]", children: "MOD1(+INSTR)" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[32px]", children: "DIR:" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] flex-1 items-center border border-ink bg-paper px-1 text-[10px] opacity-60", children: "browser" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "fmt-mmd1n", on: fmt === "mmd1n", cls: "w-[82px]", children: "MOD1(NO INSTR)" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[32px]", children: "FILE:" }),
+        /* @__PURE__ */ a3(T3, { value: app.song.name || "", maxlength: 40, onInput: (v3) => {
+          app.song.name = v3;
+        }, cls: "flex-1" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "fmt-mmd0", on: fmt === "mmd0", cls: "w-[82px]", children: "MOD0 (OLD)" }),
+        /* @__PURE__ */ a3(B3, { act: "fmt-st", on: fmt === "st", cls: "w-[82px]", children: "ST-MODULE" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[42px]", children: "EXPORT" }),
+        /* @__PURE__ */ a3(B3, { act: "audio-wav", cls: "w-[42px]", children: "WAV" }),
+        /* @__PURE__ */ a3(B3, { act: "audio-aac", cls: "w-[42px]", children: "AAC" }),
+        /* @__PURE__ */ a3(B3, { act: "audio-mp3", cls: "w-[42px]", children: "MP3" }),
+        /* @__PURE__ */ a3(B3, { act: "file-demo", cls: "flex-1", children: "DEMO" })
+      ] })
+    ] });
+  }
+  function InstrPanel() {
+    useKeys(["currentIns"]);
+    const app = MW.app;
+    const inst = app.song.instruments[app.currentIns - 1];
+    const vol = inst ? inst.volume ?? 64 : 64;
+    const setInst = (fn) => {
+      const i3 = app.song.instruments[app.currentIns - 1];
+      if (!i3) return;
+      fn(i3);
+      MW.panels.refresh();
+    };
+    const setType = (type) => setInst((i3) => {
+      if ((type === "synth" || type === "hybrid") && !i3.synth) {
+        i3.synth = MW.createSynth();
+        const data = i3.data || new Float32Array(0);
+        const wave = new Float32Array(64);
+        for (let k2 = 0; k2 < wave.length; k2++) wave[k2] = data[k2] || 0;
+        i3.synth.waveforms = [wave];
+        i3.synth.voltbl = [64, 255];
+        i3.synth.wftbl = [0, 255];
+      }
+      if (type === "sample" && i3.synth) {
+        const rendered = MW.renderSynth(i3, 44100, 50, 2);
+        if (rendered) {
+          i3.data = Float32Array.from(rendered);
+          i3.dataR = null;
+          i3.bits16 = false;
+          i3.stereo16 = false;
+        }
+      }
+      i3.type = type;
+    });
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[24px] items-center justify-center border border-ink bg-paper text-[10px]", children: MW.insName(app.currentIns) }),
+        /* @__PURE__ */ a3(T3, { value: inst ? inst.name || "" : "", maxlength: 39, onInput: (v3) => setInst((i3) => {
+          i3.name = v3;
+        }), cls: "flex-1" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[36px]", children: "LEN:" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[64px] items-center justify-end border border-ink bg-paper px-1 text-[11px] tabular-nums", children: inst && inst.data ? inst.data.length : 0 })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "ins-first", cls: "w-[24px]", children: "|<" }),
+        /* @__PURE__ */ a3(B3, { act: "ins-prev", cls: "w-[24px]", children: "<" }),
+        /* @__PURE__ */ a3(B3, { act: "ins-next", cls: "w-[24px]", children: ">" }),
+        /* @__PURE__ */ a3(B3, { act: "ins-last", cls: "w-[24px]", children: ">|" }),
+        /* @__PURE__ */ a3(B3, { act: "ins-lastoccupied", cls: "w-[30px]", children: ">|<" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[52px]", children: "TRANSPOSE" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setInst((i3) => {
+          i3.transpose = Math.max(-48, (i3.transpose || 0) - 1);
+        }), cls: "w-[16px]", children: "-" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]", children: inst ? inst.transpose || 0 : 0 }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setInst((i3) => {
+          i3.transpose = Math.min(48, (i3.transpose || 0) + 1);
+        }), cls: "w-[16px]", children: "+" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[46px]", children: "FINETUNE" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setInst((i3) => {
+          i3.finetune = Math.max(-8, (i3.finetune || 0) - 1);
+        }), cls: "w-[16px]", children: "-" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[26px] items-center justify-center border border-ink bg-paper text-[11px]", children: inst ? inst.finetune || 0 : 0 }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setInst((i3) => {
+          i3.finetune = Math.min(7, (i3.finetune || 0) + 1);
+        }), cls: "w-[16px]", children: "+" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[32px]", children: "HLD:" }),
+        /* @__PURE__ */ a3(N2, { value: inst ? inst.hold || 0 : 0, min: 0, max: 255, onChange: (v3) => setInst((i3) => {
+          i3.hold = v3;
+        }), cls: "w-[34px]" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[32px]", children: "R/B:" }),
+        /* @__PURE__ */ a3(N2, { value: inst ? inst.loop || 0 : 0, min: 0, onChange: (v3) => setInst((i3) => {
+          i3.loop = v3;
+        }), cls: "w-[52px]" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "ins-kill", cls: "w-[54px]", children: "FLUSH" }),
+        /* @__PURE__ */ a3(B3, { act: "ins-open", cls: "w-[46px]", children: "LOAD" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[32px]", children: "DEC:" }),
+        /* @__PURE__ */ a3(N2, { value: inst ? inst.decay || 0 : 0, min: 0, max: 255, onChange: (v3) => setInst((i3) => {
+          i3.decay = v3;
+        }), cls: "w-[34px]" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[32px]", children: "R/L:" }),
+        /* @__PURE__ */ a3(N2, { value: inst ? inst.looplen || 0 : 0, min: 0, onChange: (v3) => setInst((i3) => {
+          i3.looplen = v3;
+        }), cls: "w-[52px]" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[42px]", children: "TYPE:" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setType("sample"), on: inst && inst.type === "sample", cls: "w-[58px]", children: "SAMPLE" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setType("synth"), on: inst && inst.type === "synth", cls: "w-[52px]", children: "SYNTH" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setType("hybrid"), on: inst && inst.type === "hybrid", cls: "w-[54px]", children: "HYBRID" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[34px]", children: "VOL:" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[50px] items-center justify-center border border-ink bg-paper text-[11px] tabular-nums", children: [
+          vol,
+          "/",
+          vol.toString(16).toUpperCase().padStart(2, "0")
+        ] }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setInst((i3) => {
+          i3.volume = Math.max(0, (i3.volume ?? 64) - 1);
+        }), cls: "w-[18px]", children: "<" }),
+        /* @__PURE__ */ a3(
+          "input",
+          {
+            type: "range",
+            min: "0",
+            max: "64",
+            value: vol,
+            class: "h-[20px] min-w-0 flex-1",
+            onChange: (e3) => setInst((i3) => {
+              i3.volume = +e3.currentTarget.value;
+            })
+          }
+        ),
+        /* @__PURE__ */ a3(B3, { onClick: () => setInst((i3) => {
+          i3.volume = Math.min(64, (i3.volume ?? 64) + 1);
+        }), cls: "w-[18px]", children: ">" })
+      ] })
+    ] });
+  }
+  function BlockPanel() {
+    const app = MW.app;
+    const b = app.song.blocks[app.cursor.block];
+    const [factor, setFactor] = d2(2);
+    const lines = (n2) => MW.ops.setLines(MW.clamp(n2, 1, 3200));
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[30px]", children: "TRK:" }),
+        /* @__PURE__ */ a3(B3, { act: "trk-cut", cls: "w-[42px]", children: "CUT" }),
+        /* @__PURE__ */ a3(B3, { act: "trk-copy", cls: "w-[46px]", children: "COPY" }),
+        /* @__PURE__ */ a3(B3, { act: "trk-paste", cls: "w-[46px]", children: "PASTE" }),
+        /* @__PURE__ */ a3(B3, { act: "trk-swap", cls: "w-[46px]", children: "SWAP" }),
+        /* @__PURE__ */ a3(B3, { act: "track-ins", cls: "w-[58px]", children: "INS.TRK" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[36px]", children: "TRKS:" }),
+        [4, 8, 12, 16].map((n2) => /* @__PURE__ */ a3(B3, { act: `blk-tracks-${n2}`, on: b.tracks === n2, cls: "w-[28px]", children: n2 }, n2))
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[30px]", children: "BLK:" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-cut", cls: "w-[42px]", children: "CUT" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-copy", cls: "w-[46px]", children: "COPY" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-paste", cls: "w-[46px]", children: "PASTE" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-swap", cls: "w-[46px]", children: "SWAP" }),
+        /* @__PURE__ */ a3(B3, { act: "track-del", cls: "w-[58px]", children: "DEL.TRK" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[38px]", children: "LINES:" }),
+        /* @__PURE__ */ a3(N2, { value: b.lines, min: 1, max: 3200, onChange: lines, cls: "w-[46px]" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => lines(b.lines - 1), cls: "w-[18px]", children: "<" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => lines(b.lines + 1), cls: "w-[18px]", children: ">" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => lines(b.lines - 10), cls: "w-[20px]", children: "<<" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => lines(b.lines + 10), cls: "w-[20px]", children: ">>" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "blk-expand", cls: "w-[54px]", children: "EXPAND" }),
+        /* @__PURE__ */ a3(
+          "input",
+          {
+            type: "number",
+            min: "2",
+            max: "9",
+            value: factor,
+            class: `${FIELD} w-[28px]`,
+            onChange: (e3) => setFactor(parseInt(e3.currentTarget.value, 10) || 2)
+          }
+        ),
+        /* @__PURE__ */ a3(B3, { act: "blk-shrink", cls: "w-[54px]", children: "SHRINK" }),
+        /* @__PURE__ */ a3(B3, { act: "line-ins", cls: "w-[44px]", children: "INS.L." }),
+        /* @__PURE__ */ a3(B3, { act: "line-del", cls: "w-[44px]", children: "DEL.L." }),
+        /* @__PURE__ */ a3(B3, { act: "del-buffer", cls: "w-[58px]", children: "DEL BUFF" }),
+        [1, 2, 3, 4, 8, 16].map((n2) => /* @__PURE__ */ a3(B3, { act: `hl-${n2}`, cls: "w-[20px]", children: n2 }, n2)),
+        /* @__PURE__ */ a3(B3, { act: "hl-clear", cls: "w-[20px]", children: "C" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "blk-new", cls: "w-[64px]", children: "NEW BLOCK" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-new-def", cls: "w-[34px]", children: "DEF" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-new-here", cls: "w-[64px]", children: "NEW HERE" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-new-here-def", cls: "w-[34px]", children: "DEF" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-del-last", cls: "w-[70px]", children: "DELETE LAST" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-del", cls: "w-[70px]", children: "DELETE THIS" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-split", cls: "w-[42px]", children: "SPLIT" }),
+        /* @__PURE__ */ a3(B3, { act: "blk-join", cls: "w-[42px]", children: "JOIN" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[42px]", children: "NAME:" }),
+        /* @__PURE__ */ a3(T3, { value: b.name || "", maxlength: 40, onInput: (v3) => {
+          b.name = v3;
+        }, cls: "flex-1" })
+      ] })
+    ] });
+  }
+  function EditPanel() {
+    useKeys(["editMode", "spaceAsDel", "chordMode", "octave", "advance"]);
+    const app = MW.app;
+    const def = app.prog && app.prog[app.progTarget];
+    const toggleTrack = (t3) => {
+      app.mutedTracks[t3] = !app.mutedTracks[t3];
+      MW.player.channels[t3].muted = app.mutedTracks[t3];
+      MW.grid.render();
+      MW.panels.refresh();
+    };
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[54px]", children: "TRK ON:" }),
+        Array.from({ length: 16 }, (_3, t3) => /* @__PURE__ */ a3(B3, { onClick: () => toggleTrack(t3), on: !app.mutedTracks[t3], cls: "flex-1 px-0", children: t3.toString(16).toUpperCase() }, t3)),
+        /* @__PURE__ */ a3(B3, { onClick: () => {
+          for (let t3 = 0; t3 < 16; t3++) {
+            app.mutedTracks[t3] = false;
+            MW.player.channels[t3].muted = false;
+          }
+          MW.grid.render();
+        }, cls: "w-[34px]", children: "SET" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => {
+          for (let t3 = 0; t3 < 16; t3++) {
+            app.mutedTracks[t3] = true;
+            MW.player.channels[t3].muted = true;
+          }
+          MW.grid.render();
+        }, cls: "w-[34px]", children: "CLR" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[48px]", children: "KEYPAD:" }),
+        /* @__PURE__ */ a3(B3, { act: "pad-mode", on: app.padMode === "track", cls: "w-[74px]", children: "TRK ON/OFF" }),
+        /* @__PURE__ */ a3(B3, { act: "pad-mode", on: app.padMode === "instr", cls: "w-[70px]", children: "SEL.INSTR" }),
+        /* @__PURE__ */ a3(B3, { act: "pad-map2", on: !!app.padMap2, cls: "w-[42px]", children: "MAP2" }),
+        /* @__PURE__ */ a3(B3, { act: "alt-clear", cls: "w-[22px]", children: "C" }),
+        /* @__PURE__ */ a3(B3, { act: "alt-pick-l", cls: "w-[22px]", children: "L" }),
+        /* @__PURE__ */ a3(B3, { act: "alt-pick-r", cls: "w-[22px]", children: "R" }),
+        /* @__PURE__ */ a3(B3, { act: "prog-prev", cls: "w-[16px]", children: "<" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[20px] items-center justify-center border border-ink bg-paper text-[11px]", children: app.progTarget }),
+        /* @__PURE__ */ a3(B3, { act: "prog-next", cls: "w-[16px]", children: ">" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[12px] items-center justify-center text-[10px]", children: "=" }),
+        /* @__PURE__ */ a3(
+          "input",
+          {
+            value: MW.noteName(def ? def.note || 0 : 0, app.hb),
+            class: `${FIELD} w-[36px] text-center`,
+            onInput: (e3) => {
+              if (!def) return;
+              def.note = MW.noteIndex(e3.currentTarget.value);
+            }
+          }
+        ),
+        /* @__PURE__ */ a3(
+          "input",
+          {
+            value: MW.insName(def ? def.ins || 0 : 0),
+            class: `${FIELD} w-[30px] text-center`,
+            onInput: (e3) => {
+              if (!def) return;
+              def.ins = parseInt(e3.currentTarget.value, 32) || 0;
+            }
+          }
+        ),
+        /* @__PURE__ */ a3(
+          "input",
+          {
+            value: (def ? def.cmd || 0 : 0).toString(16).toUpperCase().padStart(2, "0"),
+            class: `${FIELD} w-[28px] text-center`,
+            onInput: (e3) => {
+              if (!def) return;
+              def.cmd = parseInt(e3.currentTarget.value, 16) || 0;
+            }
+          }
+        ),
+        /* @__PURE__ */ a3(
+          "input",
+          {
+            value: (def ? def.dat || 0 : 0).toString(16).toUpperCase().padStart(2, "0"),
+            class: `${FIELD} w-[28px] text-center`,
+            onInput: (e3) => {
+              if (!def) return;
+              def.dat = parseInt(e3.currentTarget.value, 16) || 0;
+            }
+          }
+        ),
+        /* @__PURE__ */ a3(B3, { act: "edit-space", on: !!app.spaceAsDel, cls: "w-[72px]", children: "SPACE=DEL" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[48px]", children: "OCTAVE:" }),
+        Array.from({ length: 9 }, (_3, i3) => /* @__PURE__ */ a3(B3, { act: `oct-${i3}`, on: app.octave === i3, cls: "w-[26px]", children: i3 + 1 }, i3)),
+        /* @__PURE__ */ a3(B3, { act: "edit-toggle", on: !!app.editMode, cls: "w-[58px]", children: "EDIT ON" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[34px]", children: "ADV." }),
+        [["up", "\u2191"], ["down", "\u2193"], ["nexttrk", "\xBB"], ["prevtrk", "\xAB"], ["right", ">"], ["left", "<"]].map(([k2, l3]) => /* @__PURE__ */ a3(B3, { act: `adv-${k2}`, on: app.advance === k2, cls: "w-[24px]", children: l3 }, k2)),
+        /* @__PURE__ */ a3(L2, { cls: "w-[34px]", children: "PICK:" }),
+        /* @__PURE__ */ a3(B3, { act: "pick-note", cls: "w-[42px]", children: "NOTE" }),
+        /* @__PURE__ */ a3(B3, { act: "pick-range", cls: "w-[44px]", children: "RANGE" }),
+        /* @__PURE__ */ a3(B3, { act: "pick-buffer", cls: "w-[34px]", children: "BUF" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[26px]", children: "SPC" }),
+        /* @__PURE__ */ a3(N2, { value: app.step, min: 1, max: 16, onChange: (v3) => {
+          app.step = v3;
+        }, cls: "w-[34px]" })
+      ] })
+    ] });
+  }
+  function MiscPanel() {
+    useKeys(["song"]);
+    const app = MW.app;
+    const rgb = app.paletteRGB || { r: 136, g: 136, b: 136 };
+    const setRGB = (key, value) => {
+      app.paletteRGB[key] = value;
+      MW.runAction("pal-set");
+    };
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[16px]", children: "R" }),
+        /* @__PURE__ */ a3("input", { type: "range", min: "0", max: "255", value: rgb.r, class: "h-[20px] w-[120px]", onChange: (e3) => setRGB("r", +e3.currentTarget.value) }),
+        /* @__PURE__ */ a3("span", { class: `${FIELD} w-[28px] text-center`, children: rgb.r }),
+        [0, 1, 2, 3, 4, 5, 6, 7].map((n2) => /* @__PURE__ */ a3(B3, { onClick: () => MW.missing("RGB palette"), cls: `w-[18px] ${n2 === 0 ? "bg-ink" : ""}`, children: " " }, n2)),
+        /* @__PURE__ */ a3(B3, { act: "pal-reset", cls: "w-[34px]", children: "RES" }),
+        /* @__PURE__ */ a3(B3, { act: "pal-undo", cls: "w-[38px]", children: "UNDO" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[16px]", children: "G" }),
+        /* @__PURE__ */ a3("input", { type: "range", min: "0", max: "255", value: rgb.g, class: "h-[20px] w-[120px]", onChange: (e3) => setRGB("g", +e3.currentTarget.value) }),
+        /* @__PURE__ */ a3("span", { class: `${FIELD} w-[28px] text-center`, children: rgb.g }),
+        /* @__PURE__ */ a3(B3, { act: "ptkey", on: !!app.ptkey, cls: "w-[46px]", children: "PTKEY" }),
+        /* @__PURE__ */ a3(B3, { act: "missing", name: "Workbench", disabled: true, cls: "w-[44px]", children: "WB OPEN" }),
+        /* @__PURE__ */ a3(B3, { act: "missing", name: "Workbench", disabled: true, cls: "w-[44px]", children: "CLOSE" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[16px]", children: "B" }),
+        /* @__PURE__ */ a3("input", { type: "range", min: "0", max: "255", value: rgb.b, class: "h-[20px] w-[120px]", onChange: (e3) => setRGB("b", +e3.currentTarget.value) }),
+        /* @__PURE__ */ a3("span", { class: `${FIELD} w-[28px] text-center`, children: rgb.b }),
+        /* @__PURE__ */ a3(B3, { act: "name-flat", on: !!app.hb, cls: "w-[44px]", children: "H\u2194B" }),
+        /* @__PURE__ */ a3(B3, { act: "missing", name: "Load graphics", disabled: true, cls: "w-[58px]", children: "LOADGFX" }),
+        /* @__PURE__ */ a3(B3, { act: "missing", name: "Mouse pointer", disabled: true, cls: "w-[50px]", children: "MOUSE2" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "paths-info", cls: "w-[52px]", children: "PATHS" }),
+        /* @__PURE__ */ a3(B3, { act: "paths-add", cls: "w-[34px]", children: "ADD" }),
+        /* @__PURE__ */ a3(B3, { act: "paths-rem", cls: "w-[34px]", children: "REM" }),
+        /* @__PURE__ */ a3(B3, { act: "misc-clear-all", cls: "w-[70px]", children: "CLEAR ALL" }),
+        /* @__PURE__ */ a3(B3, { act: "misc-clear", cls: "w-[106px]", children: "CLEAR SONG ONLY" }),
+        /* @__PURE__ */ a3(B3, { act: "quit-app", cls: "w-[38px]", children: "QUIT" }),
+        /* @__PURE__ */ a3(B3, { act: "confirm-toggle", on: app.confirmOn !== false, cls: "w-[54px]", children: "CONFIRM" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "no16", on: !!app.no16, cls: "w-[42px]", children: "NO16" }),
+        /* @__PURE__ */ a3(B3, { act: "dep2", on: !!app.dep2, cls: "w-[42px]", children: "DEP2" }),
+        /* @__PURE__ */ a3(B3, { act: "prefs-save", cls: "w-[72px]", children: "SAVE PREFS" }),
+        /* @__PURE__ */ a3(B3, { act: "prefs-reset", cls: "w-[72px]", children: "FORGET" }),
+        /* @__PURE__ */ a3(B3, { act: "pal-cycle", cls: "w-[46px]", children: "COLOUR" })
+      ] })
+    ] });
+  }
+  function VolPanel() {
+    useKeys(["song"]);
+    const app = MW.app;
+    const song = app.song;
+    const trk = app.volTrack || 0;
+    const setTrack = (t3) => {
+      app.volTrack = t3;
+      MW.panels.refresh();
+    };
+    const setVol = (t3, v3) => {
+      song.trkvol[t3] = MW.clamp(v3, 0, 64);
+      MW.panels.refresh();
+    };
+    const setMaster = (v3) => {
+      song.mastervol = MW.clamp(v3, 0, 64);
+      MW.panels.refresh();
+    };
+    const cells = [];
+    for (let t3 = 0; t3 < 16; t3++) {
+      cells.push(
+        /* @__PURE__ */ a3(B3, { onClick: () => setTrack(t3), on: trk === t3, cls: "flex-1 px-0", children: [
+          t3.toString(16).toUpperCase(),
+          ":",
+          String(song.trkvol[t3] || 64).padStart(2, "0")
+        ] }, t3)
+      );
+    }
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: /* @__PURE__ */ a3("div", { class: "flex items-start gap-2", children: [
+      /* @__PURE__ */ a3("div", { class: "flex flex-1 flex-col gap-px", children: [
+        /* @__PURE__ */ a3(L2, { children: "THE RELATIVE VOLUMES OF TRACKS 0\u201315:" }),
+        /* @__PURE__ */ a3(R, { children: cells.slice(0, 8) }),
+        /* @__PURE__ */ a3(R, { children: cells.slice(8) }),
+        /* @__PURE__ */ a3(R, { children: [
+          /* @__PURE__ */ a3(L2, { cls: "w-[36px]", children: [
+            trk.toString(16).toUpperCase(),
+            ":"
+          ] }),
+          /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]", children: song.trkvol[trk] || 64 }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setVol(trk, (song.trkvol[trk] || 64) - 10), cls: "w-[24px]", children: "\xAB" }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setVol(trk, (song.trkvol[trk] || 64) - 1), cls: "w-[22px]", children: "\u2039" }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setVol(trk, (song.trkvol[trk] || 64) + 1), cls: "w-[22px]", children: "\u203A" }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setVol(trk, (song.trkvol[trk] || 64) + 10), cls: "w-[24px]", children: "\xBB" }),
+          /* @__PURE__ */ a3(L2, { cls: "w-[44px]", children: "MASTER" }),
+          /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]", children: song.mastervol }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setMaster(song.mastervol - 10), cls: "w-[24px]", children: "\xAB" }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setMaster(song.mastervol - 1), cls: "w-[22px]", children: "\u2039" }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setMaster(song.mastervol + 1), cls: "w-[22px]", children: "\u203A" }),
+          /* @__PURE__ */ a3(B3, { onClick: () => setMaster(song.mastervol + 10), cls: "w-[24px]", children: "\xBB" })
+        ] })
+      ] }),
+      /* @__PURE__ */ a3("div", { class: "w-[210px] shrink-0 border border-ink p-2 text-center text-[10px] leading-tight", children: [
+        /* @__PURE__ */ a3("div", { children: "OCTANAUT" }),
+        /* @__PURE__ */ a3("div", { children: "BROWSER TRACKER" }),
+        /* @__PURE__ */ a3("div", { class: "my-1", children: "\u2014" }),
+        /* @__PURE__ */ a3("div", { children: "EIGHT CHANNELS" }),
+        /* @__PURE__ */ a3("div", { children: "MED MODULES" })
+      ] })
+    ] }) });
+  }
+  function RangePanel() {
+    useKeys(["selection", "selectedTracks"]);
+    const app = MW.app;
+    const b = app.song.blocks[app.cursor.block];
+    const sel = app.selection;
+    const [echoDist, setEchoDist] = d2(2);
+    const [echoMin, setEchoMin] = d2(1);
+    const rangeText = sel ? `${Math.min(sel.t0, sel.t1)}\u2013${Math.max(sel.t0, sel.t1)} / ${Math.min(sel.l0, sel.l1)}\u2013${Math.max(sel.l0, sel.l1)}` : "---";
+    const selectTrack = () => {
+      app.selection = { l0: 0, l1: b.lines - 1, t0: app.cursor.track, t1: app.cursor.track };
+      MW.grid.render();
+      MW.touchStatus("selection", ["selection"]);
+    };
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[48px]", children: "SELECT:" }),
+        Array.from({ length: 16 }, (_3, t3) => /* @__PURE__ */ a3(
+          B3,
+          {
+            onClick: () => {
+              app.selectedTracks[t3] = !app.selectedTracks[t3];
+              MW.touchStatus("selection", ["selectedTracks"]);
+            },
+            on: !!app.selectedTracks[t3],
+            cls: "flex-1 px-0",
+            children: t3.toString(16).toUpperCase()
+          },
+          t3
+        )),
+        /* @__PURE__ */ a3(B3, { onClick: () => {
+          for (let t3 = 0; t3 < 16; t3++) app.selectedTracks[t3] = true;
+          MW.touchStatus("selection", ["selectedTracks"]);
+        }, cls: "w-[30px]", children: "SET" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => {
+          for (let t3 = 0; t3 < 16; t3++) app.selectedTracks[t3] = false;
+          MW.touchStatus("selection", ["selectedTracks"]);
+        }, cls: "w-[30px]", children: "CLR" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { onClick: selectTrack, cls: "w-[82px]", children: "SELECT TRACK" }),
+        /* @__PURE__ */ a3(B3, { act: "rng-cut", cls: "w-[42px]", children: "CUT" }),
+        /* @__PURE__ */ a3(B3, { act: "rng-copy", cls: "w-[46px]", children: "COPY" }),
+        /* @__PURE__ */ a3(B3, { act: "rng-paste", cls: "w-[46px]", children: "PASTE" }),
+        /* @__PURE__ */ a3(B3, { act: "rng-paste", cls: "w-[78px]", children: "PASTE SELECT" }),
+        /* @__PURE__ */ a3(B3, { act: "chord-toggle", on: !!app.chordMode, cls: "w-[48px]", children: "CHORD" }),
+        /* @__PURE__ */ a3(B3, { act: "chord-rst", cls: "w-[32px]", children: "RST" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "sel-all", cls: "w-[82px]", children: "SELECT BLOCK" }),
+        /* @__PURE__ */ a3(B3, { act: "rng-clear", cls: "w-[46px]", children: "CLEAR" }),
+        /* @__PURE__ */ a3(B3, { act: "sel-cancel", cls: "w-[52px]", children: "CANCEL" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[54px]", children: "SPREAD:" }),
+        /* @__PURE__ */ a3(B3, { act: "spread-2", cls: "w-[20px]", children: "2" }),
+        /* @__PURE__ */ a3(B3, { act: "spread-3", cls: "w-[20px]", children: "3" }),
+        /* @__PURE__ */ a3(B3, { act: "spread-4", cls: "w-[20px]", children: "4" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[44px]", children: "SLIDE:" }),
+        /* @__PURE__ */ a3(B3, { act: "mk-slide1", cls: "w-[20px]", children: "1" }),
+        /* @__PURE__ */ a3(B3, { act: "mk-slide2", cls: "w-[20px]", children: "2" }),
+        /* @__PURE__ */ a3(B3, { act: "mk-volslide", cls: "w-[34px]", children: "VOL" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "note-echo", cls: "w-[64px]", children: "NOTE ECHO" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[34px]", children: "DIST" }),
+        /* @__PURE__ */ a3(N2, { id: "echo-dist", value: echoDist, min: 1, max: 16, onChange: setEchoDist, cls: "w-[30px]" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[30px]", children: "MIN" }),
+        /* @__PURE__ */ a3(N2, { id: "echo-min", value: echoMin, min: 1, max: 64, onChange: setEchoMin, cls: "w-[30px]" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[44px]", children: "RANGE:" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] flex-1 items-center border border-ink bg-paper px-1 text-[10px]", children: rangeText })
+      ] })
+    ] });
+  }
+  function TransPanel() {
+    useKeys(["cursor", "currentIns"]);
+    const app = MW.app;
+    const scope = app.transposeScope || "block";
+    const instScope = app.transposeInstrScope || "all";
+    const setPlay = (v3) => {
+      app.song.playtransp = MW.clamp(v3, -24, 24);
+      MW.panels.refresh();
+    };
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[48px]", children: "AFFECT:" }),
+        [["song", "SONG"], ["block", "BLOCK"], ["track", "TRACK"], ["sel", "SEL.TRKS"], ["range", "RANGE"]].map(([k2, l3]) => /* @__PURE__ */ a3(B3, { act: `scope-${k2}`, on: scope === k2, cls: "flex-1", children: l3 }, k2)),
+        /* @__PURE__ */ a3(L2, { cls: "w-[42px]", children: "INSTR:" }),
+        /* @__PURE__ */ a3(B3, { act: "instscope-all", on: instScope === "all", cls: "w-[40px]", children: "ALL" }),
+        /* @__PURE__ */ a3(B3, { act: "instscope-curr", on: instScope === "curr", cls: "w-[46px]", children: "CURR" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[40px]", children: "INSTR:" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[40px]", children: "NOTE:" }),
+        /* @__PURE__ */ a3("input", { id: "tr-from", type: "number", min: "1", max: "120", value: "1", class: `${FIELD} w-[40px]` }),
+        /* @__PURE__ */ a3(B3, { act: "note-change", cls: "w-[26px]", children: "\u2192" }),
+        /* @__PURE__ */ a3("input", { id: "tr-to", type: "number", min: "1", max: "120", value: "1", class: `${FIELD} w-[40px]` }),
+        /* @__PURE__ */ a3(B3, { act: "note-exchange", cls: "w-[26px]", children: "\u21C4" }),
+        /* @__PURE__ */ a3(B3, { act: "tr-up", cls: "w-[38px]", children: "1/2\u2191" }),
+        /* @__PURE__ */ a3(B3, { act: "tr-down", cls: "w-[38px]", children: "1/2\u2193" }),
+        /* @__PURE__ */ a3(B3, { act: "tr-up12", cls: "w-[38px]", children: "OCT\u2191" }),
+        /* @__PURE__ */ a3(B3, { act: "tr-down12", cls: "w-[38px]", children: "OCT\u2193" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "ins-delete", cls: "w-[34px]", children: "DEL" }),
+        /* @__PURE__ */ a3("input", { id: "tr-ins-from", type: "number", min: "1", max: "63", value: app.currentIns, class: `${FIELD} w-[36px]` }),
+        /* @__PURE__ */ a3(B3, { act: "ins-change", cls: "w-[26px]", children: "\u2192" }),
+        /* @__PURE__ */ a3("input", { id: "tr-ins-to", type: "number", min: "1", max: "63", value: "1", class: `${FIELD} w-[36px]` }),
+        /* @__PURE__ */ a3(B3, { act: "ins-exchange", cls: "w-[26px]", children: "\u21C4" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[100px]", children: "PLAY TRANSPOSE:" }),
+        /* @__PURE__ */ a3(
+          "input",
+          {
+            type: "range",
+            min: "-24",
+            max: "24",
+            value: app.song.playtransp || 0,
+            class: "h-[20px] min-w-0 flex-1",
+            onChange: (e3) => setPlay(+e3.currentTarget.value)
+          }
+        ),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]", children: app.song.playtransp || 0 })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[34px]", children: "TEXT:" }),
+        /* @__PURE__ */ a3(T3, { value: app.song.annotation || "", onInput: (v3) => {
+          app.song.annotation = v3;
+        }, cls: "flex-1" })
+      ] })
+    ] });
+  }
+  function MidiPanel() {
+    useKeys(["currentIns"]);
+    const app = MW.app;
+    const inst = app.song.instruments[app.currentIns - 1];
+    const msg = app.midiMessages && app.midiMessages[app.midiMsgIndex] ? app.midiMessages[app.midiMsgIndex] : { name: "", data: [] };
+    const hexData = (msg.data || []).map((b) => b.toString(16).toUpperCase().padStart(2, "0")).join(" ");
+    const setHex = (v3) => {
+      const bytes = (v3.match(/[0-9a-fA-F]{2}/g) || []).map((x2) => parseInt(x2, 16) & 255);
+      msg.data = bytes;
+      MW.panels.refresh();
+    };
+    const midi = MW.midi || { supported: false, enabled: false, outputs: [], inputs: [] };
+    const ch = inst ? inst.midiChannel || 0 : 0;
+    const mapEntry = app.midiMap && app.midiMap[app.midiMapIndex];
+    const mapName = mapEntry && mapEntry.kind === "fn" ? mapEntry.fn : "note";
+    const setCh = (n2) => {
+      const i3 = app.song.instruments[app.currentIns - 1];
+      if (i3) {
+        i3.midiChannel = n2;
+        MW.panels.refresh();
+      }
+    };
+    return /* @__PURE__ */ a3("div", { class: "flex h-full flex-col gap-px", children: [
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[52px]", children: "MIDI CH:" }),
+        /* @__PURE__ */ a3(B3, { onClick: () => setCh(0), on: ch === 0, cls: "w-[54px]", children: "NO MIDI" }),
+        Array.from({ length: 16 }, (_3, i3) => /* @__PURE__ */ a3(B3, { onClick: () => setCh(i3 + 1), on: ch === i3 + 1, cls: "flex-1 px-0", children: i3 + 1 }, i3))
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[82px]", children: "MIDI PRESET #:" }),
+        /* @__PURE__ */ a3(
+          N2,
+          {
+            value: inst ? inst.midiPreset || 0 : 0,
+            min: 0,
+            max: 128,
+            onChange: (v3) => {
+              const i3 = app.song.instruments[app.currentIns - 1];
+              if (i3) i3.midiPreset = v3;
+            },
+            cls: "w-[40px]"
+          }
+        ),
+        /* @__PURE__ */ a3(
+          "select",
+          {
+            class: "h-[20px] min-w-0 flex-1 border border-ink bg-paper px-1 text-[10px]",
+            onChange: (e3) => {
+              if (midi.outputs[e3.currentTarget.value]) midi.port = midi.outputs[e3.currentTarget.value];
+            },
+            children: [
+              midi.outputs.map((o4, i3) => /* @__PURE__ */ a3("option", { value: i3, children: o4.name })),
+              !midi.outputs.length && /* @__PURE__ */ a3("option", { children: "no outputs" })
+            ]
+          }
+        )
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "midi-enable", on: !!midi.enabled, cls: "w-[72px]", children: "MIDI ACTIVE" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-input", on: !!app.midiInput, cls: "w-[44px]", children: "INPUT" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[52px]", children: "CHANNEL" }),
+        /* @__PURE__ */ a3(N2, { value: app.midiInChannel || 0, min: 0, max: 16, onChange: (v3) => {
+          app.midiInChannel = v3;
+        }, cls: "w-[32px]" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-sendout", on: !!app.midiSendOut, cls: "w-[54px]", children: "SEND OUT" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-suppress", on: !!(inst && inst.suppressOff), cls: "w-[70px]", children: "SUPPR.N.OFF" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-alloff-cc", on: MW.app.midiAllOff !== "note", cls: "w-[30px]", children: "OFF" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "midi-sync", on: !!MW.player.sync, cls: "w-[62px]", children: "SEND SYNC" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-extsync", on: !!app.extSync, cls: "w-[58px]", children: "EXT SYNC" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-sensing", on: MW.midi.sensingOn !== false, cls: "w-[70px]", children: "ACT.SENSING" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[48px]", children: "ALL OFF:" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-alloff-cc", on: MW.app.midiAllOff !== "note", cls: "w-[58px]", children: "$Bx7B00" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-alloff-note", on: MW.app.midiAllOff === "note", cls: "w-[58px]", children: "N.OFF:S" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[40px]", children: "READ:" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-keyup", on: !!app.midiKeyUp, cls: "w-[48px]", children: "KEY-UP" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-vel", on: !!app.readVelocity, cls: "w-[48px]", children: "VOLUME" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[44px]", children: "RESET:" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-reset-pb", cls: "w-[54px]", children: "PB+PRES" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-reset-ff", cls: "w-[34px]", children: "$FF" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-lc-on", cls: "w-[54px]", children: "LOC.CTRL" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-lc-off", cls: "w-[34px]", children: "OFF" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[42px]", children: "MSG #:" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-prev", cls: "w-[20px]", children: "<" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[32px] items-center justify-center border border-ink bg-paper text-[11px]", children: [
+          (app.midiMsgIndex || 0) + 1,
+          "/",
+          app.midiMessages.length
+        ] }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-next", cls: "w-[20px]", children: ">" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-new", cls: "w-[34px]", children: "NEW" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-insert", cls: "w-[52px]", children: "N.HERE" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-del", cls: "w-[34px]", children: "DEL" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-clear", cls: "w-[44px]", children: "CLEAR" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[54px]", children: "MSG SIZE:" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-dec", cls: "w-[20px]", children: "<" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]", children: msg.data.length }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-inc", cls: "w-[20px]", children: ">" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-capture", on: !!app.midiCapture, cls: "w-[40px]", children: "CAPT." }),
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-send", cls: "w-[42px]", children: "SEND" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(B3, { act: "midi-msg-auto", on: app.midiMsgAuto !== false, cls: "w-[92px]", children: "AUTO-TERMINATE" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[38px]", children: "NAME:" }),
+        /* @__PURE__ */ a3(T3, { value: msg.name || "", maxlength: 40, onInput: (v3) => {
+          msg.name = v3;
+        }, cls: "flex-1" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[36px]", children: "DATA:" }),
+        /* @__PURE__ */ a3(T3, { value: hexData, onInput: setHex, cls: "flex-1", placeholder: "F0 ... F7" })
+      ] }),
+      /* @__PURE__ */ a3(R, { children: [
+        /* @__PURE__ */ a3(L2, { cls: "w-[30px]", children: "MAP:" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-map-active", on: !!app.midiMapActive, cls: "w-[44px]", children: "ACTIVE" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-map-reset", cls: "w-[42px]", children: "RESET" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[40px]", children: "FUNCT:" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-map-prev", cls: "w-[20px]", children: "<" }),
+        /* @__PURE__ */ a3("span", { class: "flex h-[20px] w-[72px] items-center justify-center border border-ink bg-paper text-[10px]", children: mapName }),
+        /* @__PURE__ */ a3(B3, { act: "midi-map-next", cls: "w-[20px]", children: ">" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-map-new", cls: "w-[32px]", children: "NEW" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-map-del", cls: "w-[32px]", children: "DEL" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-dump-save", cls: "w-[52px]", children: "SAVE DUMP" }),
+        /* @__PURE__ */ a3(B3, { act: "midi-dump-load", cls: "w-[52px]", children: "LOAD DUMP" }),
+        /* @__PURE__ */ a3(L2, { cls: "w-[26px]", children: "KEY" }),
+        /* @__PURE__ */ a3(N2, { value: app.midiMapIndex, min: 0, max: 127, onChange: (v3) => {
+          app.midiMapIndex = v3;
+          MW.panels.refresh();
+        }, cls: "w-[38px]" })
+      ] }),
+      /* @__PURE__ */ a3("div", { class: "max-h-[84px] overflow-auto border border-ink bg-paper", children: Array.from({ length: 128 }, (_3, i3) => {
+        const entry = app.midiMap && app.midiMap[i3];
+        const label = entry && entry.kind === "fn" ? entry.fn : "note";
+        return /* @__PURE__ */ a3(
+          "button",
+          {
+            type: "button",
+            class: `flex w-full items-center gap-2 px-1 text-left text-[10px] leading-[14px] ${i3 === app.midiMapIndex ? "bg-ink text-paper" : ""}`,
+            onClick: () => {
+              app.midiMapIndex = i3;
+              MW.panels.refresh();
+            },
+            children: [
+              /* @__PURE__ */ a3("span", { class: "w-[26px] text-right", children: i3 }),
+              /* @__PURE__ */ a3("span", { class: "w-[34px]", children: MW.noteName(i3 - 23, app.hb) }),
+              /* @__PURE__ */ a3("span", { children: label })
+            ]
+          },
+          i3
+        );
+      }) })
+    ] });
+  }
+  var PANELS = {
+    play: PlayPanel,
+    files: FilesPanel,
+    instr: InstrPanel,
+    block: BlockPanel,
+    edit: EditPanel,
+    misc: MiscPanel,
+    vol: VolPanel,
+    range: RangePanel,
+    transp: TransPanel,
+    midi: MidiPanel
+  };
+  var active = "play";
+  var listeners = /* @__PURE__ */ new Set();
+  var emit = () => listeners.forEach((fn) => fn());
+  function Host() {
+    const [, force] = _2((n2) => n2 + 1, 0);
+    A(() => {
+      const bump = () => force(0);
+      listeners.add(bump);
+      return () => {
+        listeners.delete(bump);
+      };
+    }, []);
+    const Panel = PANELS[active] || PlayPanel;
+    return /* @__PURE__ */ a3(Panel, {});
+  }
+  MW.panels = {
+    get current() {
+      return active;
+    },
+    mount(host) {
+      K(/* @__PURE__ */ a3(Host, {}), host);
+      const left = document.querySelector(".deck-left");
+      if (left) left.style.display = "block";
+    },
+    show(name) {
+      active = name;
+      document.querySelectorAll("#rail button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.panel === name);
+      });
+      const left = document.querySelector(".deck-left");
+      if (left) left.style.display = name === "play" ? "block" : "none";
+      emit();
+    },
+    refresh() {
+      emit();
+    }
+  };
+})();

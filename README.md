@@ -22,8 +22,10 @@ npm install          # once
 npm run build:css    # compile web/css/app.css
 npm run build:panels # compile web/js/panels.js from TSX
 npm run build        # both
-npm run watch:css    # rebuild CSS while editing
-npm run watch:panels # rebuild panels while editing
+npm run dev          # watch both and serve at http://localhost:3000
+npm run watch:css    # rebuild CSS only
+npm run watch:panels # rebuild panels only
+npm run serve        # static server without the watchers
 ```
 
 Buttons carry their utility classes in the markup. Three custom variants handle the states the scripts toggle: `on` for a lit gadget, `selected` for the active tab, and `playing` for the row under the playhead. The `@layer components` block holds the drawn, repeated shapes: the frame, the sequence box, the status line, the grid and its cells, the channel meters and the scope overlays.
