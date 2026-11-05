@@ -235,7 +235,9 @@ app/
     js/ui-grid.js     note grid
     js/panels.js      compiled Preact panel bundle
     js/ui-displays.js notation, sample, synth, instrument list
-    src/panels.tsx    panel components and their store subscriptions
+    src/panels.tsx    panel host and store controller
+    src/shared.tsx    shared panel helpers and hooks
+    src/panels/       one component file per panel
     js/app.js         editing operations, keyboard, file IO
 ```
 
