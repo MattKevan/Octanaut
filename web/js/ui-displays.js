@@ -99,47 +99,47 @@
         <div class="panel-row" style="margin-top:10px">
           <div class="group"><div class="group-label">View</div>
             <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zoomin">Zoom in</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zoomout">Zoom out</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-showrange">Show range</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-showall">Show all</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zoomin">Zoom in</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zoomout">Zoom out</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-showrange">Show range</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-showall">Show all</button>
             </div>
           </div>
           <div class="group"><div class="group-label">Range</div>
             <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-play">Play</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-playrange">Play range</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-loop">Loop ${inst.looplen > 2 ? 'on' : 'off'}</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-play">Play</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-playrange">Play range</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-loop">Loop ${inst.looplen > 2 ? 'on' : 'off'}</button>
             </div>
           </div>
           <div class="group"><div class="group-label">Edit</div>
             <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-rev">Reverse</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-norm">Normalise</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-fadein">Fade in</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-fadeout">Fade out</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-crop">Crop</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-filter">Filter</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-boost">Boost</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-rev">Reverse</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-norm">Normalise</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-fadein">Fade in</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-fadeout">Fade out</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-crop">Crop</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-filter">Filter</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-boost">Boost</button>
             </div>
           </div>
           <div class="group"><div class="group-label">Effects</div>
             <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-echo">Echo</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-noise">Noise</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-mix">Mix</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-copyall">S&gt;Buffer</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-restore">Buffer&gt;S</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-tosynth">R&gt;SY</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-echo">Echo</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-noise">Noise</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-mix">Mix</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-copyall">S&gt;Buffer</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-restore">Buffer&gt;S</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-tosynth">R&gt;SY</button>
             </div>
           </div>
           <div class="group"><div class="group-label">Sample</div>
             <div class="group-row">
               <span class="preadout">size</span>
               <input class="pnum" id="buffsize" type="number" min="1" max="131072" value="${d.length}">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-buffsize">Set</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-rate-up">Oct +</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-rate-down">Oct −</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-buffsize">Set</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-rate-up">Oct +</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-rate-down">Oct −</button>
             </div>
           </div>
           <div class="group"><div class="group-label">Input</div>
@@ -151,19 +151,19 @@
                 ${(MW.sampler.devices || []).map((d, i) =>
                   `<option value="${d.deviceId}">${escapeHtml(d.label || 'input ' + (i + 1))}</option>`).join('')}
               </select>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-devices">Find</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-monitor">Monitor</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-record">Record</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-stop">Stop</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-devices">Find</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-monitor">Monitor</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-record">Record</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-stop">Stop</button>
             </div>
           </div>
           <div class="group"><div class="group-label">Loop</div>
             <div class="group-row">
               <input class="pnum" id="loop-start" type="number" min="0" value="${inst.loop || 0}">
               <input class="pnum" id="loop-len" type="number" min="0" value="${inst.looplen || 0}">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-loopset">From range</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zleft">&lt;0</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zright">0&gt;</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-loopset">From range</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zleft">&lt;0</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="samp-zright">0&gt;</button>
             </div>
           </div>
         </div>
@@ -370,40 +370,55 @@
       host.innerHTML = `<div class="pane">
         <h2>Synthsound — ${syn.waveforms.length} waveform${syn.waveforms.length === 1 ? '' : 's'}, editing ${side === 'bank' ? 'waveform ' + MW.hex(wfIdx) : 'the buffer'}</h2>
         <p class="lede">Two waveform displays, as on the Amiga: the bank on the left, a scratch buffer on the right. Click a display to edit it.</p>
+        <div class="flex items-stretch gap-px" style="margin:6px 0">
+          <span class="flex h-[20px] items-center px-1 text-[10px] uppercase">WF:</span>
+          <span class="flex h-[20px] w-[48px] items-center justify-center border border-ink bg-paper text-[10px]">${MW.hex(wfIdx)}/${MW.hex(syn.waveforms.length - 1)}</span>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="syn-prev">−</button>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="syn-next">+</button>
+          <span class="flex h-[20px] items-center px-1 text-[10px] uppercase">LEN:</span>
+          <span class="flex h-[20px] w-[48px] items-center justify-center border border-ink bg-paper text-[10px]">${wave.length}</span>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="missing">PIXEL</button>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="missing">LINE</button>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="missing">MIX</button>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="syn-undo">UNDO</button>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="missing">RANGE ALL</button>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="missing">STRETCH</button>
+          <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px]" data-act="missing">VOL.CHG</button>
+        </div>
         <div class="synth-pair">
           <div class="synth-side${side === 'bank' ? ' active' : ''}" data-side="bank">
             <div class="wave-wrap"><canvas id="wave-bank"></canvas></div>
             <div class="group-row" style="margin-top:4px">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-prev">‹</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-prev">‹</button>
               <span class="preadout">wf ${MW.hex(wfIdx)} / ${MW.hex(syn.waveforms.length - 1)} · ${wave.length} bytes</span>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-next">›</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-add">Add</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-del">Del</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-next">›</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-add">Add</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-del">Del</button>
             </div>
           </div>
           <div class="synth-side${side === 'buffer' ? ' active' : ''}" data-side="buffer">
             <div class="wave-wrap"><canvas id="wave-buffer"></canvas></div>
             <div class="group-row" style="margin-top:4px">
               <span class="preadout">buffer · ${syn.buffer.length} bytes</span>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-copy-right">→ buf</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-copy-left">← wf</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-exchange">⇄</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-copy-right">→ buf</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-copy-left">← wf</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-exchange">⇄</button>
             </div>
           </div>
         </div>
         <div class="panel-row" style="margin-top:8px">
           <div class="group"><div class="group-label">Shapes (on the active display)</div>
             <div class="group-row">
-              ${['sine', 'saw', 'pulse', 'triangle', 'random'].map(s => `<button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-shape="${s}">${s}</button>`).join('')}
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-undo">Undo</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-mix">Mix</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-addwave">Add together</button>
+              ${['sine', 'saw', 'pulse', 'triangle', 'random'].map(s => `<button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-shape="${s}">${s}</button>`).join('')}
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-undo">Undo</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-mix">Mix</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-addwave">Add together</button>
             </div>
           </div>
           <div class="group"><div class="group-label">Transform</div>
             <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-tstart">Start here</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-tdo">Do</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-tstart">Start here</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-tdo">Do</button>
               <span class="preadout">${MW.app.synthTransform == null ? 'no start' : 'from wf ' + MW.hex(MW.app.synthTransform)}</span>
             </div>
           </div>
@@ -411,7 +426,7 @@
             <div class="group-row">
               <span class="preadout">vol</span><input class="pnum" type="number" min="1" max="16" value="${syn.volspeed}" data-act="syn-vspd">
               <span class="preadout">wf</span><input class="pnum" type="number" min="1" max="16" value="${syn.wfspeed}" data-act="syn-wspd">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-play">Play</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="syn-play">Play</button>
             </div>
           </div>
         </div>
@@ -422,14 +437,18 @@
         <div class="panel-row" style="margin-top:8px">
           <div class="group"><div class="group-label">Step ${MW.hex((app.synthSel && app.synthSel.index) || 0)} of the ${(app.synthSel && app.synthSel.list) === 'wf' ? 'waveform' : 'volume'} list</div>
             <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="dec">−1</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="inc">+1</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="ins">Insert</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="del">Delete</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="dec">−1</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="inc">+1</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="ins">Insert</button>
+              <button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-seq="del">Delete</button>
             </div>
           </div>
         </div>
       </div>`;
+
+      host.querySelectorAll('[data-act="missing"]').forEach(b => {
+        b.onclick = () => MW.missing('Synth range editing');
+      });
 
       this.drawSynthWave(host.querySelector('#wave-bank'), wave);
       this.drawSynthWave(host.querySelector('#wave-buffer'), syn.buffer);
@@ -613,51 +632,49 @@
       const app = MW.app;
       const block = app.song.blocks[app.cursor.block];
       const tracks = Math.min(4, block.tracks);
+      const btn = (label, attrs, on) =>
+        `<button class="flex h-[20px] items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper ${on ? 'on' : ''}" ${attrs}>${label}</button>`;
+      const lab = text => `<span class="flex h-[20px] shrink-0 items-center px-1 text-[10px] uppercase leading-none whitespace-nowrap">${text}</span>`;
+      const trackRow = (label, attr) => lab(label) + Array.from({ length: 16 }, (_, t) =>
+        btn(t.toString(16).toUpperCase(), `${attr}="${t}"`, (attr === 'data-notatrack'
+          ? (app.notaTracks ? app.notaTracks[t] !== false : true)
+          : attr === 'data-ghost' ? !!(app.notaGhost && app.notaGhost[t]) : app.cursor.track === t))).join('');
+
       host.innerHTML = `<div class="pane">
-        <h2>Notation — block ${MW.hex(app.cursor.block)}</h2>
-        <p class="lede">Click a staff to place a note. One text line is a sixteenth; four lines to the beat.</p>
-        <div class="panel-row">
-          <div class="group"><div class="group-label">Length</div>
-            <div class="group-row">
-              ${[1, 2, 3, 4, 6, 8, 12, 16].map(n =>
-                `<button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper${app.noteLen === n ? ' on' : ''}" data-len="${n}">${n}</button>`).join('')}
-            </div>
+        <div class="flex flex-col gap-px">
+          <div class="flex items-stretch gap-px">
+            ${btn('PRINT', 'data-act="nota-print"')}
+            ${btn('HEADER', 'data-act="missing" disabled')}
+            ${btn('NOTES', 'data-act="missing" disabled')}
+            ${btn('TEXT', 'data-act="missing" disabled')}
+            ${btn('→FILE', 'data-act="missing" disabled')}
+            ${btn('FFEED', 'data-act="nota-feed"', !!app.notaFeed)}
+            <span class="w-[10px]"></span>
+            ${lab('BLKS:')}
+            <span class="flex h-[20px] w-[38px] items-center justify-center border border-ink bg-paper text-[10px]">0</span>
+            <span class="flex h-[20px] w-[12px] items-center justify-center text-[10px]">→</span>
+            <span class="flex h-[20px] w-[38px] items-center justify-center border border-ink bg-paper text-[10px]">0</span>
+            ${btn('ALL', 'data-act="nota-all"', app.notaPrintAll !== false)}
           </div>
-          <div class="group"><div class="group-label">Tracks</div>
-            <div class="group-row">
-              ${Array.from({ length: tracks }, (_, t) => {
-                const on = app.notaTracks ? app.notaTracks[t] !== false : true;
-                return `<button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper${on ? ' on' : ''}" data-notatrack="${t}">${t.toString(16).toUpperCase()}</button>`;
-              }).join('')}
-            </div>
+          <div class="flex items-stretch gap-px">${trackRow('SHOW TRACKS:', 'data-notatrack')}</div>
+          <div class="flex items-stretch gap-px">${trackRow('GHOST TRACKS:', 'data-ghost')}</div>
+          <div class="flex items-stretch gap-px">
+            ${trackRow('SEL.TRACK:', 'data-seltrack')}
+            ${btn('HIDE', 'data-act="missing" disabled')}
           </div>
-          <div class="group"><div class="group-label">Time</div>
-            <div class="group-row">
-              ${[3, 4].map(n => `<button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper${(app.timeSig || 4) === n ? ' on' : ''}" data-time="${n}">${n}/4</button>`).join('')}
-            </div>
+          <div class="flex items-stretch gap-px">
+            ${btn('INS', 'data-act="missing" disabled')}${btn('DEL', 'data-act="missing" disabled')}
+            ${lab('NT:')}<span class="flex h-[20px] w-[38px] items-center justify-center border border-ink bg-paper text-[10px]">---</span>
+            ${lab('L:')}<span class="flex h-[20px] w-[28px] items-center justify-center border border-ink bg-paper text-[10px]">${String(app.noteLen || 2).padStart(2, '0')}</span>
+            ${[1, 2, 3, 4, 6, 8, 12, 16].map(n => btn(String(n), `data-len="${n}"`, app.noteLen === n)).join('')}
           </div>
-          <div class="group"><div class="group-label">Key</div>
-            <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="nota-flat">♭</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="nota-sharp">♯</button>
-              <span class="preadout">${(app.keySig && app.keySig.count) || 0}</span>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="nota-keyless">None</button>
-            </div>
-          </div>
-          <div class="group"><div class="group-label">Presets</div>
-            <div class="group-row">
-              ${[0,1,2,3,4].map(n => `<button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper${(app.pset || 0) === n ? ' on' : ''}" data-pset="${n}">${n + 1}</button>`).join('')}
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="pset-save">Save</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="pset-clear">Clr</button>
-            </div>
-          </div>
-          <div class="group"><div class="group-label">Page</div>
-            <div class="group-row">
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper${app.notaPrintAll === false ? '' : ' on'}" data-act="nota-all">All blocks</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper${app.notaFeed ? ' on' : ''}" data-act="nota-feed">FFeed</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="nota-print">Print</button>
-              <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" data-act="nota-clear">Clear track</button>
-            </div>
+          <div class="flex items-stretch gap-px">
+            ${lab('PSET:')}${[0, 1, 2, 3, 4].map(n => btn(String(n + 1), `data-pset="${n}"`, (app.pset || 0) === n)).join('')}
+            ${btn('CLR', 'data-act="pset-clear"')}${btn('SAVE', 'data-act="pset-save"')}
+            ${lab('SIG:')}<span class="flex h-[20px] w-[28px] items-center justify-center border border-ink bg-paper text-[10px]">${(app.keySig && app.keySig.count) || 0}</span>
+            ${btn('−', 'data-act="nota-flat"')}${btn('+', 'data-act="nota-sharp"')}${btn('#', 'data-act="nota-keyless"')}
+            ${lab('TS:')}${[3, 4].map(n => btn(n + '/4', `data-time="${n}"`, (app.timeSig || 4) === n)).join('')}
+            ${btn('CLEAR TRACK', 'data-act="nota-clear"')}
           </div>
         </div>
         <div class="sheet-wrap"><canvas id="sheet"></canvas></div>
@@ -665,69 +682,21 @@
       const canvas = host.querySelector('#sheet');
       this.drawSheet(canvas, block, tracks);
 
-      host.querySelectorAll('[data-len]').forEach(b => {
-        b.onclick = () => { app.noteLen = parseInt(b.dataset.len, 10); this.show('notation'); };
-      });
-      host.querySelectorAll('[data-notatrack]').forEach(b => {
-        b.onclick = () => {
-          const t = parseInt(b.dataset.notatrack, 10);
-          app.notaTracks = app.notaTracks || {};
-          app.notaTracks[t] = app.notaTracks[t] === false;
-          this.show('notation');
-        };
-      });
-      host.querySelectorAll('[data-time]').forEach(b => {
-        b.onclick = () => { app.timeSig = parseInt(b.dataset.time, 10); this.show('notation'); };
-      });
-      host.querySelector('[data-act="nota-sharp"]').onclick = () => {
-        const k = app.keySig = app.keySig || { count: 0, flat: false };
-        k.flat = false; k.count = Math.min(6, k.count + 1);
-        this.show('notation');
-      };
-      host.querySelector('[data-act="nota-flat"]').onclick = () => {
-        const k = app.keySig = app.keySig || { count: 0, flat: false };
-        k.flat = true; k.count = Math.min(6, k.count + 1);
-        this.show('notation');
-      };
-      host.querySelector('[data-act="nota-keyless"]').onclick = () => {
-        app.keySig = { count: 0, flat: false };
-        this.show('notation');
-      };
-      host.querySelectorAll('[data-pset]').forEach(b => {
-        b.onclick = () => {
-          const n = parseInt(b.dataset.pset, 10);
-          app.pset = n;
-          const saved = app.psets && app.psets[n];
-          app.notaTracks = saved ? JSON.parse(JSON.stringify(saved)) : {};
-          this.show('notation');
-        };
-      });
-      host.querySelector('[data-act="pset-save"]').onclick = () => {
-        app.psets = app.psets || [null, null, null, null, null];
-        app.psets[app.pset || 0] = JSON.parse(JSON.stringify(app.notaTracks || {}));
-        MW.toast('Preset ' + ((app.pset || 0) + 1) + ' saved');
-      };
-      host.querySelector('[data-act="pset-clear"]').onclick = () => {
-        app.psets = app.psets || [null, null, null, null, null];
-        app.psets[app.pset || 0] = null;
-        app.notaTracks = {};
-        this.show('notation');
-      };
-      host.querySelector('[data-act="nota-all"]').onclick = () => {
-        app.notaPrintAll = app.notaPrintAll === false;
-        this.show('notation');
-      };
-      host.querySelector('[data-act="nota-feed"]').onclick = () => {
-        app.notaFeed = !app.notaFeed;
-        this.show('notation');
-      };
+      host.querySelectorAll('[data-len]').forEach(b => { b.onclick = () => { app.noteLen = parseInt(b.dataset.len, 10); this.show('notation'); }; });
+      host.querySelectorAll('[data-notatrack]').forEach(b => { b.onclick = () => { const t = parseInt(b.dataset.notatrack, 10); app.notaTracks = app.notaTracks || {}; app.notaTracks[t] = app.notaTracks[t] === false; this.show('notation'); }; });
+      host.querySelectorAll('[data-ghost]').forEach(b => { b.onclick = () => { const t = parseInt(b.dataset.ghost, 10); app.notaGhost = app.notaGhost || {}; app.notaGhost[t] = !app.notaGhost[t]; this.show('notation'); }; });
+      host.querySelectorAll('[data-seltrack]').forEach(b => { b.onclick = () => { app.cursor.track = parseInt(b.dataset.seltrack, 10); this.show('notation'); }; });
+      host.querySelectorAll('[data-time]').forEach(b => { b.onclick = () => { app.timeSig = parseInt(b.dataset.time, 10); this.show('notation'); }; });
+      host.querySelector('[data-act="nota-sharp"]').onclick = () => { const k = app.keySig = app.keySig || { count: 0, flat: false }; k.flat = false; k.count = Math.min(6, k.count + 1); this.show('notation'); };
+      host.querySelector('[data-act="nota-flat"]').onclick = () => { const k = app.keySig = app.keySig || { count: 0, flat: false }; k.flat = true; k.count = Math.min(6, k.count + 1); this.show('notation'); };
+      host.querySelector('[data-act="nota-keyless"]').onclick = () => { app.keySig = { count: 0, flat: false }; this.show('notation'); };
+      host.querySelectorAll('[data-pset]').forEach(b => { b.onclick = () => { const n = parseInt(b.dataset.pset, 10); app.pset = n; const saved = app.psets && app.psets[n]; app.notaTracks = saved ? JSON.parse(JSON.stringify(saved)) : {}; this.show('notation'); }; });
+      host.querySelector('[data-act="pset-save"]').onclick = () => { app.psets = app.psets || [null, null, null, null, null]; app.psets[app.pset || 0] = JSON.parse(JSON.stringify(app.notaTracks || {})); MW.toast('Preset ' + ((app.pset || 0) + 1) + ' saved'); };
+      host.querySelector('[data-act="pset-clear"]').onclick = () => { app.psets = app.psets || [null, null, null, null, null]; app.psets[app.pset || 0] = null; app.notaTracks = {}; this.show('notation'); };
+      host.querySelector('[data-act="nota-all"]').onclick = () => { app.notaPrintAll = app.notaPrintAll === false; this.show('notation'); };
+      host.querySelector('[data-act="nota-feed"]').onclick = () => { app.notaFeed = !app.notaFeed; this.show('notation'); };
       host.querySelector('[data-act="nota-print"]').onclick = () => this.printNotation();
-      host.querySelector('[data-act="nota-clear"]').onclick = () => {
-        const b = block;
-        b.rows.forEach(r => { if (r[app.cursor.track]) MW.clearCell(r[app.cursor.track]); });
-        MW.refreshAll();
-      };
-
+      host.querySelector('[data-act="nota-clear"]').onclick = () => { const b = block; b.rows.forEach(r => { if (r[app.cursor.track]) MW.clearCell(r[app.cursor.track]); }); MW.refreshAll(); };
       canvas.onclick = e => this.sheetClick(e, block);
     },
 
@@ -767,6 +736,7 @@
         const x0 = 20 + col * measureW + (col ? 10 : 0);
         for (let t = 0; t < tracks; t++) {
           if (MW.app.notaTracks && MW.app.notaTracks[t] === false) continue;
+          ctx.globalAlpha = MW.app.notaGhost && MW.app.notaGhost[t] ? 0.3 : 1;
           const baseY = 52 + (row * tracks + t) * staffGap;
           ctx.lineWidth = 0.7;
           for (let i = 0; i < 5; i++) {
@@ -795,6 +765,7 @@
               ctx.stroke();
             }
           }
+          ctx.globalAlpha = 1;
         }
       }
       this._sheet = layout;

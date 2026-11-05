@@ -59,7 +59,7 @@ These are implemented with browser equivalents rather than the original file for
 - **Misc:** the RGB palette edits the custom track colour. Paths use directory handles. QUIT closes the tab where the browser allows it, and CONFIRM toggles save prompts.
 - **MIDI:** KEY-UP is a transport toggle. SysEx messages save as JSON, not inside MMD1.
 
-The remaining functional gaps are the programmable-key `x` wildcard, note-length capture for MIDI key-up, the old display layouts and the `MED_Paths` sample library.
+The remaining functional gaps are the programmable-key `x` wildcard, note-length capture for MIDI key-up, the sample and synth range tools, notation print modes and the `MED_Paths` sample library.
 
 ---
 
@@ -269,6 +269,6 @@ The V4 gaps that matter most:
 2. **MIDI messages and maps.** No SysEx message editor, input map editor, external sync, dump or send-out. Basic note out and input work.
 3. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
 4. **Command coverage.** 05/06/07 (slide+fade, vibrato+fade, tremolo), 10 (MIDI message), 16 (block loop), 1C (MIDI preset), 1E (line delay) and the MIDI 0A/0C/0D forms are absent.
-5. **Editor polish.** Programmable-key wildcards and group entry, NRM, sample/synth range tools and notation ghosting.
+5. **Editor polish.** Programmable-key wildcards and group entry, NRM, sample/synth range tools and notation print modes.
 6. **Filesystem-adjacent features.** INFO/ICON on save, delete file, absolute instrument names, paths add/remove and the RGB palette editor.
 7. **MP3 export.** WAV and AAC work without extra code; MP3 waits for a browser encoder or a bundled one.

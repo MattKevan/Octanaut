@@ -202,13 +202,14 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 
 - **MIDI messages and maps** are partial: SysEx messages can be edited, captured, sent and saved as JSON; external clock and transport follow; the input map has all 128 keys. Key-up recording and writing SysEx into MMD1 are still missing.
 - **The sample list** shows loaded instruments rather than a `MED_Paths` library, so it cannot browse a disk collection or resolve missing names.
+- **The sample and synth editors** still lack freehand/RANGE ALL, stretch, VOL.CHG and the remaining range tools. Notation prints the staff and header, but not the text or file modes.
 - **Amiga-only controls** (ICON, Workbench open/close, LOADGFX, MOUSE2) are disabled. They have no browser equivalent.
 - **MP3 export** depends on a browser audio encoder. Chromium exposes AAC but not MP3, so there the WAV and AAC buttons are the reliable pair.
 - Browsers hold audio back until the page has been clicked once. Octanaut resumes the audio context on the first click or key press and says so if it is still blocked.
 - **Synthsound sequence editing** changes values and inserts/deletes lines, but does not let you type command names inline; the binary instruments round-trip unchanged through MMD0.
 - **The sample editor** has reverse, normalise, fades, crop, filter, boost, echo, noise, mix, buffer undo and loop setting. It has no freehand drawing, RANGE ALL, pitch-to-note, zero search or D.PIXELS.
 - **MED 2.00** (`MED` + version 3) song files produce an error message; save them as MMD0 in OctaMED first.
-- Notation is a single-staff sketch per track. Ghost tracks, hide-instrument mode and saved view settings are missing.
+- Notation is a single-staff sketch per track. Ghost tracks work; hide-instrument mode and saved view settings are missing.
 
 ## Layout
 
