@@ -2331,6 +2331,7 @@
       this.selected = null;
       this.note = `${out.length} entries`;
       this.render();
+      if (this._onChange) this._onChange();
     },
 
     async enter(entry) {
@@ -2358,6 +2359,7 @@
         this.selected = this.entries.length ? 0 : null;
         this.note = this.entries.length + ' file(s) ready';
         this.render();
+        if (this._onChange) this._onChange();
       };
       input.click();
     },
@@ -2928,14 +2930,11 @@
     MW.renderSeqBox();
     scope.start();
 
-    document.getElementById('rail').addEventListener('click', e => {
-      const b = e.target.closest('button[data-panel]');
-      if (b) MW.panels.show(b.dataset.panel);
-    });
-
-    document.getElementById('display-tabs').addEventListener('click', e => {
-      const b = e.target.closest('button[data-display]');
-      if (b) MW.displays.show(b.dataset.display);
+    document.querySelector('.deck-side').addEventListener('click', e => {
+      const p = e.target.closest('button[data-panel]');
+      if (p) return MW.panels.show(p.dataset.panel);
+      const d = e.target.closest('button[data-display]');
+      if (d) MW.displays.show(d.dataset.display);
     });
 
     document.getElementById('panel').addEventListener('click', onPanelClick);

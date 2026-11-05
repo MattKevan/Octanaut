@@ -29,11 +29,19 @@ MW.panels = {
   },
   show(name: string) {
     active = name;
-    document.querySelectorAll('#rail button').forEach((b: any) => {
+    document.querySelectorAll('.deck-side [data-panel]').forEach((b: any) => {
       b.classList.toggle('active', b.dataset.panel === name);
     });
     const left = document.querySelector('.deck-left') as HTMLElement | null;
     if (left) left.style.display = name === 'play' ? 'block' : 'none';
+    if (name === 'files') {
+      if (MW.displays.current !== 'files') {
+        MW._prevDisplay = MW.displays.current;
+        MW.displays.show('files');
+      }
+    } else if (MW.displays.current === 'files') {
+      MW.displays.show(MW._prevDisplay || 'grid');
+    }
     emit();
   },
   refresh() {

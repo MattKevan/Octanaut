@@ -6,7 +6,7 @@
 <title>Octanaut — eight channel tracker</title>
 <link rel="preload" href="fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/PixelOperatorMonoHB8.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=150">
+<link rel="stylesheet" href="css/app.css?v=153">
 </head>
 <body>
 
@@ -41,9 +41,8 @@
       <div class="deck-panel min-w-0 flex-1 overflow-y-auto overflow-x-hidden" id="panel"></div>
     </div>
 
-    <div class="deck-side grid h-[144px] min-w-0 grid-cols-3 grid-rows-5 gap-[2px] border border-ink bg-paper p-[2px]">
-      <div class="contents" id="rail" aria-label="Panels">
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-1 row-start-1" data-panel="files">FILES</button>
+    <div class="deck-side grid h-[144px] min-w-0 grid-cols-3 grid-rows-5 border border-ink bg-paper p-1 shadow-[1px_1px_0_0_#000]">
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border-l border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-1 row-start-1" data-panel="files">FILES</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-1" data-panel="misc">MISC</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active col-start-1 row-start-2" data-panel="play">PLAY</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-2" data-panel="vol">VOL</button>
@@ -53,14 +52,11 @@
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-4" data-panel="transp">TRANS</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-1 row-start-5" data-panel="edit">EDIT</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-5" data-panel="range">RANGE</button>
-      </div>
-      <div class="contents" id="display-tabs" aria-label="Displays">
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active col-start-3 row-start-1" data-display="grid">NOTES</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-2" data-display="notation">NOTA</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-3" data-display="synth">SYNTH</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-4" data-display="sample">SMPED</button>
         <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-5" data-display="list">SLIST</button>
-      </div>
     </div>
 
     <div class="statusline col-span-2 col-start-1 grid h-[29px] min-w-0 grid-cols-[119px_96px_33px_24px_30px_58px_88px_33px_minmax(0,1fr)_18px_18px_71px] gap-1">
@@ -100,17 +96,17 @@
 
 <div id="toast" class="toast" role="status"></div>
 
-<script src="js/core.js?v=150"></script>
-<script src="js/store.js?v=150"></script>
-<script src="js/loaders.js?v=150"></script>
-<script src="js/lha.js?v=150"></script>
-<script src="js/writer.js?v=150"></script>
-<script src="js/synth.js?v=150"></script>
-<script src="js/engine.js?v=150"></script>
-<script src="js/audio-export.js?v=150"></script>
-<script src="js/ui-grid.js?v=150"></script>
-<script src="js/ui-displays.js?v=150"></script>
-<script src="js/panels.js?v=150"></script>
-<script src="js/app.js?v=150"></script>
+<script src="js/core.js?v=153"></script>
+<script src="js/store.js?v=153"></script>
+<script src="js/loaders.js?v=153"></script>
+<script src="js/lha.js?v=153"></script>
+<script src="js/writer.js?v=153"></script>
+<script src="js/synth.js?v=153"></script>
+<script src="js/engine.js?v=153"></script>
+<script src="js/audio-export.js?v=153"></script>
+<script src="js/ui-grid.js?v=153"></script>
+<script src="js/ui-displays.js?v=153"></script>
+<script src="js/panels.js?v=153"></script>
+<script src="js/app.js?v=153"></script>
 </body>
 </html>

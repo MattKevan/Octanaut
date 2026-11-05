@@ -9,11 +9,12 @@
     show(name) {
       this.current = name;
       const host = document.getElementById('display-body');
-      document.querySelectorAll('#display-tabs button').forEach(b => {
+      document.querySelectorAll('.deck-side [data-display]').forEach(b => {
         b.classList.toggle('active', b.dataset.display === name);
       });
       document.getElementById('display-meta').textContent = '';
       if (name === 'grid') { MW.grid.mount(host); return; }
+      if (name === 'files') return this.renderFiles(host);
       if (name === 'list') return this.renderList(host);
       if (name === 'sample') return this.renderSample(host);
       if (name === 'synth') return this.renderSynth(host);
@@ -28,6 +29,54 @@
     inst() {
       const app = MW.app;
       return app.song.instruments[app.currentIns - 1];
+    },
+
+    /* ---------------------------------------------------------- files */
+
+    renderFiles(host) {
+      const req = MW.requester;
+      if (!req) return;
+      const draw = () => { if (MW.displays.current === 'files') this.renderFiles(host); };
+      req._onChange = draw;
+      const path = req.dir ? req.dir.name : (req.title || 'no folder chosen');
+      const rows = (req.entries || []).map((e, i) => {
+        const size = e.dir ? '<dir>' : (e.data ? e.data.length : e.file ? e.file.size : '');
+        return `<button class="req-row${e.dir ? ' dir' : ''}" data-file="${i}">
+          <span>${escapeHtml(e.name)}</span><span class="float-right opacity-60">${size}</span>
+        </button>`;
+      }).join('');
+      host.innerHTML = `<div class="pane flex h-full flex-col gap-2">
+        <div class="flex items-stretch gap-2">
+          <span class="flex h-[24px] min-w-0 flex-1 items-center border border-ink bg-black px-2 text-[11px] text-white">DIR: ${escapeHtml(path)}</span>
+          <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="folder">FOLDER</button>
+          <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="browse">BROWSE</button>
+          <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="up">UP</button>
+          <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="refresh">REFRESH</button>
+        </div>
+        <div class="req-list min-h-0 flex-1">${rows || '<div class="req-empty">No folder open. Choose a folder or browse for a module.</div>'}</div>
+      </div>`;
+      host.querySelectorAll('[data-files]').forEach(b => {
+        b.onclick = async () => {
+          const act = b.dataset.files;
+          try {
+            if (act === 'folder') await req.pickDir();
+            else if (act === 'browse') req.browse();
+            else if (act === 'up') await req.up();
+            else if (act === 'refresh') await req.listDir();
+          } catch (e) { /* requester reports its own errors */ }
+          draw();
+        };
+      });
+      host.querySelectorAll('[data-file]').forEach(b => {
+        b.onclick = async () => {
+          const i = parseInt(b.dataset.file, 10);
+          req.selected = i;
+          const e = req.entries[i];
+          if (!e) return;
+          if (e.dir) { await req.enter(e); draw(); }
+          else req.choose();
+        };
+      });
     },
 
     /* ---------------------------------------------------------- list */

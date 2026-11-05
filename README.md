@@ -194,7 +194,7 @@ Samples are resampled to the context rate once on load, which keeps pitch handli
 
 The interface is built in OctaMED's own idiom: grey bevelled chrome over a black screen, a timer in the title bar, the play sequence as a five-row box on the left with its own up/down arrows, tempo and filter gadgets along the top, transport under the gadget row, and a status line carrying the sequence position, block, octave, the E / SP / CHRD flags and sixteen track lamps.
 
-The panel selector is the two-column grid on the right, in the same order: Files/Misc, Play/Vol, Instr/MIDI, Block/Trans, Edit/Range. The display selector sits under it. The bottom strip is the Amiga's monitor area: sixteen channel meters on the left and a live oscilloscope on the right, both switchable with the E1 and E3 gadgets.
+The panel and display selectors share one five-row, three-column grid on the right: the ten panels in the first two columns, the five editors in the third. The Files panel opens a directory browser in the main window, with folder, browse, parent and refresh controls. The bottom strip is the Amiga's monitor area: sixteen channel meters on the left and a live oscilloscope on the right, both switchable with the E1 and E3 gadgets.
 
 The colours are the machine's: grey chrome, black screen, white notes, amber commands and alternating red and blue track rules. E2 switches the rules off for a plainer grid.
 
