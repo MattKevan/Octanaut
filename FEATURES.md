@@ -18,7 +18,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | MOD0 (old) multi-song save | yes | Writes a proper nextmod chain. |
 | 3200-line blocks | yes | MMD1 writer, loader, model and block panel. MMD0 still caps at 256, with a clear error. |
 | Blocks 00–99 | part | No explicit 100-block cap; the status bar will show more. |
-| Octaves 1+2 to 9+A | part | 1+2 to 4+5 only; notes cap at 96. |
+| Octaves 1+2 to 9+A | yes | Panel buttons, note names and the model reach octave A. |
 | Instrument finetune -8..+7 | yes | Panel, engine and MMD1 expdata. MMD0 cannot store it. |
 | Last occupied instrument (`>|<`) | yes | Scans down from 1V. |
 | Keypad MAP2 maps | no | Track on/off and select-instrument only. |
@@ -45,6 +45,17 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | Delete file | no | Browser leaves this to the OS. |
 | Absolute instrument names / paths | no | |
 | Palette RGB editor | part | Four fixed palettes. |
+
+## Controls shown but not implemented
+
+The panels follow the V4 layouts, including controls whose features are still absent. These are the visible placeholders:
+
+- **Files:** ICON, DEL FILE, LOAD MSG, SAVE MSG, LOAD MAP, SAVE MAP, MOD1(NO INSTR). INFO toggles a flag, but the writer always includes the extra information block.
+- **Instr:** TYPE switches the instrument type but does not convert the waveform or sample data.
+- **Edit:** MAP2. The programmable-key definition is shown but cannot be edited digit by digit.
+- **Misc:** RGB palette sliders, RES, UNDO, WB OPEN, CLOSE, PATHS, ADD, REM, LOADGFX, MOUSE2, QUIT, CONFIRM.
+- **MIDI:** EXT SYNC, the ACT.SENSING toggle, KEY-UP, the ALL OFF modes, the MIDI message editor and the input map editor.
+- **Range:** NOTE ECHO with DIST and MIN, RST, and PASTE SELECT (it currently behaves like PASTE).
 
 ---
 
@@ -124,7 +135,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 |---|---|---|
 | Per-track on/off switches | yes | In the panel, and the status lamps. |
 | Edit on/off, SPC, space value 1–16 | yes | SPC sets how far the cursor advances, which is the quantise step during real-time entry. |
-| Octave pairs 1+2 – 9+A | part | 1+2 to 4+5 only. |
+| Octave pairs 1+2 – 9+A | yes | Nine panel buttons; note names run to octave A. |
 | Programmable keys 0–9 | part | Shift+digit inserts, Ctrl+Shift+digit picks. No digit editor or `x` wildcards, and range pick stores only the first note. |
 | Left Alt / Right Alt templates | yes | Pick from the cursor cell; hold Alt while entering a note to apply. |
 | Pick note / pick range / pick buffer | yes | Ctrl+Shift+digit picks the cursor note; the Edit panel picks from the range or the copy buffer. |

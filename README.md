@@ -11,7 +11,7 @@ python3 -m http.server 8000 --directory web
 # then visit http://localhost:8000/
 ```
 
-The JavaScript is plain ES2019 in classic scripts, with no build step. The stylesheet is compiled from Tailwind, and the compiled file is checked in, so `file://` still works as-is.
+The engine, grid and canvas code is plain ES2019 in classic scripts. The panel chrome is Preact with TSX, compiled to `web/js/panels.js`, and the stylesheet is compiled from Tailwind. Both compiled files are checked in, so `file://` still works as-is.
 
 ## Styling
 
@@ -20,7 +20,10 @@ The interface is built with Tailwind CSS v4. The source lives in `web/css/tailwi
 ```
 npm install          # once
 npm run build:css    # compile web/css/app.css
-npm run watch:css    # rebuild while editing
+npm run build:panels # compile web/js/panels.js from TSX
+npm run build        # both
+npm run watch:css    # rebuild CSS while editing
+npm run watch:panels # rebuild panels while editing
 ```
 
 Buttons carry their utility classes in the markup. Three custom variants handle the states the scripts toggle: `on` for a lit gadget, `selected` for the active tab, and `playing` for the row under the playhead. The `@layer components` block holds the drawn, repeated shapes: the frame, the sequence box, the status line, the grid and its cells, the channel meters and the scope overlays.
@@ -124,7 +127,7 @@ The map is OctaMED's, with **Cmd** (or **Ctrl** for the shortcuts a browser leav
 | `Shift`+`Space` | Continue song |
 | `Alt`+`Space` | Continue block |
 | `Shift`+`Alt`+`Space` | Play song |
-| `F1`–`F4` | Octave for the two keyboard rows |
+| `F1`–`F5` | Octave for the two keyboard rows |
 | `F6`–`F10` | First, quarter, middle, three-quarter, last line |
 | `Ctrl`+`F1`–`F10` | Select panel |
 | Up / Down | Scroll the tracker one row |
@@ -228,16 +231,17 @@ app/
     js/synth.js       synthsound renderer
     js/engine.js      tick scheduler, Web Audio voices, effects
     js/ui-grid.js     note grid
-    js/ui-panels.js   the ten panels
+    js/panels.js      compiled Preact panel bundle
     js/ui-displays.js notation, sample, synth, instrument list
+    src/panels.tsx    panel components and their store subscriptions
     js/app.js         editing operations, keyboard, file IO
 ```
 
 The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.writeMMD0(song)` work without a DOM, which is how the demo modules were round-trip tested (7,680 cells, no differences).
 
-Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 31 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export and the store. The UI scripts can join them one file at a time.
+Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 31 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export, the store and the TSX panel components. The UI scripts can join them one file at a time.
 
-`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 111 features matching, 22 partial, 29 absent.
+`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 113 features matching, 20 partial, 29 absent.
 
 ## Command bytes
 

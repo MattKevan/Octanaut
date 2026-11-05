@@ -40,6 +40,12 @@
     no16: false,
     ptkey: false,
     clipRange: null,
+    saveFormat: 'mmd1',
+    saveInfo: true,
+    volTrack: 0,
+    midiInput: true,
+    midiSendOut: false,
+    midiInChannel: 0,
     seq: 0,
     transport: { playing: false }
   };
@@ -85,7 +91,7 @@
 
     el('st-seq').textContent = `${String(Math.min(MW.player.seqPos + 1, seqLen)).padStart(4, '0')}/${String(seqLen).padStart(4, '0')}`;
     el('st-block').textContent = `${String(app.cursor.block).padStart(4, '0')}/${String(Math.max(0, s.blocks.length - 1)).padStart(4, '0')}`;
-    el('st-oct').textContent = String(app.octave + 1) + (app.octave + 2);
+    el('st-oct').textContent = (app.octave + 1).toString(36).toUpperCase() + '+' + (app.octave + 2).toString(36).toUpperCase();
     el('st-edit').classList.toggle('on', app.editMode);
     el('st-space').classList.toggle('on', app.spaceAsDel);
     el('st-chord').classList.toggle('on', app.chordMode);
@@ -392,7 +398,7 @@
       const apply = c => {
         if (!c.note) return;
         if (instScope === 'curr' && c.ins !== cur) return;
-        c.note = MW.clamp(c.note + semis, 1, 96);
+        c.note = MW.clamp(c.note + semis, 1, 120);
       };
       if (scope === 'song') {
         app.song.blocks.forEach(b => b.rows.forEach(r => r.forEach(apply)));
@@ -932,7 +938,7 @@
   }
 
   function enterNote(offset, altSide) {
-    const n = MW.clamp(app.octave * 12 + 1 + offset, 1, 96);
+    const n = MW.clamp(app.octave * 12 + 1 + offset, 1, 120);
     if (app.chordMode) { chordPress(n); return; }
     const c = curCell();
     if (!c) return;
@@ -1182,7 +1188,7 @@
     if (/^F([1-9]|1[0-2])$/.test(key)) {
       e.preventDefault();
       const n = parseInt(key.slice(1), 10);
-      if (n >= 1 && n <= 4) {
+      if (n >= 1 && n <= 5) {
         app.octave = n - 1;
         MW.touchStatus('octave', ['octave']);
       } else if (app.ptkey && n >= 3 && n <= 5 && (shift || alt)) {
@@ -1224,7 +1230,7 @@
     if (off !== undefined && !(app.editMode && app.cursor.field > 0)) {
       e.preventDefault();
       if (app.editMode && app.cursor.field === 0) enterNote(off, alt ? 'left' : null);
-      else if (!app.editMode) MW.voicePreview(MW.clamp(app.octave * 12 + 1 + off, 1, 96), app.currentIns);
+      else if (!app.editMode) MW.voicePreview(MW.clamp(app.octave * 12 + 1 + off, 1, 120), app.currentIns);
       return;
     }
 
@@ -1357,6 +1363,10 @@
     else MW.toast(`Loaded ${song.format}: ${song.blocks.length} blocks, ${song.channels} tracks`);
     MW.emit('song', song);
   }
+  MW.missing = function (name) {
+    MW.toast((name || 'That feature') + ' is not implemented yet', true);
+  };
+
   MW.openBuffer = openBuffer;
 
   function readFile(file) {
@@ -1367,7 +1377,9 @@
 
   function saveModule(format) {
     try {
-      const mmd1 = format !== 0;
+      const chosen = format === 0 ? 'mmd0' : format === 1 ? 'mmd1' : (app.saveFormat || 'mmd1');
+      if (chosen === 'st') { saveST(); return; }
+      const mmd1 = chosen !== 'mmd0';
       const list = (app.songList && app.songList.length > 1)
         ? app.songList
         : [app.song];
@@ -1585,7 +1597,7 @@
         const raw = localStorage.getItem(PREF_KEY) || localStorage.getItem(PREF_KEY_OLD);
         if (!raw) return;
         const p = JSON.parse(raw);
-        if (typeof p.octave === 'number') app.octave = MW.clamp(p.octave, 0, 3);
+        if (typeof p.octave === 'number') app.octave = MW.clamp(p.octave, 0, 8);
         if (p.advance) app.advance = p.advance;
         if (p.step) app.step = MW.clamp(p.step, 1, 16);
         app.spaceAsDel = !!p.spaceAsDel;
@@ -1725,7 +1737,7 @@
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     const a = lastActionFor(btn.dataset.act);
-    if (a) a();
+    if (a) a(btn.dataset.name);
   }
 
   function lastActionFor(act) {
@@ -1735,6 +1747,19 @@
       'edit-chord': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
       'chord-toggle': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
       'file-open': () => MW.requester.open(),
+      'file-info': () => { app.saveInfo = !app.saveInfo; MW.panels.refresh(); },
+      'fmt-mmd1': () => { app.saveFormat = 'mmd1'; MW.panels.refresh(); },
+      'fmt-mmd1n': () => MW.missing('MOD1 without instruments'),
+      'fmt-mmd0': () => { app.saveFormat = 'mmd0'; MW.panels.refresh(); },
+      'fmt-st': () => { app.saveFormat = 'st'; MW.panels.refresh(); },
+      'file-save-song': () => saveModule(),
+      'file-del': () => MW.missing('Delete file'),
+      'file-icon': () => MW.missing('Save icon'),
+      'file-load-msg': () => MW.missing('MIDI message files'),
+      'file-save-msg': () => MW.missing('MIDI message files'),
+      'file-load-map': () => MW.missing('MIDI map files'),
+      'file-save-map': () => MW.missing('MIDI map files'),
+      'missing': name => MW.missing(name || 'That control'),
       'file-save': () => saveModule(1),
       'file-save-mmd0': () => saveModule(0),
       'audio-wav': () => MW.exportAudio('wav'),
@@ -1834,6 +1859,13 @@
         setInstrument(1);
       },
       'ins-jump': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) { i.jump = !i.jump; MW.panels.refresh(); } },
+      'pick-note': () => pickProgKey(app.progTarget),
+      'prefs-save': () => { prefs.save(); MW.toast('Preferences saved'); },
+      'midi-input': () => { app.midiInput = !app.midiInput; MW.panels.refresh(); },
+      'midi-sendout': () => { app.midiSendOut = !app.midiSendOut; MW.panels.refresh(); },
+      'midi-suppress': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) i.suppressOff = !i.suppressOff; MW.panels.refresh(); },
+      'midi-reset-pb': () => { for (let c = 0; c < 16; c++) { midi.send([0xe0 | c, 0, 64]); midi.send([0xb0 | c, 1, 0]); } MW.toast('Pitch bend and modulation reset'); },
+      'midi-reset-ff': () => { midi.send([0xff]); MW.toast('MIDI system reset sent'); },
       'file-save-iff': () => MW.saveIFF(),
       'samp-record': () => {
         const len = parseInt((document.getElementById('buffsize') || {}).value, 10) || 65536;
@@ -2145,12 +2177,17 @@
     onMessage(e) {
       const d = e.data;
       if (!d || d.length < 3) return;
+      const app = MW.app;
+      if (!app.midiInput) return;
+      const incoming = d[0] & 0x0f;
+      if (app.midiInChannel && incoming !== app.midiInChannel - 1) return;
+      if (app.midiSendOut) this.send(Array.from(d));
       const type = d[0] & 0xf0;
       const note = d[1];
       const vel = d[2];
 
       if (type === 0x90 && vel > 0) {
-        const med = MW.clamp(note - 23, 1, 96);
+        const med = MW.clamp(note - 23, 1, 120);
         MW.midiNoteIn(med, vel);
       } else if (type === 0x80 || (type === 0x90 && vel === 0)) {
         // nothing to release: notes are one-shots in this engine

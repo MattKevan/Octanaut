@@ -864,7 +864,7 @@
       const pos = Math.round((baseY - y) / 4);
       const steps = [0, 2, 4, 5, 7, 9, 11];
       const oct = Math.floor(pos / 7);
-      const note = MW.clamp(oct * 12 + 1 + steps[((pos % 7) + 7) % 7], 1, 96);
+      const note = MW.clamp(oct * 12 + 1 + steps[((pos % 7) + 7) % 7], 1, 120);
 
       if (!app.editMode) {
         MW.voicePreview(note, app.currentIns);

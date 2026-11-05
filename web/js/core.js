@@ -14,7 +14,7 @@
   MW.noteName = function (n, hb) {
     if (!n) return '---';
     const i = (n - 1) % 12;
-    const o = Math.floor((n - 1) / 12) + 1;
+    const o = (Math.floor((n - 1) / 12) + 1).toString(36).toUpperCase();
     if (hb) {
       if (i === 10) return 'B-' + o;
       if (i === 11) return 'H-' + o;
@@ -23,11 +23,11 @@
   };
 
   MW.noteIndex = function (name) {
-    const m = /^([A-G])(#|-)?(\d)$/.exec(name);
+    const m = /^([A-G])(#|-)?([0-9A])$/.exec(name);
     if (!m) return 0;
     const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]];
     const sharp = m[2] === '#' ? 1 : 0;
-    return 1 + (parseInt(m[3], 10) - 1) * 12 + base + sharp;
+    return 1 + (parseInt(m[3], 36) - 1) * 12 + base + sharp;
   };
 
   /* instrument numbers display in base 32: 1..63 -> 01..1V */

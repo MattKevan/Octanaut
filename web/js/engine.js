@@ -591,7 +591,7 @@
       const inst = ch.inst;
       if (!ctx || !inst) return;
 
-      const eff = MW.clamp(note + (this.song.playtransp || 0) + (inst.transpose || 0), 1, 96);
+      const eff = MW.clamp(note + (this.song.playtransp || 0) + (inst.transpose || 0), 1, 120);
       if (!ch._keepStart) ch.synthStart = 0;
       ch._keepStart = false;
       ch.note = note;
@@ -719,7 +719,7 @@
         case 0x03:
           if (cell && cell.note) {
             const inst2 = ch.inst;
-            ch.target = MW.period(MW.clamp(cell.note + (this.song.playtransp || 0) + (inst2 ? inst2.transpose || 0 : 0), 1, 96));
+            ch.target = MW.period(MW.clamp(cell.note + (this.song.playtransp || 0) + (inst2 ? inst2.transpose || 0 : 0), 1, 120));
             if (ch.dat) ch.portaSpeed = ch.dat;
           }
           break;
@@ -774,7 +774,7 @@
             this.song.flags.filteron = 1;
             audio.setFilter(true);
           } else if (ch.dat === 0xfd) {
-            ch.period = MW.period(MW.clamp((cell && cell.note ? cell.note : ch.note) + (this.song.playtransp || 0) + (inst ? inst.transpose || 0 : 0), 1, 96));
+            ch.period = MW.period(MW.clamp((cell && cell.note ? cell.note : ch.note) + (this.song.playtransp || 0) + (inst ? inst.transpose || 0 : 0), 1, 120));
             if (ch.src) ch.src.playbackRate.setValueAtTime(this.rateFor(ch), time);
           }
           break;

@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "lib": ["ES2020", "DOM"],
     "module": "esnext",
     "allowJs": true,
@@ -12,5 +14,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["web/js/**/*.js"]
+  "include": ["web/js/**/*.js", "web/src/**/*.tsx"]
 }

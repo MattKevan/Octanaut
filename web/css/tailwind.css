@@ -2,6 +2,7 @@
 
 @source "../index.html";
 @source "../js/*.js";
+@source "../src/**/*.tsx";
 
 /* ------------------------------------------------------------------ fonts */
 
@@ -56,6 +57,10 @@
 
   body {
     @apply overflow-auto p-[23px] text-[14px];
+  }
+
+  input[type="range"] {
+    accent-color: var(--color-ink);
   }
 
   button,
