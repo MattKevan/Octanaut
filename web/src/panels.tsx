@@ -91,7 +91,7 @@ function TempoSlider(props: any) {
   return (
     <div
       ref={ref}
-      class={`tslider ${props.cls || ''}`}
+      class={`relative h-full min-w-0 flex-1 border border-l-2 border-t-2 border-ink bg-paper [background-image:repeating-conic-gradient(rgba(0,0,0,0.35)_0_25%,transparent_0_50%)] [background-size:2px_2px] ${props.cls || ''}`}
       onPointerDown={(e: any) => {
         dragging.current = true;
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
@@ -101,7 +101,7 @@ function TempoSlider(props: any) {
       onPointerUp={() => { dragging.current = false; }}
       onPointerCancel={() => { dragging.current = false; }}
     >
-      <div class="knob" style={{ left: `calc(${pct.toFixed(2)}% - 5px)` }} />
+      <div class="absolute top-1 bottom-1 w-[10px] border border-ink bg-paper shadow-[1px_1px_0_0_#000]" style={{ left: `calc(${pct.toFixed(2)}% - 5px)` }} />
     </div>
   );
 }
@@ -147,7 +147,7 @@ function PlayPanel() {
     setTempo(kind, (kind === 'tempo' ? song.deftempo : song.tempo2) + d);
 
   return (
-    <div class="playpanel">
+    <div class="flex h-full flex-col">
       <div class="flex h-[46px] shrink-0 items-stretch">
         <TempoSlider kind="tempo" value={tempo} max={240} cls="flex-[1.68]" onChange={(v: number) => setTempo('tempo', v)} />
         <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo', -1)} title="Slower">‹</PB>

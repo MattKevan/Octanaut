@@ -489,10 +489,6 @@
   }
 
   /* play panel ----------------------------------------------------------- */
-  .playpanel {
-    @apply flex h-full flex-col;
-  }
-
   .insbox {
     @apply flex h-full w-[34px] shrink-0 flex-col items-center justify-center border border-ink leading-none;
   }
@@ -503,16 +499,6 @@
 
   .insbox b {
     @apply text-[16px] font-normal;
-  }
-
-  .tslider {
-    @apply relative h-full min-w-0 flex-1 border border-l-2 border-t-2 border-ink bg-paper;
-    background-image: repeating-conic-gradient(rgba(0, 0, 0, 0.35) 0 25%, transparent 0 50%);
-    background-size: 2px 2px;
-  }
-
-  .tslider .knob {
-    @apply absolute top-1 bottom-1 w-[10px] border border-ink bg-paper shadow-[1px_1px_0_0_#000];
   }
 
   /* displays ------------------------------------------------------------- */
