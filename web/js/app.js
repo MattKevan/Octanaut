@@ -137,7 +137,7 @@
     const leds = el('st-tracks');
     if (leds && leds.children.length !== 16) {
       leds.innerHTML = Array.from({ length: 16 }, (_, i) =>
-        `<span class="dot" data-mute="${i}" title="Track ${i.toString(16).toUpperCase()}"></span>`).join('');
+        `<span class="dot size-2 shrink-0 border border-ink bg-paper on:bg-ink" data-mute="${i}" title="Track ${i.toString(16).toUpperCase()}"></span>`).join('');
     }
     if (leds) {
       for (let i = 0; i < 16; i++) {
@@ -2662,15 +2662,14 @@
     for (let i = 0; i < 5; i++) {
       const idx = start + i;
       const up = i < 2;
-      if (idx >= total) { rows += '<div class="seq-row"></div>'; continue; }
-      const cls = 'seq-row'
-        + (idx === cur ? ' cur' : '')
-        + (MW.player.playing && idx === MW.player.seqPos ? ' playing' : '');
+      if (idx >= total) { rows += '<div class="flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap"></div>'; continue; }
+      const cls = 'flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap'
+        + (idx === cur || (MW.player.playing && idx === MW.player.seqPos) ? ' bg-ink text-paper' : '');
       /* the sequence list shows block numbers, as OctaMED does */
       rows += `<div class="${cls}" data-seq="${idx}" title="Sequence ${idx + 1}">${MW.hex(s.playseq[idx])}</div>`;
       arrows += `<button class="flex items-center justify-center border-b border-ink bg-paper text-[15px] leading-none active:bg-ink active:text-paper" data-seqmove="${idx}" data-dir="${up ? -1 : 1}" title="${up ? 'Move this entry up' : 'Move this entry down'}">${up ? '↑' : '↓'}</button>`;
     }
-    host.innerHTML = `<div class="seq-list">${rows}</div>`;
+    host.innerHTML = `<div class="grid h-full grid-rows-5">${rows}</div>`;
     if (arrowsHost) arrowsHost.innerHTML = arrows;
   };
 

@@ -28,7 +28,7 @@ npm run watch:panels # rebuild panels only
 npm run serve        # static server without the watchers
 ```
 
-Buttons carry their utility classes in the markup. Three custom variants handle the states the scripts toggle: `on` for a lit gadget, `selected` for the active tab, and `playing` for the row under the playhead. The `@layer components` block holds the drawn, repeated shapes: the frame, the sequence box, the status line, the grid and its cells, the channel meters and the scope overlays.
+Buttons carry their utility classes in the markup. Three custom variants handle the states the scripts toggle: `on` for a lit gadget, `selected` for the active tab, and `playing` for the row under the playhead. The chrome (frame, title bar, deck, side rail, sequence box, status line, bottom bar) uses utilities directly in the markup. The `@layer components` block now holds only the grid, cell, meter and display primitives that are too repetitive to inline.
 
 Fonts are bundled in `web/fonts/`:
 

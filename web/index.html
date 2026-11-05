@@ -6,29 +6,29 @@
 <title>Octanaut — eight channel tracker</title>
 <link rel="preload" href="fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/PixelOperatorMonoHB8.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=147">
+<link rel="stylesheet" href="css/app.css?v=149">
 </head>
 <body>
 
-<div class="frame max-w-8xl">
+<div class="frame flex h-full min-h-[620px] min-w-[1024px] flex-col overflow-hidden border border-ink bg-paper shadow-[2px_2px_0_0_#000] max-w-7xl mx-auto">
 
-  <div class="titlebar">
-    <span class="tick" aria-hidden="true"></span>
-    <span class="brand">OctaNAUT Professional (v0.01)</span>
-    <span class="credit">Inspired by Teijo Kinnunen</span>
-    <span class="rule" aria-hidden="true"></span>
-    <span class="timer-label">TIMER</span>
-    <b id="timer">00:00</b>
-    <span class="grip" aria-hidden="true"><i></i></span>
+  <div class="titlebar flex h-[30px] shrink-0 items-center gap-2.5 border-b border-ink px-2">
+    <span class="tick size-[14px] shrink-0 border border-ink" aria-hidden="true"></span>
+    <span class="brand whitespace-nowrap text-[14px] leading-none">OctaNAUT Professional (v0.01)</span>
+    <span class="credit whitespace-nowrap text-[10px] uppercase leading-none tracking-[0.05em]">Inspired by Teijo Kinnunen</span>
+    <span class="rule h-[13px] w-[364px] max-w-[40vw] shrink bg-[repeating-linear-gradient(to_bottom,#000_0,#000_1px,transparent_1px,transparent_4px)]" aria-hidden="true"></span>
+    <span class="timer-label ml-auto whitespace-nowrap text-[14px] uppercase leading-none">TIMER</span>
+    <b id="timer" class="whitespace-nowrap text-[14px] font-normal leading-none tabular-nums">00:00</b>
+    <span class="grip flex size-[14px] shrink-0 items-center justify-center border border-ink bg-paper" aria-hidden="true"><i class="block size-[6px] border border-ink bg-paper"></i></span>
   </div>
 
-  <div class="deck">
-    <div class="deck-main">
-      <div class="deck-left">
-        <div class="seqbox" id="seqbox"></div>
-        <div class="seqarrows" id="seqarrows"></div>
-        <div class="seqtools">
-          <div class="row">
+  <div class="deck grid h-[193px] shrink-0 grid-cols-[minmax(0,1fr)_254px] grid-rows-[144px_29px] gap-x-2 gap-y-[6px] px-2 pb-1 pt-2 [background-image:repeating-conic-gradient(rgba(0,0,0,0.35)_0_25%,transparent_0_50%)] [background-size:2px_2px]">
+    <div class="deck-main flex min-w-0 border border-ink bg-paper p-1 shadow-[1px_1px_0_0_#000]">
+      <div class="deck-left flex w-[146px] shrink-0 border border-ink">
+        <div class="seqbox h-full w-[57px] shrink-0 border-r border-t border-l border-ink bg-paper" id="seqbox"></div>
+        <div class="seqarrows grid w-[29px] shrink-0 grid-rows-4 border-r border-ink" id="seqarrows"></div>
+        <div class="seqtools grid w-[59px] shrink-0 grid-rows-4">
+          <div class="flex min-h-0">
             <button class="flex h-full min-w-0 flex-1 items-center justify-center border-b border-ink bg-paper px-0 text-[16px] leading-none active:bg-ink active:text-paper" data-act="seq-add" title="Append a sequence entry">+</button>
             <button class="flex h-full min-w-0 flex-1 items-center justify-center border-b border-ink bg-paper px-0 text-[16px] leading-none active:bg-ink active:text-paper" data-act="seq-sub" title="Remove the last entry">−</button>
           </div>
@@ -38,60 +38,60 @@
         </div>
       </div>
 
-      <div class="deck-panel" id="panel"></div>
+      <div class="deck-panel min-w-0 flex-1 overflow-y-auto overflow-x-hidden" id="panel"></div>
     </div>
 
-    <div class="deck-side">
-      <div class="panelgrid" id="rail" aria-label="Panels">
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="files">FILES</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="misc">MISC</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active" data-panel="play">PLAY</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="vol">VOL</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="instr">INSTR</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="midi">MIDI</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="block">BLOCK</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="transp">TRANS</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="edit">EDIT</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-panel="range">RANGE</button>
+    <div class="deck-side grid h-[144px] min-w-0 grid-cols-3 grid-rows-5 gap-[2px] border border-ink bg-paper p-[2px]">
+      <div class="contents" id="rail" aria-label="Panels">
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-1 row-start-1" data-panel="files">FILES</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-1" data-panel="misc">MISC</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active col-start-1 row-start-2" data-panel="play">PLAY</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-2" data-panel="vol">VOL</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-1 row-start-3" data-panel="instr">INSTR</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-3" data-panel="midi">MIDI</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-1 row-start-4" data-panel="block">BLOCK</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-4" data-panel="transp">TRANS</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-1 row-start-5" data-panel="edit">EDIT</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-2 row-start-5" data-panel="range">RANGE</button>
       </div>
-      <div class="dispgrid" id="display-tabs" aria-label="Displays">
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active" data-display="grid">NOTES</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="notation">NOTA</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="synth">SYNTH</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="sample">SMPED</button>
-        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper" data-display="list">SLIST</button>
+      <div class="contents" id="display-tabs" aria-label="Displays">
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper active col-start-3 row-start-1" data-display="grid">NOTES</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-2" data-display="notation">NOTA</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-3" data-display="synth">SYNTH</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-4" data-display="sample">SMPED</button>
+        <button class="flex min-w-0 items-center justify-center overflow-hidden border border-ink bg-paper px-0.5 text-[15px] leading-none tracking-[0.01em] whitespace-nowrap text-ink selected:bg-ink selected:text-paper col-start-3 row-start-5" data-display="list">SLIST</button>
       </div>
     </div>
 
-    <div class="statusline">
-      <span class="sb"><b id="st-seq">0001/0001</b></span>
-      <span class="sb"><b id="st-block">0000/0000</b></span>
-      <span class="sb"><b id="st-oct">12</b></span>
-      <span class="sb flag" id="st-edit">E</span>
-      <span class="sb" id="st-space">SP</span>
-      <span class="sb" id="st-chord">CHRD</span>
-      <span class="sb leds" id="st-tracks"></span>
-      <span class="sb"><b id="st-ins">01</b></span>
-      <span class="sb grow" id="st-insname">no instrument</span>
-      <span class="sb cursor-pointer text-[11px]" id="st-song-prev" title="Previous song (Shift: delete last)">◀</span>
-      <span class="sb cursor-pointer text-[11px]" id="st-song-next" title="Next song">▶</span>
-      <span class="sb"><b id="st-song">01/01</b></span>
+    <div class="statusline col-span-2 col-start-1 grid h-[29px] min-w-0 grid-cols-[119px_96px_33px_24px_30px_58px_88px_33px_minmax(0,1fr)_18px_18px_71px] gap-1">
+      <span class="sb flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper"><b id="st-seq" class="font-normal">0001/0001</b></span>
+      <span class="sb flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper"><b id="st-block" class="font-normal">0000/0000</b></span>
+      <span class="sb flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper"><b id="st-oct" class="font-normal">12</b></span>
+      <span class="sb flag flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper" id="st-edit">E</span>
+      <span class="sb flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper" id="st-space">SP</span>
+      <span class="sb flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper" id="st-chord">CHRD</span>
+      <span class="sb leds flex min-w-0 flex-wrap place-content-center justify-start gap-px overflow-hidden border border-ink bg-paper p-1 text-[16px] leading-none" id="st-tracks"></span>
+      <span class="sb flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper"><b id="st-ins" class="font-normal">01</b></span>
+      <span class="sb grow flex min-w-0 items-center justify-start gap-1 overflow-hidden border border-ink bg-paper px-2 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper" id="st-insname">no instrument</span>
+      <span class="sb flex min-w-0 cursor-pointer items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[11px] leading-none whitespace-nowrap on:bg-ink on:text-paper" id="st-song-prev" title="Previous song (Shift: delete last)">◀</span>
+      <span class="sb flex min-w-0 cursor-pointer items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[11px] leading-none whitespace-nowrap on:bg-ink on:text-paper" id="st-song-next" title="Next song">▶</span>
+      <span class="sb flex min-w-0 items-center justify-center gap-1 overflow-hidden border border-ink bg-paper px-1 text-[16px] leading-none whitespace-nowrap on:bg-ink on:text-paper"><b id="st-song" class="font-normal">01/01</b></span>
     </div>
   </div>
 
-  <div class="screen" id="display-body"></div>
+  <div class="screen relative min-h-0 flex-1 overflow-hidden bg-black text-white outline outline-1 outline-offset-[-1px] outline-white" id="display-body"></div>
 
-  <div class="bottom">
-    <div class="membar">
-      <span class="mem-label">MEM</span>
+  <div class="bottom shrink-0 px-2 pb-2 pt-1.5 [background-image:repeating-conic-gradient(rgba(0,0,0,0.35)_0_25%,transparent_0_50%)] [background-size:2px_2px]">
+    <div class="membar flex h-[30px] items-center gap-1.5 border border-ink bg-paper px-2 text-[16px] leading-none">
+      <span class="pr-1 text-[16px]">MEM</span>
       <span id="mem-used">000000</span>
       <span class="mem-sep">/</span>
       <span id="mem-total">000000</span>
-      <span class="mem-bars"><i id="mem-bar-a"></i><i id="mem-bar-b"></i></span>
+      <span class="mx-1 flex h-[14px] min-w-0 flex-1 gap-1 overflow-hidden border border-ink/30 p-px"><i class="block h-full bg-[linear-gradient(to_right,#ff00ff,#a55aff,#00ffff)]" id="mem-bar-a"></i><i class="block h-full bg-[linear-gradient(to_right,#ff00ff,#a55aff,#00ffff)]" id="mem-bar-b"></i></span>
       <span id="display-meta" class="sr-only"></span>
       <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[14px] leading-none active:bg-ink active:text-paper" id="btn-nrm" title="Monitor normalisation">NRM</button>
     </div>
-    <div class="monitor"><canvas id="meters"></canvas></div>
+    <div class="monitor mt-1.5 h-[117px] border border-ink bg-paper p-1.5"><canvas class="block h-full w-full" id="meters"></canvas></div>
   </div>
 
   <input id="file-input" type="file" accept=".mmd0,.mmd1,.mmd2,.mmd3,.med,.mod,.mmd,.msh,.8svx,.lha,.lzh" hidden>
@@ -100,17 +100,17 @@
 
 <div id="toast" class="toast" role="status"></div>
 
-<script src="js/core.js?v=147"></script>
-<script src="js/store.js?v=147"></script>
-<script src="js/loaders.js?v=147"></script>
-<script src="js/lha.js?v=147"></script>
-<script src="js/writer.js?v=147"></script>
-<script src="js/synth.js?v=147"></script>
-<script src="js/engine.js?v=147"></script>
-<script src="js/audio-export.js?v=147"></script>
-<script src="js/ui-grid.js?v=147"></script>
-<script src="js/ui-displays.js?v=147"></script>
-<script src="js/panels.js?v=147"></script>
-<script src="js/app.js?v=147"></script>
+<script src="js/core.js?v=149"></script>
+<script src="js/store.js?v=149"></script>
+<script src="js/loaders.js?v=149"></script>
+<script src="js/lha.js?v=149"></script>
+<script src="js/writer.js?v=149"></script>
+<script src="js/synth.js?v=149"></script>
+<script src="js/engine.js?v=149"></script>
+<script src="js/audio-export.js?v=149"></script>
+<script src="js/ui-grid.js?v=149"></script>
+<script src="js/ui-displays.js?v=149"></script>
+<script src="js/panels.js?v=149"></script>
+<script src="js/app.js?v=149"></script>
 </body>
 </html>
