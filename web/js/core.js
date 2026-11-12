@@ -129,6 +129,49 @@
   /* ---------- cells ---------- */
 
   MW.cell = () => ({ note: 0, ins: 0, cmd: 0, dat: 0 });
+
+  /* Programmable keys: a definition can be a single cell, or a group of
+     cells picked from a range. */
+  MW.progGroupFromRange = function (block, range, track, limit) {
+    if (!block || !range) return [];
+    const max = Math.max(1, limit || 16);
+    const l0 = Math.min(range.l0, range.l1), l1 = Math.max(range.l0, range.l1);
+    const out = [];
+    for (let l = l0; l <= l1 && out.length < max; l++) {
+      const cell = block.rows[l] && block.rows[l][track];
+      out.push(cell
+        ? { note: cell.note || 0, ins: cell.ins || 0, cmd: cell.cmd || 0, dat: cell.dat || 0 }
+        : { note: 0, ins: 0, cmd: 0, dat: 0 });
+    }
+    return out;
+  };
+
+  MW.insertProgGroup = function (block, track, line, cells) {
+    if (!block || !cells) return;
+    for (let i = 0; i < cells.length; i++) {
+      const row = block.rows[line + i];
+      if (!row) break;
+      row[track] = { ...cells[i] };
+    }
+  };
+
+  /* Apply a definition at the cursor; null fields are wildcards. Returns
+     how many lines it consumed. */
+  MW.applyProgDefinition = function (block, track, line, def) {
+    if (!block || !def) return 0;
+    if (def.cells && def.cells.length) {
+      MW.insertProgGroup(block, track, line, def.cells);
+      return def.cells.length;
+    }
+    const row = block.rows[line];
+    if (!row) return 0;
+    const c = row[track] || (row[track] = MW.cell());
+    if (def.note != null) c.note = def.note;
+    if (def.ins != null) c.ins = def.ins;
+    if (def.cmd != null) { c.cmd = def.cmd; c.dat = def.dat == null ? 0 : def.dat; }
+    else if (def.dat != null) c.dat = def.dat;
+    return 1;
+  };
   MW.blankCell = c => !c.note && !c.ins && !c.cmd && !c.dat;
   MW.clearCell = c => { c.note = 0; c.ins = 0; c.cmd = 0; c.dat = 0; };
 

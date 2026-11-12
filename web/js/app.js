@@ -1041,14 +1041,12 @@
   }
 
   function applyProgKey(i) {
-    const c = curCell();
-    if (!c) return;
+    const b = block();
     const t = app.prog[i];
-    if (t.note != null) c.note = t.note;
-    if (t.ins != null) c.ins = t.ins;
-    if (t.cmd != null) { c.cmd = t.cmd; c.dat = t.dat == null ? 0 : t.dat; }
-    else if (t.dat != null) c.dat = t.dat;
-    advanceCursor();
+    if (!b || !t) return;
+    const n = MW.applyProgDefinition(b, app.cursor.track, app.cursor.line, t);
+    if (!n) return;
+    for (let k = 0; k < n; k++) advanceCursor(app.autoSpace);
     afterEdit();
   }
 
@@ -1075,7 +1073,7 @@
     if (!c) return;
     /* the note characters of the Alt definitions are always wildcards */
     const note = app.progAlt === 'C' ? c.note : null;
-    setCurrentDef({ note, ins: c.ins, cmd: c.cmd, dat: c.dat });
+    setCurrentDef({ note, ins: c.ins, cmd: c.cmd, dat: c.dat, cells: null });
     MW.toast(defName() + ' set to ' + MW.noteName(c.note, app.hb) + ' ' + MW.insName(c.ins));
     MW.panels.refresh();
   }
@@ -1089,8 +1087,9 @@
     const first = b.rows[l0] && b.rows[l0][t0];
     if (!first) return;
     const note = app.progAlt === 'C' ? first.note : null;
-    setCurrentDef({ note, ins: first.ins, cmd: first.cmd, dat: first.dat });
-    MW.toast(defName() + ' picked from the range');
+    const cells = MW.progGroupFromRange(b, s, Math.min(s.t0, s.t1));
+    setCurrentDef({ note, ins: first.ins, cmd: first.cmd, dat: first.dat, cells });
+    MW.toast(defName() + ' picked ' + cells.length + ' lines from the range');
     MW.panels.refresh();
   }
 

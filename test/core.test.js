@@ -68,3 +68,25 @@ test('rewriting volumes keeps the sounding volume and skips instrument volumes',
   assert.equal(song.blocks[0].rows[1][0].dat, 0x90); // instrument volume untouched
   assert.equal(MW.volumeFromArg(song.blocks[0].rows[0][0].dat, true), 40);
 });
+
+test('a range becomes a group and inserts from the cursor', () => {
+  const block = MW.createBlock(2, 8);
+  block.rows[2][1] = { note: 25, ins: 1, cmd: 0, dat: 0 };
+  block.rows[3][1] = { note: 27, ins: 1, cmd: 0, dat: 0 };
+  block.rows[4][1] = { note: 29, ins: 1, cmd: 0, dat: 0 };
+  const group = MW.progGroupFromRange(block, { l0: 2, l1: 4, t0: 1, t1: 1 }, 1);
+  assert.deepEqual(group.map(c => c.note), [25, 27, 29]);
+  MW.insertProgGroup(block, 0, 6, group);
+  assert.equal(block.rows[6][0].note, 25);
+  assert.equal(block.rows[7][0].note, 27);
+  assert.equal(block.rows[8] && block.rows[8][0].note, undefined);
+});
+
+test('a plain definition still inserts a single cell', () => {
+  const block = MW.createBlock(1, 4);
+  const prog = { note: 30, ins: 2, cmd: 0, dat: 0 };
+  MW.applyProgDefinition(block, 0, 1, prog);
+  assert.equal(block.rows[1][0].note, 30);
+  assert.equal(block.rows[1][0].ins, 2);
+  assert.equal(block.rows[2][0].note, 0);
+});
