@@ -248,6 +248,8 @@
     tempo: 33,
     tempo2: 6,
     pulse: 0.02,
+    /* NRM on the memory strip: 1, 2/3 or 1/2 of the normal speed */
+    rate: 1,
 
     nextTime: 0,
     timer: null,
@@ -269,6 +271,17 @@
     onStop: null,
 
     /* ---------------------------------------------------------- setup */
+
+    resetFlow() {
+      this.jumpNext = false;
+      this.pendingSeq = null;
+      this.pendingLine = null;
+      this.loopStart = -1;
+      this.loopLine = null;
+      this.loopCount = 0;
+      this.lineDelay = 0;
+      this.delayLine = false;
+    },
 
     setSong(song) {
       this.stop();
@@ -318,11 +331,13 @@
       this.errors = 0;
       this.blockOnly = typeof blockIdx === 'number';
       if (typeof blockIdx === 'number') {
+        this.resetFlow();
         this.blockIdx = blockIdx;
         this.line = 0;
         this.tick = 0;
         this.channels.forEach(c => this.silence(c, ctx.currentTime));
       } else if (fromStart !== false) {
+        this.resetFlow();
         this.seqPos = 0;
         this.blockIdx = this.song.playseq[0] || 0;
         this.line = 0;
@@ -360,6 +375,7 @@
       const wasPlaying = this.playing;
       this.playing = false;
       this.blockOnly = false;
+      this.resetFlow();
       const ctx = audio.ctx;
       if (ctx) this.channels.forEach(c => this.silence(c, ctx.currentTime + 0.01));
       if (wasPlaying) MW.emit('transport', { playing: false });
@@ -388,13 +404,15 @@
     step(time) {
       const song = this.song;
       if (!song) return;
-      this.pulse = MW.pulseSeconds(this.tempo, this.tempo2, this.song.bpmMode, this.song.linesPerBeat);
+      this.pulse = MW.pulseSeconds(this.tempo, this.tempo2, this.song.bpmMode, this.song.linesPerBeat) / (this.rate || 1);
 
       const block = song.blocks[this.blockIdx];
       if (!block) { this.stop(); return; }
 
       if (this.tick === 0) {
-        this.readLine(block, time, this.delayLine);
+        // A repeated row continues tick effects but does not retrigger its
+        // notes or re-arm one-shot commands, including the delay itself.
+        if (!this.delayLine) this.readLine(block, time, false);
         this.delayLine = false;
         if (this.onRow) this.onRow({ block: this.blockIdx, line: this.line, seq: this.seqPos });
       }
@@ -428,6 +446,11 @@
 
       if (this.tick >= Math.max(1, this.tempo2)) {
         this.tick = 0;
+        if (this.lineDelay > 0) {
+          this.lineDelay--;
+          this.delayLine = true;
+          return;
+        }
         this.line++;
 
         if (this.pendingSeq != null) {
@@ -442,20 +465,16 @@
           this.tick = 0;
           return;
         }
-        if (this.lineDelay > 0) {
-          this.lineDelay--;
-          this.delayLine = true;
-          this.tick = 0;
-          return;
-        }
         if (this.line >= block.lines) {
           this.line = 0;
           if (!this.blockOnly) this.advanceSeq();
+          else this.resetFlow();
         }
       }
     },
 
     advanceSeq() {
+      this.resetFlow();
       if (this.offline && this.seqPos + 1 >= this.song.playseq.length) {
         this.offlineDone = true;
         return;
@@ -473,14 +492,7 @@
       this.blockIdx = b < this.song.blocks.length ? b : 0;
       this.line = 0;
       this.tick = 0;
-      this.jumpNext = false;
-      this.pendingSeq = null;
-      this.pendingLine = null;
-      this.loopStart = -1;
-      this.loopLine = null;
-      this.loopCount = 0;
-      this.lineDelay = 0;
-      this.delayLine = false;
+      this.resetFlow();
     },
 
     /* ---------------------------------------------------------- line decode */
@@ -495,7 +507,7 @@
         ch.cmd = cell.cmd;
         ch.dat = cell.dat;
 
-        if (cell.ins) ch.inst = this.song.instruments[cell.ins - 1] || ch.inst;
+        if (cell.ins) { ch.inst = this.song.instruments[cell.ins - 1] || ch.inst; ch.instNum = cell.ins; }
 
         if (cell.note && !effectsOnly) {
           if (cell.cmd === 0x03) {
@@ -625,6 +637,11 @@
       ch.decayLeft = -1;
       ch.volume = inst.volume == null ? 64 : inst.volume;
       ch.volOffset = 0;
+
+      /* the footer's E1 graph watches note triggers */
+      ch.triggers = (ch.triggers || 0) + 1;
+      this.triggers = this.triggers || {};
+      this.triggers[ch.idx] = { count: ch.triggers, note, ins: ch.instNum || 0, volume: ch.volume };
 
       const hold = cell && cell.cmd === 8 ? (cell.dat & 0x0f) : (inst.hold || 0);
       const decay = cell && cell.cmd === 8 ? (cell.dat >> 4) : (inst.decay || 0);
@@ -814,15 +831,10 @@
         case 0x16:
           if (ch.dat === 0) {
             this.loopStart = this.line;
-            this.loopCount = 0;
           } else if (this.loopStart >= 0) {
             if (!this.loopCount) this.loopCount = ch.dat;
-            if (this.loopCount > 1) {
-              this.loopCount--;
-              this.loopLine = this.loopStart;
-            } else {
-              this.loopCount = 0;
-            }
+            else this.loopCount--;
+            if (this.loopCount > 0) this.loopLine = this.loopStart;
           }
           break;
         case 0x1c:
@@ -936,7 +948,9 @@
           }
           break;
         case 0x06:
-          if (ch.dat) { ch.vibSpeed = ch.dat >> 4; ch.vibDepth = ch.dat & 0x0f; }
+          /* the whole argument is the fade speed; the vibrato keeps the
+             parameters from the last 04 (manual: "the vibrato will
+             continue during this command") */
           ch.vibPos = (ch.vibPos + (ch.vibSpeed || 1)) % 64;
           rate = this.rateFor(ch) * (1 + (SINE[ch.vibPos | 0] * (ch.vibDepth || 0) * 3) / 1200);
           if (ch.dat) {

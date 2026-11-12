@@ -135,3 +135,74 @@ test('command 1E delays the current line', () => {
   player.startEffect({ cmd: 0x1e, dat: 3 }, 0, null);
   assert.equal(player.lineDelay, 3);
 });
+
+/* ---- extended command audit (OctaMED v4 manual, commands chapter) ---- */
+
+function tickChannel(overrides) {
+  const calls = [];
+  return {
+    calls,
+    ch: {
+      idx: 0, cmd: 0, dat: 0, period: 428, target: 0, portaSpeed: 0, volume: 64,
+      vibPos: 0, vibSpeed: 0, vibDepth: 0, tremPos: 0, tremSpeed: 0, tremDepth: 0,
+      src: { playbackRate: { setValueAtTime: (v) => calls.push(v) } },
+      gain: { gain: { setValueAtTime() {} } }, rate: 1, inst: null, ...overrides
+    }
+  };
+}
+
+test('05 slides pitch toward the porta target and fades by the low nibble', () => {
+  player.song = song();
+  const { ch } = tickChannel({ cmd: 0x05, dat: 0x02, period: 400, target: 300, portaSpeed: 4, volume: 40 });
+  player.channelTick(ch, 0);
+  assert.equal(ch.period, 396);
+  assert.equal(ch.volume, 38);
+});
+
+test('06 fades by its argument and keeps the vibrato running', () => {
+  player.song = song();
+  const { ch } = tickChannel({ cmd: 0x06, dat: 0x21, volume: 40, vibPos: 0, vibSpeed: 3, vibDepth: 6 });
+  player.channelTick(ch, 0);
+  assert.equal(ch.volume, 42);
+  assert.ok(ch.vibPos > 0);
+  assert.equal(ch.vibDepth, 6, '06 does not reset the vibrato parameters');
+});
+
+test('07 moves the volume offset by the tremolo depth', () => {
+  player.song = song();
+  const { ch } = tickChannel({ cmd: 0x07, dat: 0x4a, tremPos: 0 });
+  player.channelTick(ch, 0);
+  assert.notEqual(ch.volOffset || 0, 0);
+});
+
+test('09 sets the secondary tempo and 0b queues a sequence jump', () => {
+  player.song = song();
+  const { ch } = tickChannel({});
+  ch.cmd = 0x09; ch.dat = 4; player.startEffect(ch, 0, null);
+  assert.equal(player.tempo2, 4);
+  ch.cmd = 0x0b; ch.dat = 7; player.startEffect(ch, 0, null);
+  assert.equal(player.pendingSeq, 7);
+});
+
+test('16 loops back to the marked line for the given count', () => {
+  player.song = song();
+  const { ch } = tickChannel({});
+  player.line = 12; player.loopStart = -1; player.loopCount = 0;
+  ch.cmd = 0x16; ch.dat = 0; player.startEffect(ch, 0, null);
+  assert.equal(player.loopStart, 12);
+  ch.dat = 2; player.startEffect(ch, 0, null);
+  assert.equal(player.loopCount, 2);
+  assert.equal(player.loopLine, 12);
+});
+
+test('1e delays the next line and 1c sends a MIDI preset', () => {
+  player.song = song();
+  const sent = [];
+  global.MW.midi = { send: (bytes) => sent.push(bytes) };
+  const { ch } = tickChannel({ inst: { midiChannel: 3 } });
+  ch.cmd = 0x1e; ch.dat = 3; player.startEffect(ch, 0, null);
+  assert.equal(player.lineDelay, 3);
+  ch.cmd = 0x1c; ch.dat = 0x12; player.startEffect(ch, 0, null);
+  assert.deepEqual(sent[0], [0xc2, 0x12]);
+  delete global.MW.midi;
+});
