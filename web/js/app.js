@@ -2929,7 +2929,7 @@
       const input = document.createElement('input');
       input.type = 'file';
       input.multiple = true;
-      input.accept = '.mmd0,.mmd1,.mmd2,.mmd3,.mmdc,.med,.mod,.mmd,.msh,.8svx,.wav,.wave,.aif,.aiff,.raw,.ins,.lha,.lzh';
+      input.accept = '.mmd0,.mmd1,.mmd2,.mmd3,.mmdc,.med,.mod,.mmd,.msh,.8svx,.wav,.wave,.aif,.aiff,.mp3,.m4a,.aac,.flac,.ogg,.opus,.raw,.ins,.lha,.lzh';
       input.onchange = () => {
         this.entries = Array.from(input.files).map(f => ({ name: f.name, file: f, dir: false }));
         this.selected = this.entries.length ? 0 : null;
@@ -3751,7 +3751,7 @@
     insInput.type = 'file';
     insInput.id = 'ins-file-input';
     insInput.hidden = true;
-    insInput.accept = '.wav,.wave,.8svx,.iff,.msh,.aif,.aiff,.raw,.ins,.lha,.lzh';
+    insInput.accept = '.wav,.wave,.aif,.aiff,.mp3,.m4a,.aac,.flac,.ogg,.opus,.raw,.ins,.8svx,.iff,.msh,.lha,.lzh';
     insInput.onchange = e => {
       const f = e.target.files[0];
       if (!f) return;

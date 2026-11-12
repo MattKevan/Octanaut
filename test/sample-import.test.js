@@ -219,3 +219,98 @@ test('build sets depth flags, keeps stereo and normalises on request', () => {
 test('build refuses silence', () => {
   assert.throws(() => build(decoded(8000, [new Float32Array(8)]), base), /No sound in it/);
 });
+
+class FakeContext {
+  constructor(channels, length, rate) { this.rate = rate; }
+  async decodeAudioData() {
+    return {
+      numberOfChannels: 2,
+      sampleRate: this.rate,
+      getChannelData: (c) => Float32Array.from([c === 0 ? 0.5 : 0.25])
+    };
+  }
+}
+class BrokenContext {
+  async decodeAudioData() { throw new Error('no decoder'); }
+}
+function m4aBox(rate) {
+  const box = (type, ...parts) => {
+    const body = Buffer.concat(parts);
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(body.length + 8, 0);
+    head.write(type, 4, 'ascii');
+    return Buffer.concat([head, body]);
+  };
+  const mdhd = Buffer.alloc(24);
+  mdhd.writeUInt32BE(rate, 12);
+  mdhd.writeUInt32BE(rate * 2, 16);
+  const hdlr = Buffer.alloc(12);
+  hdlr.write('soun', 8, 'ascii');
+  const out = Buffer.concat([
+    box('ftyp', Buffer.from('M4A \0\0\0\0')),
+    box('moov', box('trak', box('mdia', box('hdlr', hdlr), box('mdhd', mdhd))))
+  ]);
+  return out.buffer.slice(out.byteOffset, out.byteOffset + out.length);
+}
+
+const mp3 = Buffer.from([0xff, 0xfb, 0x90, 0x40, ...new Array(128).fill(0)]);
+const adts = Buffer.from([0xff, 0xf1, 0x4c, 0x80, ...new Array(64).fill(0)]);
+const flac = (() => {
+  const b = Buffer.alloc(8 + 34);
+  b.write('fLaC', 0);
+  b[4] = 0; b[5] = 0; b[6] = 0; b[7] = 34;
+  b[10] = 0x0a; b[11] = 0xc4; b[12] = 0x42; b[13] = 0xf0;
+  return b;
+})();
+
+test('sniff reads MP3, ADTS AAC, FLAC and M4A rates', () => {
+  const mw = runtime(['sample-import']);
+  assert.deepEqual([mw.sampleImport.sniff(new Uint8Array(mp3)).format, mw.sampleImport.sniff(new Uint8Array(mp3)).rate], ['mp3', 44100]);
+  assert.deepEqual([mw.sampleImport.sniff(new Uint8Array(adts)).format, mw.sampleImport.sniff(new Uint8Array(adts)).rate], ['aac', 48000]);
+  const f = mw.sampleImport.sniff(new Uint8Array(flac));
+  assert.deepEqual([f.format, f.rate, f.bits, f.channels], ['flac', 44100, 16, 2]);
+  const m = mw.sampleImport.sniff(new Uint8Array(m4aBox(44100)));
+  assert.deepEqual([m.format, m.rate], ['m4a', 44100]);
+});
+
+test('sniff prefers raw over a bare sync byte', () => {
+  const mw = runtime(['sample-import']);
+  assert.equal(mw.sampleImport.sniff(new Uint8Array([0xff, 0xfb, 0x9c, 0x00])).format, 'raw');
+});
+
+test('sniff reads an AIFF COMM rate', () => {
+  const mw = runtime(['sample-import']);
+  const comm = Buffer.alloc(18);
+  comm.writeUInt16BE(1, 0);
+  comm.writeUInt32BE(0, 2);
+  comm.writeUInt16BE(16, 6);
+  Buffer.from([0x40, 0x0e, 0xac, 0x44, 0, 0, 0, 0, 0, 0]).copy(comm, 8);
+  const commHead = Buffer.alloc(8);
+  commHead.write('COMM', 0, 'ascii');
+  commHead.writeUInt32BE(comm.length, 4);
+  const body = Buffer.concat([Buffer.from('AIFF'), commHead, comm]);
+  const head = Buffer.alloc(8);
+  head.write('FORM', 0, 'ascii');
+  head.writeUInt32BE(body.length, 4);
+  const m = mw.sampleImport.sniff(new Uint8Array(Buffer.concat([head, body])));
+  assert.deepEqual([m.format, m.rate, m.channels, m.bits], ['aiff', 44100, 1, 16]);
+});
+
+test('decode uses the sniffed rate and copies every channel', async () => {
+  const mw = runtime(['sample-import'], { OfflineAudioContext: FakeContext });
+  const d = await mw.sampleImport.decode(wav({ rate: 22050 }), { rate: 22050 });
+  assert.equal(d.rate, 22050);
+  assert.equal(d.channels.length, 2);
+  assert.equal(d.channels[1][0], 0.25);
+});
+
+test('decode refuses long or oversized compressed files before decoding', async () => {
+  const mw = runtime(['sample-import'], { OfflineAudioContext: FakeContext });
+  await assert.rejects(() => mw.sampleImport.decode(new ArrayBuffer(8), { format: 'mp3', rate: 44100, compressed: true, duration: 601 }), /longer than 10 minutes/);
+  await assert.rejects(() => mw.sampleImport.decode(new ArrayBuffer(17 * 1024 * 1024), { format: 'mp3', rate: 44100, compressed: true }), /larger than 16 MB/);
+});
+
+test('a browser without the codec says so', async () => {
+  const mw = runtime(['sample-import'], { OfflineAudioContext: BrokenContext });
+  await assert.rejects(() => mw.sampleImport.decode(wav(), { format: 'mp3', rate: 44100 }), /WAV always works/);
+});
