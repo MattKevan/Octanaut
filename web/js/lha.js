@@ -637,7 +637,12 @@
 
   /* Entries that look like something Octanaut can open. */
   MW.lhaModules = function (result) {
-    const known = /\.(mmd0|mmd1|mmd2|mmd3|mmd4|mmdc|mmd|med|med4|mod|msh|8svx|iff)$/i;
+    const known = /\.(mmd0|mmd1|mmd2|mmd3|mmd4|mmdc|mmd|med|med4|mod)$/i;
+    return result.entries.filter(e => known.test(e.name));
+  };
+
+  MW.lhaInstruments = function (result) {
+    const known = /\.(msh|8svx|iff|wav|wave|aif|aiff|raw|ins|mp3|m4a|aac|flac|ogg|opus)$/i;
     return result.entries.filter(e => known.test(e.name));
   };
 

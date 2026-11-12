@@ -49,7 +49,7 @@
   MW.listLibraryEntries = async function (dir) {
     const files = [];
     for await (const [name, handle] of dir.entries()) {
-      if (handle.kind === 'file' && (/\.(msh|8svx|iff|raw|ins)$/i.test(name) || !name.includes('.'))) files.push({ name, handle });
+      if (handle.kind === 'file' && (/\.(msh|8svx|iff|wav|wave|aif|aiff|raw|ins)$/i.test(name) || !name.includes('.'))) files.push({ name, handle });
     }
     return files.sort((a, b) => a.name.localeCompare(b.name));
   };

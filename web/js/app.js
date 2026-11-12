@@ -1554,6 +1554,19 @@
 
   /* ------------------------------------------------------------ file io */
 
+  function loadSampleBuffer(buffer, name) {
+    let inst = null;
+    try { inst = MW.loadInstrument(buffer); } catch (e) { /* reported below */ }
+    if (!inst) return MW.toast('Could not read that instrument', true);
+    inst.name = inst.name || String(name || 'sample').replace(/\.[^.]+$/, '');
+    app.song.instruments[app.currentIns - 1] = inst;
+    if (MW.audio) MW.audio.invalidateBuffers();
+    refreshAll();
+    MW.toast('Loaded ' + (name || 'sample') + ' into ' + MW.insName(app.currentIns));
+    return inst;
+  }
+  MW.loadSampleBuffer = loadSampleBuffer;
+
   function handleFileBuffer(buffer, name, source) {
     let bytes;
     try {
@@ -1570,19 +1583,25 @@
         return MW.toast('That archive could not be read: ' + e.message, true);
       }
       const mods = MW.lhaModules(archive);
-      if (!mods.length) {
+      const samples = MW.lhaInstruments(archive).map(entry => ({ ...entry, instrument: true }));
+      const entries = mods.concat(samples);
+      if (!entries.length) {
         const what = archive.entries.length
           ? archive.entries.map(e => e.name).slice(0, 3).join(', ')
           : (archive.skipped.slice(0, 3).join(', ') || 'nothing');
-        return MW.toast('No modules inside ' + (name || 'that archive') + ' — found ' + what, true);
+        return MW.toast('No modules or samples inside ' + (name || 'that archive') + ' — found ' + what, true);
       }
-      if (mods.length === 1) {
-        MW.toast('Extracted ' + mods[0].name + ' from ' + (name || 'the archive'));
-        return openBuffer(mods[0].data.slice().buffer, mods[0].name.split('/').pop(), source);
+      if (entries.length === 1) {
+        const entry = entries[0];
+        MW.toast('Extracted ' + entry.name + ' from ' + (name || 'the archive'));
+        const data = entry.data.slice().buffer;
+        const entryName = entry.name.split('/').pop();
+        return entry.instrument ? loadSampleBuffer(data, entryName) : openBuffer(data, entryName, source);
       }
-      return MW.requester.openEntries(mods, name || 'Archive');
+      return MW.requester.openEntries(entries, name || 'Archive');
     }
 
+    if (MW.detectFile(buffer) === 'instrument') return loadSampleBuffer(buffer, name);
     openBuffer(buffer, name, source);
   }
   MW.handleFileBuffer = handleFileBuffer;
@@ -2613,8 +2632,8 @@
       this.volume = null;
       this.title = title || '';
       this.selected = 0;
-      this.build(title || 'Choose a module');
-      this.note = list.length + ' module' + (list.length === 1 ? '' : 's') + ' in the archive';
+      this.build(title || 'Choose a file');
+      this.note = list.length + ' file' + (list.length === 1 ? '' : 's') + ' in the archive';
       this.render();
     },
 
@@ -2910,7 +2929,7 @@
       const input = document.createElement('input');
       input.type = 'file';
       input.multiple = true;
-      input.accept = '.mmd0,.mmd1,.mmd2,.mmd3,.mmdc,.med,.mod,.mmd,.msh,.8svx';
+      input.accept = '.mmd0,.mmd1,.mmd2,.mmd3,.mmdc,.med,.mod,.mmd,.msh,.8svx,.wav,.wave,.aif,.aiff,.raw,.ins,.lha,.lzh';
       input.onchange = () => {
         this.entries = Array.from(input.files).map(f => ({ name: f.name, file: f, dir: false }));
         this.selected = this.entries.length ? 0 : null;
@@ -2927,6 +2946,10 @@
       if (!e) return;
       try {
         if (e.dir) { await this.enter(e); return; }
+        if (e.instrument) {
+          this.close();
+          return MW.loadSampleBuffer(e.data.slice().buffer, e.name.split('/').pop());
+        }
         if (e.remote) {
           this.note = 'Downloading ' + e.name + ' from Modland…';
           this.render();
@@ -3728,7 +3751,7 @@
     insInput.type = 'file';
     insInput.id = 'ins-file-input';
     insInput.hidden = true;
-    insInput.accept = '.wav,.8svx,.iff,.msh,.raw,.ins,.lha,.lzh';
+    insInput.accept = '.wav,.wave,.8svx,.iff,.msh,.aif,.aiff,.raw,.ins,.lha,.lzh';
     insInput.onchange = e => {
       const f = e.target.files[0];
       if (!f) return;

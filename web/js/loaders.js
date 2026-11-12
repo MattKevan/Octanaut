@@ -987,6 +987,15 @@
     return inst;
   };
 
+  /* Which of the three things a dropped file is. Samples are the fallback,
+     as they are in OctaMED: anything the module loaders refuse is a sample. */
+  MW.detectFile = function (buffer) {
+    if (MW.isLHA && MW.isLHA(new Uint8Array(buffer))) return 'archive';
+    let song = null;
+    try { song = MW.loadModule(buffer); } catch (e) { /* not a module */ }
+    return song ? 'song' : 'instrument';
+  };
+
   MW.formats = { loadMMD, loadMED, loadMOD, loadMSH, load8SVX };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);
