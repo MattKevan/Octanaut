@@ -34,7 +34,7 @@ export function RangePanel() {
         <B act="rng-cut" cls="w-[42px]">CUT</B>
         <B act="rng-copy" cls="w-[46px]">COPY</B>
         <B act="rng-paste" cls="w-[46px]">PASTE</B>
-        <B act="rng-paste" cls="w-[78px]">PASTE SELECT</B>
+        <B act="rng-paste-selected" cls="w-[78px]">PASTE SELECT</B>
         <B act="chord-toggle" on={!!app.chordMode} cls="w-[48px]">CHORD</B>
         <B act="chord-rst" cls="w-[32px]">RST</B>
       </R>

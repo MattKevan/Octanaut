@@ -2,7 +2,7 @@
 
 An eight-channel music tracker for the browser, built to open the modules that OctaMED wrote.
 
-The name is a nod to OctaMED, which is where all of this comes from. The reference is OctaMED Professional V4.00 (1992), and `FEATURES.md` tracks parity against its manual and retail binary.
+The name is a nod to OctaMED, which is where all of this comes from. The reference is OctaMED Professional V4.00 (1992), and `FEATURES.md` tracks parity against its manual and retail binary. The V4 manual PDF lives at `../docs/OctaMED-V4-Manual.pdf`, with its extracted text at `../docs_txt/OctaMED4.0.doc.txt` alongside the older V2 manual text. Everything established about the original's behaviour, with its source and confidence, is collected in `../docs/OCTAMED-REFERENCE.md`.
 
 Open `web/index.html` directly, or serve the site:
 
@@ -49,9 +49,9 @@ The playhead is a fixed white bar across the exact vertical centre of the tracke
 
 Track dividers run the full height of the tracker area, through the blank space above and below the block. The grid carries symmetric padding at the top and bottom so that the first and last lines can also sit at the centre.
 
-Meters and scopes read the real audio: every track has its own `AnalyserNode` after its volume stage, so a muted or silent track flatlines and a playing one moves. The cyan trace over the pattern is the same per-track signal, clipped to that track's column. The three E gadgets follow the original: **E1** switches the level bars, **E2** the coloured channel sprites, **E3** the oscilloscopes. All eight tracks are metered in 5–8 channel modes. Four-channel songs without free panning are hard-panned as the Amiga was: tracks 0 and 3 left, 1 and 2 right.
+Meters read the real audio: every track has its own `AnalyserNode` after its volume stage, so a muted or silent track flatlines and a playing one moves. The three E gadgets follow the original screen: **E1** is the bar graph under the info line, with a slot per instrument (01–31) on the left and per note (C-1 up) on the right, raised by note triggers at the note's volume and falling like the other meters; **E2** is the V.U. meter at each track's edge, from mid-height down, in the original red-to-green ramp with grey edges; **E3** is the per-track oscilloscope, 42 samples wide, hanging off the highlighted line. All three switch off in 5–8 channel modes, and a right click away from the block editor switches them off together. Four-channel songs without free panning are hard-panned as the Amiga was: tracks 0 and 3 left, 1 and 2 right.
 
-The bottom monitor is two oscilloscopes, one per stereo side: left-panned tracks feed the left pane, right-panned tracks the right, with an even split when a song is centred. Each pane draws one cyan bar on every ruler tick, one audio sample per tick; a one-pixel bar means silence, so the baseline stays continuous. The tick pitch, bar width and pane split were matched to the original screen: roughly 12 px per slot, three-pixel ticks, six-pixel bars centred in their slot, panes about 43/57 of the scope area.
+The footer's geometry comes from OctaMED Pro 4 as measured in OctaMEDIC (`TheExiledCat/octamedic`): graph top 9, height 32, 8-pixel slots, instrument slots from x=16 and note slots from x=280, rulers at 14/264/278/624, and 4 height steps of 7 pixels. The info line carries the memory readout, editable block and song names, and NRM.
 
 ## What it does
 
@@ -59,7 +59,7 @@ Octanaut reads and plays:
 
 | Format | Notes |
 |---|---|
-| **MMD0, MMD1, MMD2, MMD3** | OctaMED and MED modules, including multi-modules, MMD2/MMD3 section tables and BPM mode. 16-bit and stereo instruments are decoded at full depth. |
+| **MMD0, MMD1, MMD2, MMD3, MMDC** | OctaMED and MED modules, including packed MMDC patterns, multi-modules, MMD2/MMD3 section tables and BPM mode. 16-bit and stereo instruments are decoded at full depth. Invalid optional metadata pointers are skipped so otherwise readable music can load. |
 | **MED4** (`MED` + version 4) | OctaMED 2.x song files, samples attached or external. |
 | **MED2** | MED 1.12 fixed-layout songs. |
 | **ProTracker / SoundTracker / NoiseTracker** | 4 and 8 channel `.mod`, converted to MED effects on import. |
@@ -194,7 +194,7 @@ Samples are resampled to the context rate once on load, which keeps pitch handli
 
 The interface is built in OctaMED's own idiom: grey bevelled chrome over a black screen, a timer in the title bar, the play sequence as a five-row box on the left with its own up/down arrows, tempo and filter gadgets along the top, transport under the gadget row, and a status line carrying the sequence position, block, octave, the E / SP / CHRD flags and sixteen track lamps.
 
-The panel and display selectors share one five-row, three-column grid on the right: the ten panels in the first two columns, the five editors in the third. The Files panel opens a directory browser in the main window, with folder, browse, parent and refresh controls. The bottom strip is the Amiga's monitor area: sixteen channel meters on the left and a live oscilloscope on the right, both switchable with the E1 and E3 gadgets.
+The panel and display selectors share one five-row, three-column grid on the right: the ten panels in the first two columns, the five editors in the third. The Files panel opens a directory browser in the main window, with folder, browse, parent and refresh controls. The bottom strip is the Amiga's monitor area: two stereo oscilloscopes and the four E2 sprites, with **E3** switching the scope bars. The sixteen **E1** level bars ride over the pattern grid.
 
 The colours are the machine's: grey chrome, black screen, white notes, amber commands and alternating red and blue track rules. E2 switches the rules off for a plainer grid.
 
@@ -203,15 +203,15 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 ## Known gaps
 
 - **MIDI messages and maps** are partial: SysEx messages can be edited, captured, sent and saved as JSON; external clock and transport follow; the input map has all 128 keys. Key-up recording and writing SysEx into MMD1 are still missing.
-- **The sample list** shows loaded instruments rather than a `MED_Paths` library, so it cannot browse a disk collection or resolve missing names.
-- **The sample and synth editors** still lack freehand/RANGE ALL, stretch, VOL.CHG and the remaining range tools. Notation prints the staff and header, but not the text or file modes.
+- **The sample list** shows loaded instruments and can browse user-selected folders, but does not use `MED_Paths` or resolve missing names automatically.
+- **The sample and synth editors** support freehand drawing and range operations; Sample D.PIXELS and exact original effect algorithms remain incomplete.
 - **Amiga-only controls** (ICON, Workbench open/close, LOADGFX, MOUSE2) are disabled. They have no browser equivalent.
 - **MP3 export** depends on a browser audio encoder. Chromium exposes AAC but not MP3, so there the WAV and AAC buttons are the reliable pair.
 - Browsers hold audio back until the page has been clicked once. Octanaut resumes the audio context on the first click or key press and says so if it is still blocked.
-- **Synthsound sequence editing** changes values and inserts/deletes lines, but does not let you type command names inline; the binary instruments round-trip unchanged through MMD0.
-- **The sample editor** has reverse, normalise, fades, crop, filter, boost, echo, noise, mix, buffer undo and loop setting. It has no freehand drawing, RANGE ALL, pitch-to-note, zero search or D.PIXELS.
+- **Synthsound sequence editing** supports command keys and hexadecimal values, plus insert/delete; its precise cursor behaviour still needs comparison with OctaMED.
+- **The sample editor** has freehand drawing, RANGE ALL, zero-crossing searches, reverse, fades and other sample effects. Pitch and destination accept note-key entry; D.PIXELS remains unavailable.
 - **MED 2.00** (`MED` + version 3) song files produce an error message; save them as MMD0 in OctaMED first.
-- Notation is a single-staff sketch per track. Ghost tracks work; hide-instrument mode and saved view settings are missing.
+- **Notation** uses a combined grand staff, supports ghost tracks and instrument hiding, and saves view settings. Rests, exact engraving and interoperability with OctaMED need further work.
 
 ## Layout
 
@@ -227,7 +227,7 @@ app/
     fonts/            Departure Mono and Pixel Operator
     js/core.js        model, note tables, tempo conversion
     js/store.js       app state, patch/commit and subscriptions
-    js/loaders.js     MMD0-3, MED4, MED2, MOD, MSH, 8SVX
+    js/loaders.js     MMD0-3, MMDC, MED4, MED2, MOD, MSH, 8SVX
     js/lha.js         LHA/LZH archives, levels 0-2, -lh0- to -lh7-
     js/writer.js      MMD0 and MMD1 writers
     js/synth.js       synthsound renderer
@@ -243,12 +243,14 @@ app/
 
 The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.writeMMD0(song)` work without a DOM, which is how the demo modules were round-trip tested (7,680 cells, no differences).
 
+`npm run test:corpus` checks the local Modland collection in `../fixtures/modland`, verifying each file's manifest checksum and loading its song data. Pass another fixture directory with `npm run test:corpus -- /path/to/modland`. The music files are local test data and must not be committed or distributed. Loading successfully does not establish playback fidelity.
+
 Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 32 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export, the store and the TSX panel components. The UI scripts can join them one file at a time.
 
-`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 125 features matching, 20 partial, 17 absent.
+`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 138 features matching, 17 partial, 13 absent.
 
 ## Command bytes
 
 MMD0 packs the command into a nibble beside the instrument. MMD1, MMD2 and MMD3 give it a whole byte, and from 0x10 up those bytes are commands in their own right: 0x19 is sample offset, 0x1F is note delay/retrigger, and so on. Reading them as `cmd & 0x0f` turns 0x19 into 0x09, i.e. secondary tempo, which drags the playback exactly in the sections that use sample offsets. The loader keeps the full byte and the player handles the extended set explicitly. Unknown bytes are ignored, so they cannot be mistaken for a low command.
 
-The grid shows six digits per cell: instrument, command and data, with the command always in two hex digits as OctaMED v4 and later do. The command column accepts both entry styles: type `1` then `9` for 0x19, or a single `9` for 0x09 (shown as `09`).
+The grid shows five digits per cell: instrument, command and data. OctaMED v4 prints the ordinary 0-F commands as a single hex digit (`--- 010F` is instrument 01, command 0, data 0F). Extended MMD1 commands from 0x10 up need a second digit and widen that cell to six, so a later module's 0x19 still reads correctly. The command column accepts both entry styles: type `1` then `9` for 0x19, or a single `9` for 0x09.

@@ -1,5 +1,5 @@
 // @ts-check
-/* Octanaut - module loaders: MMD0-3, MED2/3/4 song files, ProTracker MOD, MSH, 8SVX */
+/* Octanaut - module loaders: MMD0-3/MMDC, MED2/3/4 song files, ProTracker MOD, MSH, 8SVX */
 (function (global) {
   'use strict';
   const MW = global.MW;
@@ -11,6 +11,27 @@
   const u32 = (dv, o) => dv.getUint32(o, false);
   const u8 = (dv, o) => dv.getUint8(o);
   const i8 = (dv, o) => dv.getInt8(o);
+
+  function hasBytes(dv, offset, size) {
+    return offset >= 0 && size >= 0 && offset <= dv.byteLength && size <= dv.byteLength - offset;
+  }
+
+  function requireBytes(dv, offset, size, description) {
+    if (!hasBytes(dv, offset, size)) throw new Error('Truncated ' + description);
+  }
+
+  // Names and annotations are optional. Invalid spans must not prevent the
+  // musical data from loading, nor let one string spill into another table.
+  function optionalText(dv, offset, size, limit) {
+    if (!offset || !hasBytes(dv, offset, size)) return '';
+    let value = '';
+    for (let i = 0; i < Math.min(size, limit); i++) {
+      const c = u8(dv, offset + i);
+      if (!c) break;
+      value += String.fromCharCode(c);
+    }
+    return value.trim();
+  }
 
   function tag(dv, o) {
     return String.fromCharCode(u8(dv, o), u8(dv, o + 1), u8(dv, o + 2), u8(dv, o + 3));
@@ -88,7 +109,8 @@
     return synth;
   }
 
-  function mmdBlock(dv, off, id) {
+  function mmdBlock(dv, off, id, packed) {
+    requireBytes(dv, off, id === 0 ? 2 : 8, 'MMD block header');
     let tracks, lines, p;
     if (id === 0) {
       tracks = u8(dv, off);
@@ -99,27 +121,20 @@
       lines = u16(dv, off + 2) + 1;
       p = off + 8;
     }
-    tracks = Math.max(1, Math.min(16, tracks));
-    lines = Math.max(1, Math.min(id >= 1 ? 3200 : 256, lines));
+    if (tracks < 1 || tracks > 16 || lines > (id >= 1 ? 3200 : 256)) {
+      throw new Error('Invalid MMD block dimensions');
+    }
     const block = MW.createBlock(tracks, lines);
 
     /* MMD1 and later carry a BlockInfo struct after the header */
     if (id >= 1) {
       const info = u32(dv, off + 4);
-      if (info) {
+      if (info && hasBytes(dv, info, 12)) {
         const namePtr = u32(dv, info + 4);
         const nameLen = u32(dv, info + 8);
-        if (namePtr && nameLen) {
-          let nm = '';
-          for (let k = 0; k < Math.min(nameLen, 256); k++) {
-            const ch = u8(dv, namePtr + k);
-            if (!ch) break;
-            nm += String.fromCharCode(ch);
-          }
-          block.name = nm;
-        }
+        block.name = optionalText(dv, namePtr, nameLen, 256);
         const hlPtr = u32(dv, info);
-        if (hlPtr) {
+        if (hlPtr && hasBytes(dv, hlPtr, Math.ceil(lines / 32) * 4)) {
           for (let l = 0; l < lines; l++) {
             const word = u32(dv, hlPtr + (l >> 5) * 4);
             block.highlight[l] = (word >>> (l & 31)) & 1;
@@ -127,14 +142,38 @@
         }
       }
     }
+
+    const size = tracks * lines * (id === 0 ? 3 : 4);
+    let cells = dv;
+    if (packed) {
+      // MMDC keeps the MMD0 header and sample layout. Only pattern bytes
+      // are packed: 0..127 introduce 1..128 literals; 128..255 skip zeros.
+      const bytes = new Uint8Array(size);
+      let written = 0;
+      while (written < size) {
+        requireBytes(dv, p, 1, 'MMDC pattern');
+        const control = u8(dv, p++);
+        const count = Math.min(control < 128 ? control + 1 : 256 - control, size - written);
+        if (control < 128) {
+          requireBytes(dv, p, count, 'MMDC literal run');
+          bytes.set(new Uint8Array(dv.buffer, dv.byteOffset + p, count), written);
+          p += count;
+        }
+        written += count;
+      }
+      cells = new DataView(bytes.buffer);
+      p = 0;
+    } else {
+      requireBytes(dv, p, size, 'MMD pattern');
+    }
     for (let l = 0; l < lines; l++) {
       for (let t = 0; t < tracks; t++) {
         const c = block.rows[l][t];
         if (id === 0) {
-          const b0 = u8(dv, p), b1 = u8(dv, p + 1), b2 = u8(dv, p + 2);
+          const b0 = u8(cells, p), b1 = u8(cells, p + 1), b2 = u8(cells, p + 2);
           p += 3;
           c.note = b0 & 0x3f;
-          c.ins = (b1 >> 4) | (((b0 & 0xc0) >> 6) << 4);
+          c.ins = (b1 >> 4) | ((b0 & 0x80) >> 3) | ((b0 & 0x40) >> 1);
           c.cmd = b1 & 0x0f;
           c.dat = b2;
         } else {
@@ -153,9 +192,10 @@
     return block;
   }
 
-  function mmdSong(dv, base, id) {
+  function mmdSong(dv, base, id, packed) {
     /* the header lives at base, but every pointer it holds is an absolute
        offset from the start of the file, second song onward included */
+    requireBytes(dv, base, 52, 'MMD header');
     const songPtr = u32(dv, base + 8);
     const blockArr = u32(dv, base + 16);
     const smplArr = u32(dv, base + 24);
@@ -166,6 +206,7 @@
 
     let numblocks = 0, songlen = 0, numsamples = 0;
     if (songPtr) {
+      requireBytes(dv, songPtr, 788, 'MMD song');
       numblocks = u16(dv, songPtr + 504);
       songlen = u16(dv, songPtr + 506);
       s.deftempo = u16(dv, songPtr + 764) || 33;
@@ -242,18 +283,21 @@
 
     // blocks
     s.blocks = [];
+    requireBytes(dv, blockArr, numblocks * 4, 'MMD block table');
     for (let i = 0; i < numblocks; i++) {
       const p = u32(dv, blockArr + i * 4);
-      s.blocks.push(p ? mmdBlock(dv, p, id) : MW.createBlock(4, 64));
+      s.blocks.push(p ? mmdBlock(dv, p, id, packed) : MW.createBlock(4, 64));
     }
     if (!s.blocks.length) s.blocks = [MW.createBlock(4, 64)];
 
     // instruments
     const instruments = new Array(63).fill(null);
+    requireBytes(dv, smplArr, Math.min(numsamples, 63) * 4, 'MMD sample table');
     for (let i = 0; i < Math.min(numsamples, 63); i++) {
       const p = u32(dv, smplArr + i * 4);
       if (!p) continue;
       const at = p;
+      requireBytes(dv, at, 6, 'MMD sample header');
       const length = u32(dv, at);
       const type = i16(dv, at + 4);
       const inst = MW.createInstrument(type >= 0 ? 'sample' : type === -2 ? 'hybrid' : 'synth');
@@ -282,12 +326,11 @@
     // expansion block
     let annotxt = '';
     let songName = '';
-    if (expPtr) {
+    if (expPtr && hasBytes(dv, expPtr, 28)) {
       const e = expPtr;
       const expSmp = u32(dv, e + 4);
       const sExtEntries = u16(dv, e + 8);
       const sExtEntrsz = u16(dv, e + 10) || 4;
-      const infoPtr = u32(dv, e + 20);
       const iExtEntries = u16(dv, e + 24);
       const iExtEntrsz = u16(dv, e + 26) || 40;
       const namesPtr = u32(dv, e + 20);
@@ -295,21 +338,15 @@
       for (let i = 0; i < Math.min(sExtEntries, 63); i++) {
         const oe = expSmp + i * sExtEntrsz;
         const inst = instruments[i];
-        if (!inst) continue;
+        if (!inst || !expSmp || !hasBytes(dv, oe, sExtEntrsz)) continue;
         if (sExtEntrsz >= 2) { inst.hold = u8(dv, oe); inst.decay = u8(dv, oe + 1); }
         if (sExtEntrsz >= 3) inst.suppressOff = !!u8(dv, oe + 2);
         if (sExtEntrsz >= 4) inst.finetune = i8(dv, oe + 3);
       }
-      const infoBase = namesPtr || infoPtr;
       for (let i = 0; i < Math.min(iExtEntries, 63); i++) {
-        const oi = infoBase + i * iExtEntrsz;
-        let nm = '';
-        for (let k = 0; k < 40; k++) {
-          const ch = u8(dv, oi + k);
-          if (!ch) break;
-          nm += String.fromCharCode(ch);
-        }
-        nm = nm.trim();
+        const oi = namesPtr + i * iExtEntrsz;
+        if (!namesPtr || !hasBytes(dv, oi, iExtEntrsz)) continue;
+        const nm = optionalText(dv, oi, Math.min(iExtEntrsz, 40), 40);
         let inst = instruments[i];
         if (!inst && nm) {
           inst = MW.createInstrument('sample');
@@ -320,25 +357,10 @@
       }
       const aPtr = u32(dv, e + 12);
       const aLen = u32(dv, e + 16);
-      if (aPtr && aLen) {
-        let out = '';
-        for (let i = 0; i < Math.min(aLen, 4000); i++) {
-          const ch = u8(dv, aPtr + i);
-          if (!ch) break;
-          out += String.fromCharCode(ch);
-        }
-        annotxt = out.trim();
-      }
-      const songnamePtr = u32(dv, e + 44);
-      const songnameLen = u32(dv, e + 48);
-      if (songnamePtr && songnameLen) {
-        let out = '';
-        for (let i = 0; i < Math.min(songnameLen, 256); i++) {
-          const ch = u8(dv, songnamePtr + i);
-          if (!ch) break;
-          out += String.fromCharCode(ch);
-        }
-        songName = out.trim();
+      annotxt = optionalText(dv, aPtr, aLen, 4000);
+      if (hasBytes(dv, e, 44)) s.notation = MW.readNotationInfo(dv, u32(dv, e + 40));
+      if (hasBytes(dv, e, 52)) {
+        songName = optionalText(dv, u32(dv, e + 44), u32(dv, e + 48), 256);
       }
     }
 
@@ -370,7 +392,7 @@
 
     // multi-module chain
     s.multiNext = 0;
-    if (expPtr) s.multiNext = u32(dv, expPtr);
+    if (expPtr && hasBytes(dv, expPtr, 4)) s.multiNext = u32(dv, expPtr);
     return s;
   }
 
@@ -378,23 +400,26 @@
     const dv = new DataView(buffer);
     if (buffer.byteLength < 64) return null;
     const idTag = tag(dv, 0);
-    if (!/^MMD[0-3]$/.test(idTag)) return null;
-    const id = parseInt(idTag[3], 10);
+    if (!/^MMD[0-3C]$/.test(idTag)) return null;
+    const packed = idTag === 'MMDC';
+    const id = packed ? 0 : parseInt(idTag[3], 10);
 
-    const first = mmdSong(dv, 0, id);
+    const first = mmdSong(dv, 0, id, packed);
     // follow nextmod chain for multi-modules
-    let cur = first;
     const seen = new Set([0]);
     let next = first.multiNext;
     let guard = 0;
     while (next && !seen.has(next) && guard++ < 32) {
+      if (!hasBytes(dv, next, 52)) break;
+      const nextTag = tag(dv, next);
+      if (!/^M(?:MD|CN)[0-3C]$/.test(nextTag)) break;
       seen.add(next);
-      const s = mmdSong(dv, next, id);
-      cur.multis = cur.multis || [];
-      cur.multis.push(s);
+      const nextPacked = nextTag[3] === 'C';
+      const s = mmdSong(dv, next, nextPacked ? 0 : parseInt(nextTag[3], 10), nextPacked);
+      first.multis.push(s);
       next = s.multiNext;
     }
-    first.format = 'MMD' + id;
+    first.format = idTag;
     return first;
   }
 
@@ -899,30 +924,34 @@
 
   function load8SVX(buffer) {
     const dv = new DataView(buffer);
-    if (buffer.byteLength < 12 || tag(dv, 0) !== 'FORM') return null;
+    if (buffer.byteLength < 12 || tag(dv, 0) !== 'FORM' || tag(dv, 8) !== '8SVX') return null;
+    const end = u32(dv, 4) + 8;
+    if (end > dv.byteLength || end < 12) throw new Error('Truncated or invalid 8SVX FORM');
     let pos = 12;
     /** @type {any} */
     let inst = null;
     let name = '';
-    let volume = 64;
-    while (pos + 8 <= dv.byteLength) {
+    while (pos + 8 <= end) {
       const id = tag(dv, pos);
       const size = u32(dv, pos + 4);
       const body = pos + 8;
+      if (body + size + (size & 1) > end) throw new Error('Truncated 8SVX chunk');
       if (id === 'NAME') {
         let nm = '';
         for (let i = 0; i < size; i++) nm += String.fromCharCode(u8(dv, body + i));
-        name = nm.trim();
+        name = nm.replace(/\0.*$/, '').trim();
       } else if (id === 'VHDR') {
+        if (size < 20) throw new Error('Invalid 8SVX voice header');
+        if (u8(dv, body + 15) !== 0) throw new Error('Compressed 8SVX is not supported');
         const oneShot = u32(dv, body);
         const repeat = u32(dv, body + 4);
-        const rate = u32(dv, body + 12);
-        const octaves = u8(dv, body + 16);
-        const vol = u32(dv, body + 20);
+        const rate = u16(dv, body + 12);
+        const octaves = u8(dv, body + 14);
+        const vol = u32(dv, body + 16);
         inst = MW.createInstrument('sample');
         inst.loop = oneShot;
         inst.looplen = repeat;
-        inst.volume = Math.min(64, Math.round((vol / 65536) * 64)) || 64;
+        inst.volume = Math.min(64, Math.round((vol / 65536) * 64));
         inst.octaves = octaves || 1;
         inst.c2rate = rate || 8363;
       } else if (id === 'BODY') {

@@ -46,33 +46,45 @@ export function InstrPanel() {
           {inst && inst.data ? inst.data.length : 0}
         </span>
       </R>
-      <R>
-        <B act="ins-first" cls="w-[24px]">|&lt;</B>
-        <B act="ins-prev" cls="w-[24px]">&lt;</B>
-        <B act="ins-next" cls="w-[24px]">&gt;</B>
-        <B act="ins-last" cls="w-[24px]">&gt;|</B>
-        <B act="ins-lastoccupied" cls="w-[30px]">&gt;|&lt;</B>
-        <L cls="w-[52px]">TRANSPOSE</L>
-        <B onClick={() => setInst(i => { i.transpose = Math.max(-48, (i.transpose || 0) - 1); })} cls="w-[16px]">-</B>
-        <span class="flex h-[20px] w-[30px] items-center justify-center border border-ink bg-paper text-[11px]">{inst ? inst.transpose || 0 : 0}</span>
-        <B onClick={() => setInst(i => { i.transpose = Math.min(48, (i.transpose || 0) + 1); })} cls="w-[16px]">+</B>
-        <L cls="w-[46px]">FINETUNE</L>
-        <B onClick={() => setInst(i => { i.finetune = Math.max(-8, (i.finetune || 0) - 1); })} cls="w-[16px]">-</B>
-        <span class="flex h-[20px] w-[26px] items-center justify-center border border-ink bg-paper text-[11px]">{inst ? inst.finetune || 0 : 0}</span>
-        <B onClick={() => setInst(i => { i.finetune = Math.min(7, (i.finetune || 0) + 1); })} cls="w-[16px]">+</B>
-        <L cls="w-[32px]">HLD:</L>
-        <N value={inst ? inst.hold || 0 : 0} min={0} max={255} onChange={(v: number) => setInst(i => { i.hold = v; })} cls="w-[34px]" />
-        <L cls="w-[32px]">R/B:</L>
-        <N value={inst ? inst.loop || 0 : 0} min={0} onChange={(v: number) => setInst(i => { i.loop = v; })} cls="w-[52px]" />
-      </R>
-      <R>
-        <B act="ins-kill" cls="w-[54px]">FLUSH</B>
-        <B act="ins-open" cls="w-[46px]">LOAD</B>
-        <L cls="w-[32px]">DEC:</L>
-        <N value={inst ? inst.decay || 0 : 0} min={0} max={255} onChange={(v: number) => setInst(i => { i.decay = v; })} cls="w-[34px]" />
-        <L cls="w-[32px]">R/L:</L>
-        <N value={inst ? inst.looplen || 0 : 0} min={0} onChange={(v: number) => setInst(i => { i.looplen = v; })} cls="w-[52px]" />
-      </R>
+      <div class="flex min-w-0 gap-px">
+        <div class="flex min-w-[120px] flex-[2] flex-col gap-px">
+          <R>
+            <B act="ins-first" cls="flex-1">|&lt;</B>
+            <B act="ins-prev" cls="flex-1">&lt;</B>
+            <B act="ins-next" cls="flex-1">&gt;</B>
+            <B act="ins-last" cls="flex-1">&gt;|</B>
+            <B act="ins-lastoccupied" cls="flex-1">&gt;|&lt;</B>
+          </R>
+          <R>
+            <B act="ins-kill" cls="flex-1">FLUSH</B>
+            <B act="ins-open" cls="flex-[2]">LOAD</B>
+          </R>
+        </div>
+        <div class="flex min-w-[110px] flex-1 flex-col gap-px">
+          <L>TRANSPOSE</L>
+          <R>
+            <span class="flex h-[20px] min-w-0 flex-1 items-center justify-center border border-ink bg-paper text-[11px]">{inst ? inst.transpose || 0 : 0}</span>
+            <B onClick={() => setInst(i => { i.transpose = Math.max(-48, (i.transpose || 0) - 1); })} cls="w-[22px]">-</B>
+            <B onClick={() => setInst(i => { i.transpose = Math.min(48, (i.transpose || 0) + 1); })} cls="w-[22px]">+</B>
+          </R>
+        </div>
+        <div class="flex min-w-[100px] flex-1 flex-col gap-px">
+          <L>FINETUNE</L>
+          <R>
+            <span class="flex h-[20px] min-w-0 flex-1 items-center justify-center border border-ink bg-paper text-[11px]">{inst ? inst.finetune || 0 : 0}</span>
+            <B onClick={() => setInst(i => { i.finetune = Math.max(-8, (i.finetune || 0) - 1); })} cls="w-[22px]">-</B>
+            <B onClick={() => setInst(i => { i.finetune = Math.min(7, (i.finetune || 0) + 1); })} cls="w-[22px]">+</B>
+          </R>
+        </div>
+        <div class="flex min-w-[75px] flex-1 flex-col gap-px">
+          <R><L cls="w-[32px]">HLD:</L><N value={inst ? inst.hold || 0 : 0} min={0} max={255} onChange={(v: number) => setInst(i => { i.hold = v; })} cls="min-w-0 flex-1" /></R>
+          <R><L cls="w-[32px]">DEC:</L><N value={inst ? inst.decay || 0 : 0} min={0} max={255} onChange={(v: number) => setInst(i => { i.decay = v; })} cls="min-w-0 flex-1" /></R>
+        </div>
+        <div class="flex min-w-[90px] flex-1 flex-col gap-px">
+          <R><L cls="w-[32px]">R/B:</L><N value={inst ? inst.loop || 0 : 0} min={0} onChange={(v: number) => setInst(i => { i.loop = v; })} cls="min-w-0 flex-1" /></R>
+          <R><L cls="w-[32px]">R/L:</L><N value={inst ? inst.looplen || 0 : 0} min={0} onChange={(v: number) => setInst(i => { i.looplen = v; })} cls="min-w-0 flex-1" /></R>
+        </div>
+      </div>
       <R>
         <L cls="w-[42px]">TYPE:</L>
         <B onClick={() => setType('sample')} on={inst && inst.type === 'sample'} cls="w-[58px]">SAMPLE</B>

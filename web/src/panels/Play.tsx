@@ -33,7 +33,7 @@ function TempoSlider(props: any) {
 }
 
 function PB(props: any) {
-  const cls = 'flex h-full items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper';
+  const cls = 'flex h-full items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper';
   return (
     <button
       type="button"
@@ -73,8 +73,8 @@ export function PlayPanel() {
     setTempo(kind, (kind === 'tempo' ? song.deftempo : song.tempo2) + d);
 
   return (
-    <div class="flex h-full flex-col">
-      <div class="flex h-[46px] shrink-0 items-stretch">
+    <div class="flex h-full flex-col gap-[2px]">
+      <div class="flex h-[46px] shrink-0 items-stretch gap-[2px]">
         <TempoSlider kind="tempo" value={tempo} max={240} cls="flex-[1.68]" onChange={(v: number) => setTempo('tempo', v)} />
         <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo', -1)} title="Slower">‹</PB>
         <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo', 1)} title="Faster">›</PB>
@@ -83,7 +83,7 @@ export function PlayPanel() {
         <PB cls="w-[24px] shrink-0 text-[16px]" onClick={() => stepTempo('tempo2', 1)} title="More pulses per line">›</PB>
       </div>
 
-      <div class="flex h-[33px] shrink-0 items-stretch">
+      <div class="flex h-[30px] shrink-0 items-stretch gap-[2px]">
         <span class="flex w-[45px] shrink-0 items-center pl-1 text-[16px] leading-none">VOL:</span>
         <PB act="vol-hex" on={!!song.flags.volhex} cls="w-[43px]">HEX</PB>
         <PB act="vol-dec" on={!song.flags.volhex} cls="w-[46px]">DEC</PB>
@@ -92,34 +92,34 @@ export function PlayPanel() {
         <PB act="eq-2" on={!!eq[1]} cls="min-w-0 flex-1">E2</PB>
         <PB act="eq-3" on={!!eq[2]} cls="min-w-0 flex-1">E3</PB>
         <PB act="stslide" on={!!song.flags.stslide} cls="w-[55px]">STS</PB>
-        <span class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[58px]">SPD</span>
-        <span class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink w-[100px]">
+        <span class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink w-[58px]">SPD</span>
+        <span class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink w-[100px]">
           <b id="spd-readout" class="font-normal tabular-nums">{String(tempo).padStart(3, '0')}/{String(tempo2).padStart(2, '0')}</b>
         </span>
       </div>
 
-      <div class="grid h-[55px] shrink-0 grid-cols-[130px_72px_minmax(0,1fr)]">
-        <div class="grid grid-rows-2">
-          <div class="flex items-stretch">
+      <div class="grid h-[54px] shrink-0 grid-cols-[120px_64px_minmax(0,1fr)] gap-[2px]">
+        <div class="grid grid-rows-2 gap-[2px]">
+          <div class="flex items-stretch gap-[2px]">
             <span class="flex min-w-0 flex-1 items-center justify-end pr-2 text-[16px] leading-none">CH.MODE:</span>
             <PB act={app.depth === 'enhanced' ? 'depth-classic' : 'depth-enhanced'} on={app.depth === 'enhanced'} cls="w-[34px]" title="High quality output">HQ</PB>
           </div>
-          <div class="flex items-stretch">
+          <div class="flex items-stretch gap-[2px]">
             {[4, 5, 6, 7, 8].map(n => (
               <PB key={n} act={`chmode-${n}`} on={song.channels === n} cls="min-w-0 flex-1">{n}</PB>
             ))}
           </div>
         </div>
-        <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper border-l-0" id="btn-stop" title="Stop (Space)" onClick={() => MW.player.stop()}>STOP</button>
-        <div class="grid grid-rows-2 border-l border-ink">
-          <div class="flex items-stretch">
-            <button class={`flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6] ${MW.player.playing ? 'playing' : ''}`} id="btn-play" title="Play song" onClick={() => MW.player.play(true)}>PLAY SONG</button>
-            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-cont" title="Continue from here" onClick={() => MW.player.play(false)}>CONT. SONG</button>
+        <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper" id="btn-stop" title="Stop (Space)" onClick={() => MW.player.stop()}>STOP</button>
+        <div class="grid grid-rows-2 gap-[2px]">
+          <div class="flex items-stretch gap-[2px]">
+            <button class={`flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1 ${MW.player.playing ? 'playing' : ''}`} id="btn-play" title="Play song" onClick={() => MW.player.play(true)}>PLAY SONG</button>
+            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-cont" title="Continue from here" onClick={() => MW.player.play(false)}>CONT. SONG</button>
           </div>
-          <div class="flex items-stretch">
-            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-[1.6]" id="btn-play-block" title="Play the current block" onClick={() => MW.player.playBlock(app.cursor.block)}>PLAY BLOCK</button>
-            <PB act="play-on-note" on={!!app.playOnNote} cls="w-[38px]" title="Play a note as you enter it">D</PB>
-            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-cont-block" title="Continue the block from the cursor" onClick={() => MW.player.playBlock(app.cursor.block)}>CONT. BLOCK</button>
+          <div class="flex items-stretch gap-[2px]">
+            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-play-block" title="Play the current block" onClick={() => MW.player.playBlock(app.cursor.block)}>PLAY BLOCK</button>
+            <PB act="play-on-note" on={!!app.playOnNote} cls="w-[24px] shrink-0" title="Play a note as you enter it">D</PB>
+            <button class="flex items-center justify-center border border-ink bg-paper px-1.5 text-[15px] shadow-[1px_1px_0_0_#000] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper playing:bg-ink playing:text-paper min-w-0 flex-1" id="btn-cont-block" title="Continue the block from the cursor" onClick={() => MW.player.playBlock(app.cursor.block)}>CONT. BLOCK</button>
           </div>
         </div>
       </div>

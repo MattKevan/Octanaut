@@ -114,7 +114,23 @@
   }
 
   .grid-head {
-    @apply hidden;
+    @apply pointer-events-none absolute inset-x-0 top-0 z-[3] h-[36px] overflow-hidden pt-[3px] font-pixel text-[13px] leading-none text-white;
+  }
+
+  .grid-head.compact {
+    font-size: 11px;
+  }
+
+  .grid-head .grid-track-num {
+    @apply absolute top-[3px] -translate-x-1/2 text-white/85;
+  }
+
+  .grid-head .grid-count {
+    @apply absolute top-[3px] flex flex-col items-center text-[12px] leading-[13px] text-white/45;
+  }
+
+  .grid-head .grid-count i {
+    @apply not-italic;
   }
 
   /* 5-8 tracks get the narrower cut so five digits still fit a column */
@@ -201,20 +217,18 @@
     @apply absolute top-0 bottom-0 block w-px bg-white/80;
   }
 
-  .ch-meters,
-  .ch-waves {
+  .ch-meters {
     @apply pointer-events-none absolute inset-0 z-0 overflow-hidden;
   }
 
   .ch-waves {
-    display: block;
-    width: 100%;
-    height: 100%;
+    @apply pointer-events-none absolute inset-0 z-0 block h-full w-full overflow-hidden;
   }
 
   .ch-meter {
-    @apply pointer-events-none absolute bottom-0 w-[30px] bg-[linear-gradient(to_top,#00ffff_0%,#a55aff_55%,#ff00ff_100%)];
-    height: 0;
+    @apply pointer-events-none absolute bottom-0 top-1/2 w-[12px] border-x-2 border-[#aaaaaa];
+    background: linear-gradient(to bottom, #ff2211 0%, #ffcc22 40%, #66ff11 70%, #008800 100%);
+    clip-path: inset(100% 0 0 0);
   }
 
   /* generic panel controls ----------------------------------------------- */
@@ -249,6 +263,10 @@
   .pnum,
   .ptext,
   .pselect,
+  .template-cell {
+    @apply h-full bg-transparent px-0 text-[11px] leading-none text-ink outline-none;
+  }
+
   .field-input {
     @apply h-[26px] border border-ink bg-paper px-1 text-[14px] leading-none text-ink;
   }
@@ -529,3 +547,142 @@ body.dep2 .grid-row.playing .cell .note { color: #000; }
   .print-head { font: 10px ui-monospace, monospace; color: #444; margin: 0 0 4px; }
   .print-sheet canvas { display: block; width: 100% !important; height: auto !important; }
 }
+
+/* The file requester follows the original's separate file and directory lists. */
+.files-pane { padding: 4px; background: #fff; color: #000; }
+.files-lists { display: grid; grid-template-columns: minmax(0, 3fr) minmax(140px, 1fr); gap: 4px; }
+.files-lists .req-list { height: auto; background: #fff; color: #000; }
+.files-lists .req-row { display: block; width: 100%; text-align: left; color: #000; }
+.files-lists .req-row.dir { color: #000; }
+.files-lists .req-row:hover, .files-lists .req-row.sel { background: #000; color: #fff; }
+.files-lists .req-empty { color: #555; }
+
+/* Score above its controls, as in the original notation screen. */
+.notation-pane { display: flex; flex-direction: column; }
+.notation-pane .sheet-wrap { order: -1; flex: 1 1 auto; min-height: 150px; height: auto; background: #fff; color: #000; }
+.notation-pane > .flex { flex: none; }
+
+/* Sample editor: waveform above the original five rows of gadgets. */
+.sample-editor { height: 100%; display: flex; flex-direction: column; overflow: auto; background: #fff; color: #000; }
+.sample-wave { flex: 1 0 130px; min-height: 130px; border: 0; background: #000; }
+.sample-wave canvas { width: 100%; height: 100%; }
+.sample-view-overview { position: relative; flex: none; height: 8px; background: #ddd; border-block: 1px solid #000; }
+.sample-view-overview span { position: absolute; top: 0; bottom: 0; background: #000; }
+.sample-create { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+.sample-controls { flex: none; padding: 4px; background-image: repeating-conic-gradient(rgba(0,0,0,.35) 0 25%,transparent 0 50%); background-size: 2px 2px; }
+.sample-control-row, .sample-extra-row { display: flex; gap: 2px; margin-bottom: 2px; min-width: 0; }
+.sample-btn { flex: 1 1 auto; min-width: 0; height: 21px; padding: 0 4px; border: 1px solid #000; background: #fff; color: #000; box-shadow: 1px 1px #000; font-size: 10px; line-height: 1; white-space: nowrap; }
+.sample-btn:active, .sample-btn.active { background: #000; color: #fff; }
+.sample-btn:disabled { opacity: .45; cursor: default; }
+.sample-number, .sample-extra-row label { display: flex; align-items: center; gap: 3px; flex: 0 0 172px; white-space: nowrap; font-size: 10px; }
+.sample-note { min-width: 34px; height: 21px; padding: 0 3px; border: 1px solid #000; background: #000; color: #fff; }
+.sample-note:focus-visible { outline: 2px solid #f0f; outline-offset: 1px; }
+.sample-field { min-width: 0; width: 65px; height: 21px; padding: 0 3px; border: 1px solid #000; background: #000; color: #fff; }
+.sample-effect-number { display: flex; align-items: center; gap: 2px; white-space: nowrap; font-size: 10px; }
+.sample-effect-number .sample-field { width: 42px; }
+.sample-extra-row { flex-wrap: wrap; padding-top: 3px; }
+.sample-extra-row label { flex: 0 1 auto; }
+.sample-extra-row select { max-width: 165px; height: 25px; border: 1px solid #000; background: #fff; }
+.sample-extra-row .sample-btn { flex: 0 1 auto; }
+
+.sample-extras summary { cursor: pointer; font-size: 10px; padding: 3px; background: #fff; border: 1px solid #000; }
+
+/* Synthsound: twin waveforms with transfer controls between them. */
+.synth-editor { height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 3px; padding: 4px; background: #fff; color: #000; font-size: 10px; }
+.synth-workspace { display: grid; grid-template-columns: minmax(0,1fr) 160px minmax(0,1fr); gap: 3px; flex: 1 0 150px; min-height: 150px; }
+.synth-wave { min-width: 0; min-height: 0; background: #000; border: 1px solid #000; }
+.synth-wave.active { outline: 2px solid #000; outline-offset: -2px; }
+.synth-wave canvas { display: block; width: 100%; height: 100%; }
+.synth-center { display: flex; flex-direction: column; gap: 2px; }
+.synth-center > .synth-btn, .synth-center > .synth-row { flex: 1 1 0; min-height: 0; }
+.synth-row { display: flex; align-items: stretch; gap: 2px; min-width: 0; }
+.synth-row > span { display: flex; align-items: center; white-space: nowrap; padding: 0 3px; }
+.synth-btn { flex: 1 1 0; min-width: 0; min-height: 21px; padding: 0 3px; border: 1px solid #000; background: #fff; color: #000; box-shadow: 1px 1px #000; font-size: 10px; line-height: 1; white-space: nowrap; }
+.synth-btn.active, .synth-btn:active { background: #000; color: #fff; }
+.synth-btn:disabled { opacity: .45; cursor: default; }
+.synth-lower { display: grid; grid-template-columns: minmax(460px, 3fr) minmax(310px, 2fr); gap: 5px; min-height: 125px; }
+.synth-tools { display: flex; flex-direction: column; gap: 3px; }
+.synth-tools .synth-row { flex: 1 1 0; }
+.synth-number { width: 35px; border: 1px solid #000; background: #000; color: #fff; }
+.synth-program-area { display: grid; grid-template-columns: minmax(0, 1fr) 105px; gap: 4px; min-width: 0; }
+.synth-programs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px; gap: 3px; min-width: 0; min-height: 0; }
+.synth-range-bounds { display: grid; grid-template-columns: minmax(0, 1fr) 23px 23px; align-content: end; gap: 2px; }
+.synth-range-bounds > span { grid-column: 1 / -1; }
+.synth-range-bounds .synth-number { width: 100%; min-width: 0; }
+.synth-program { display: flex; flex-direction: column; min-height: 0; }
+.synth-sequence { overflow: auto; flex: 1; height: 92px; border: 1px solid #000; background: #fff; }
+.synth-sequence .syn-row { display: flex; gap: 6px; cursor: pointer; line-height: 14px; }
+.synth-sequence .syn-row.cur { background: #000; color: #fff; }
+.synth-sequence .seq-ix { width: 24px; }
+.synth-sequence .seq-op { min-width: 3ch; }
+.synth-sequence .seq-arg > span { display: inline-block; min-width: 1ch; }
+.synth-sequence .keyfocus { outline: 1px solid #f0f; }
+.synth-program-actions { display: flex; flex-direction: column; gap: 2px; }
+
+/* Instrument library: sounds and directories flank the action column. */
+.library-view { display: flex; height: 100%; min-height: 0; flex-direction: column; gap: 3px; padding: 4px; background: #fff; color: #000; }
+.library-header { display: flex; justify-content: space-between; gap: 8px; padding: 4px; border: 1px solid #000; font-size: 12px; }
+.library-columns { display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0,1fr) 100px minmax(0,1fr); gap: 4px; }
+.library-list { overflow: auto; border: 1px solid #000; background: #fff; }
+.library-item { display: block; width: 100%; overflow: hidden; padding: 3px 5px; text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #000; }
+.library-item:hover, .library-item.active { background: #000; color: #fff; }
+.library-empty { padding: 5px; font-size: 11px; }
+.library-actions { display: flex; flex-direction: column; gap: 3px; }
+.library-actions button { min-height: 25px; border: 1px solid #000; background: #fff; color: #000; box-shadow: 1px 1px #000; font-size: 10px; }
+.library-actions button:active { background: #000; color: #fff; }
+.library-actions button:disabled { opacity: .4; cursor: default; }
+
+/* The notation display uses one grand staff and a compact control bank. */
+.notation-pane { height: 100%; min-height: 0; }
+.notation-pane .sheet-wrap { overflow: hidden; min-height: 180px; }
+.notation-pane .sheet-wrap canvas { display: block; width: 100%; height: 100% !important; }
+.score-controls { display: grid; grid-template-columns: minmax(140px, 16%) minmax(190px, 24%) minmax(390px, 1fr); gap: 3px; padding: 3px; border-top: 1px solid #000; font-size: 10px; line-height: 1; }
+.score-button { min-width: 0; height: 22px; padding: 0 3px; border: 1px solid #000; background: #fff; color: #000; white-space: nowrap; }
+.score-button.on, .score-button:active { background: #000; color: #fff; }
+.score-print { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; }
+.score-block-range { grid-column: 1 / -1; display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+.score-number { width: 35px; min-width: 0; height: 22px; border: 1px solid #000; padding: 0 2px; background: white; color: black; font-size: 10px; }
+.score-edit { display: flex; flex-direction: column; gap: 1px; }
+.score-lengths { display: flex; height: 44px; }
+.score-lengths .score-button { flex: 1; height: 44px; font: 22px serif; }
+.score-edit-row, .score-instrument, .score-options { display: flex; align-items: center; gap: 1px; white-space: nowrap; }
+.score-tracks { display: flex; min-width: 0; flex-direction: column; gap: 1px; }
+.score-track-row { display: grid; grid-template-columns: minmax(85px,1fr) repeat(16,minmax(16px,1fr)); gap: 1px; align-items: center; text-align: right; }
+.score-track-row .score-button { width: 100%; padding: 0; }
+.score-options .score-button { flex: 1; }
+.score-controls { background: #fff; color: #000; }
+.score-symbol { display: block; width: 100%; height: 100%; fill: currentColor; }
+
+.notation-pane .sheet-wrap { min-height: 120px; }
+.score-button, .score-number { height: 20px; }
+.score-lengths, .score-lengths .score-button { height: 40px; }
+.score-button:disabled { opacity: .5; }
+
+/* MIDI: controls and input map above a message editor. */
+.midi-panel { height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 4px; padding: 4px; background: #fff; color: #000; }
+.midi-upper { display: grid; grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr); gap: 4px; min-height: 0; }
+.midi-settings { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.midi-map-area { display: flex; min-width: 0; min-height: 0; gap: 3px; }
+.midi-local, .midi-map-actions { display: flex; flex-direction: column; gap: 2px; }
+.midi-local { width: 58px; }
+.midi-local span { white-space: normal; text-align: center; line-height: 10px; }
+.midi-map-list { flex: 1; min-width: 0; max-height: 128px; overflow: auto; border: 1px solid #000; }
+.midi-map-item { display: grid; grid-template-columns: 30px 42px 1fr; gap: 4px; width: 100%; padding: 1px 3px; text-align: left; font-size: 10px; }
+.midi-map-item.on { background: #000; color: #fff; }
+.midi-map-actions { width: 100px; }
+.midi-map-actions > span { height: 16px; }
+.midi-map-current, .midi-message-value { display: flex; align-items: center; justify-content: center; min-width: 40px; border: 1px solid #000; font-size: 10px; }
+.midi-map-current { overflow: hidden; white-space: nowrap; }
+.midi-lower { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); flex: 1; min-height: 120px; gap: 4px; border-top: 1px solid #000; padding-top: 4px; }
+.midi-message-data { width: 100%; height: 100%; min-height: 0; resize: none; border: 1px solid #000; padding: 5px; background: #fff; color: #000; font: 12px monospace; outline: none; }
+.midi-message-actions { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.midi-panel button, .midi-panel input, .midi-panel select, .midi-panel .midi-settings span { height: 20px; }
+.midi-panel .midi-settings > div, .midi-message-actions > div { gap: 1px; }
+.midi-map-list { max-height: 108px; }
+
+.midi-panel button, .midi-panel input, .midi-panel select, .midi-panel .midi-settings span, .midi-panel .midi-message-actions span { height: 18px; }
+.midi-map-list { max-height: 98px; }
+
+.notegrid.compact .grid-num { width: 36px; font-size: inherit; }
+.notegrid.compact .track { padding-left: 1px; padding-right: 1px; }
+.notegrid.compact .data-fields { margin-left: 2px; }

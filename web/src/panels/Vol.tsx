@@ -14,7 +14,7 @@ export function VolPanel() {
   for (let t = 0; t < 16; t++) {
     cells.push(
       <B key={t} onClick={() => setTrack(t)} on={trk === t} cls="flex-1 px-0">
-        {t.toString(16).toUpperCase()}:{String(song.trkvol[t] || 64).padStart(2, '0')}
+        {t.toString(16).toUpperCase()}:{String(song.trkvol[t] ?? 64).padStart(2, '0')}
       </B>
     );
   }
@@ -27,11 +27,11 @@ export function VolPanel() {
           <R>{cells.slice(8)}</R>
           <R>
             <L cls="w-[36px]">{trk.toString(16).toUpperCase()}:</L>
-            <span class="flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]">{song.trkvol[trk] || 64}</span>
-            <B onClick={() => setVol(trk, (song.trkvol[trk] || 64) - 10)} cls="w-[24px]">«</B>
-            <B onClick={() => setVol(trk, (song.trkvol[trk] || 64) - 1)} cls="w-[22px]">‹</B>
-            <B onClick={() => setVol(trk, (song.trkvol[trk] || 64) + 1)} cls="w-[22px]">›</B>
-            <B onClick={() => setVol(trk, (song.trkvol[trk] || 64) + 10)} cls="w-[24px]">»</B>
+            <span class="flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]">{song.trkvol[trk] ?? 64}</span>
+            <B onClick={() => setVol(trk, (song.trkvol[trk] ?? 64) - 10)} cls="w-[24px]">«</B>
+            <B onClick={() => setVol(trk, (song.trkvol[trk] ?? 64) - 1)} cls="w-[22px]">‹</B>
+            <B onClick={() => setVol(trk, (song.trkvol[trk] ?? 64) + 1)} cls="w-[22px]">›</B>
+            <B onClick={() => setVol(trk, (song.trkvol[trk] ?? 64) + 10)} cls="w-[24px]">»</B>
             <L cls="w-[44px]">MASTER</L>
             <span class="flex h-[20px] w-[34px] items-center justify-center border border-ink bg-paper text-[11px]">{song.mastervol}</span>
             <B onClick={() => setMaster(song.mastervol - 10)} cls="w-[24px]">«</B>

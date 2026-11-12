@@ -12,7 +12,8 @@
     "serve": "live-server web --port=3000 --no-browser --wait=200",
     "dev": "concurrently -k -n CSS,PANELS,SERVE -c blue,green,magenta \"npm:watch:css\" \"npm:watch:panels\" \"npm:serve\"",
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && node --test test/core.test.js test/store.test.js test/engine.test.js test/export.test.js && node test/run.js"
+    "test": "npm run typecheck && node --test test/*.test.js && node test/run.js",
+    "test:corpus": "node test/corpus.js"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.4",

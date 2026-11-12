@@ -6,6 +6,61 @@
 
   const SYNTH_HDR = 278;
 
+  /* Native MMD0/1 PCM has no sample-rate field. Export a temporary copy at
+     the reference clock, including word-aligned loop positions. */
+  function nativeInstrument(inst) {
+    if (!inst || inst.type !== 'sample' || !inst.data || (inst.c2rate || 8363) === 8363) return inst;
+    const ratio = (inst.c2rate || 8363) / 8363;
+    const src = inst.data;
+    const data = new Float32Array(Math.max(src.length ? 1 : 0, Math.round(src.length / ratio)));
+    for (let i = 0; i < data.length; i++) {
+      if (ratio > 1) {
+        // Average each source interval to reduce aliasing on downsampling.
+        const start = i * ratio, end = Math.min(src.length, (i + 1) * ratio);
+        let sum = 0;
+        for (let k = Math.floor(start); k < end; k++) {
+          sum += src[k] * (Math.min(k + 1, end) - Math.max(k, start));
+        }
+        data[i] = end > start ? sum / (end - start) : 0;
+      } else {
+        const pos = i * ratio, at = Math.floor(pos), frac = pos - at;
+        data[i] = src[at] * (1 - frac) + src[Math.min(at + 1, src.length - 1)] * frac;
+      }
+    }
+    const limit = data.length & ~1;
+    const loop = Math.min(limit, Math.max(0, Math.round((inst.loop || 0) / ratio / 2) * 2));
+    const end = Math.min(limit, Math.max(loop, Math.round(((inst.loop || 0) + (inst.looplen || 0)) / ratio / 2) * 2));
+    const looplen = inst.looplen > 2 ? end - loop : 0;
+    if (looplen && (loop > 131070 || looplen > 131070)) {
+      throw new Error('Resampled loop is too large for MMD0/MMD1');
+    }
+    return { ...inst, data, c2rate: 8363, loop: looplen ? loop : 0, looplen };
+  }
+
+  MW.write8SVX = function (inst) {
+    const data = inst.data || new Float32Array(0);
+    const name = (inst.name || 'sample').slice(0, 30) + '\0';
+    const rate = Math.round(inst.c2rate || 8363);
+    if (rate < 1 || rate > 65535) throw new Error('8SVX sample rate must fit in 16 bits');
+    const size = 12 + 28 + 8 + name.length + (name.length & 1) + 8 + data.length + (data.length & 1);
+    const buffer = new ArrayBuffer(size);
+    const dv = new DataView(buffer);
+    let p = 0;
+    const str = s => { for (let i = 0; i < s.length; i++) dv.setUint8(p++, s.charCodeAt(i) & 255); };
+    const u32 = n => { dv.setUint32(p, n, false); p += 4; };
+    str('FORM'); u32(size - 8); str('8SVX');
+    str('VHDR'); u32(20);
+    u32(inst.looplen > 2 ? inst.loop : data.length);
+    u32(inst.looplen > 2 ? inst.looplen : 0); u32(0);
+    dv.setUint16(p, rate, false); p += 2;
+    dv.setUint8(p++, 1); dv.setUint8(p++, 0);
+    u32(Math.round(MW.clamp(inst.volume == null ? 64 : inst.volume, 0, 64) * 1024));
+    str('NAME'); u32(name.length); str(name); p += name.length & 1;
+    str('BODY'); u32(data.length);
+    for (let i = 0; i < data.length; i++) dv.setInt8(p++, Math.max(-128, Math.min(127, Math.round(data[i] * 128))));
+    return buffer;
+  };
+
   function synthSize(inst) {
     const syn = inst.synth;
     if (!syn) return 6;
@@ -58,7 +113,7 @@
       }
     }
     const n = songs.length;
-    const elements = song.instruments;
+    const elements = song.instruments.map(nativeInstrument);
 
     /* ---- first pass: measure ---- */
     let cursor = n * 52;
@@ -189,7 +244,7 @@
               else if (cmd === 0x18) { cmd = 0x0f; dat = 0xff; }
               else { cmd = 0; dat = 0; }
             }
-            dv.setUint8(q, (c.note & 0x3f) | (((ins >> 4) & 0x03) << 6));
+            dv.setUint8(q, (c.note & 0x3f) | ((ins & 0x10) << 3) | ((ins & 0x20) << 1));
             dv.setUint8(q + 1, ((ins & 0x0f) << 4) | (cmd & 0x0f));
             dv.setUint8(q + 2, dat & 0xff);
             q += 3;
@@ -238,7 +293,7 @@
       const ch = s.channels || 4;
       const split = ch >= 8 ? 0 : ch === 7 ? 0xff : ch === 6 ? 0xffff : ch === 5 ? 0xffffff : 0;
       dv.setUint32(e.exp + 36, split, false);
-      dv.setUint32(e.exp + 40, e.ninfo, false);
+      dv.setUint32(e.exp + 40, s.notation ? e.ninfo : 0, false);
 
       for (let k = 0; k < 63; k++) {
         const inst = elements[k];
@@ -257,11 +312,7 @@
       const rgb = [0x000, 0xeee, 0x48c, 0x4c4, 0xc44, 0xcc4, 0x46c, 0xccc];
       for (let k = 0; k < 8; k++) dv.setUint16(e.rgb + k * 2, rgb[k], false);
 
-      dv.setUint8(e.ninfo, 0);
-      dv.setUint8(e.ninfo + 1, 0);
-      for (let k = 0; k < 5; k++) dv.setUint16(e.ninfo + 2 + k * 2, 0xffff, false);
-      for (let k = 0; k < 16; k++) dv.setUint8(e.ninfo + 12 + k, 0x1f);
-      for (let k = 0; k < 16; k++) dv.setUint8(e.ninfo + 28 + k, 0);
+      MW.writeNotationInfo(dv, e.ninfo, s.notation);
     }
 
     return buf.buffer;
@@ -280,7 +331,7 @@
     const withInstr = !options || options.instruments !== false;
     const songs = [song].concat(others || []);
     const n = songs.length;
-    const elements = song.instruments;
+    const elements = withInstr ? song.instruments.map(nativeInstrument) : song.instruments;
 
     /* ---- first pass: measure ---- */
     let cursor = n * 52;
@@ -491,7 +542,7 @@
       const ch = s.channels || 4;
       const split = ch >= 8 ? 0 : ch === 7 ? 0xff : ch === 6 ? 0xffff : ch === 5 ? 0xffffff : 0;
       dv.setUint32(e.exp + 36, split, false);
-      dv.setUint32(e.exp + 40, e.ninfo, false);
+      dv.setUint32(e.exp + 40, s.notation ? e.ninfo : 0, false);
       dv.setUint32(e.exp + 44, e.songname, false);
       dv.setUint32(e.exp + 48, e.songnameLen, false);
 
@@ -512,11 +563,7 @@
       const rgb = [0x000, 0xeee, 0x48c, 0x4c4, 0xc44, 0xcc4, 0x46c, 0xccc];
       for (let k = 0; k < 8; k++) dv.setUint16(e.rgb + k * 2, rgb[k], false);
 
-      dv.setUint8(e.ninfo, 0);
-      dv.setUint8(e.ninfo + 1, 0);
-      for (let k = 0; k < 5; k++) dv.setUint16(e.ninfo + 2 + k * 2, 0xffff, false);
-      for (let k = 0; k < 16; k++) dv.setUint8(e.ninfo + 12 + k, 0x1f);
-      for (let k = 0; k < 16; k++) dv.setUint8(e.ninfo + 28 + k, 0);
+      MW.writeNotationInfo(dv, e.ninfo, s.notation);
       for (let k = 0; k < songname.length; k++) dv.setUint8(e.songname + k, songname.charCodeAt(k) & 0xff);
     }
 

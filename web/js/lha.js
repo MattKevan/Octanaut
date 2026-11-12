@@ -637,7 +637,7 @@
 
   /* Entries that look like something Octanaut can open. */
   MW.lhaModules = function (result) {
-    const known = /\.(mmd0|mmd1|mmd2|mmd3|mmd4|mmd|med|med4|mod|msh|8svx|iff)$/i;
+    const known = /\.(mmd0|mmd1|mmd2|mmd3|mmd4|mmdc|mmd|med|med4|mod|msh|8svx|iff)$/i;
     return result.entries.filter(e => known.test(e.name));
   };
 

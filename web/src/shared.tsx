@@ -5,10 +5,10 @@ export const MW: any = (globalThis as any).MW;
 /* ---------------------------------------------------------------- helpers */
 
 export const BTN =
-  'flex h-[20px] min-w-0 items-center justify-center border border-ink bg-paper px-1 text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper';
-export const LAB = 'flex h-[20px] shrink-0 items-center px-1 text-[10px] uppercase leading-none whitespace-nowrap';
-export const FIELD = 'h-[20px] min-w-0 border border-ink bg-paper px-1 text-[11px] leading-none text-ink outline-none';
-export const ROW = 'flex items-stretch gap-px';
+  'flex h-[24px] min-w-0 grow items-center justify-center border border-ink bg-paper px-1 shadow-[1px_1px_0_0_#000] text-[10px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper';
+export const LAB = 'flex h-[24px] shrink-0 items-center px-1 text-[10px] uppercase leading-none whitespace-nowrap';
+export const FIELD = 'h-[24px] min-w-0 border border-ink bg-paper px-1 text-[11px] leading-none text-ink outline-none';
+export const ROW = 'flex items-stretch gap-[2px]';
 
 export function B(props: any) {
   const { act, on, cls, children, title, name, onClick, disabled } = props;

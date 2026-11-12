@@ -16,19 +16,25 @@
     mount(host) {
       host.innerHTML = '<div class="grid-wrap" id="grid-wrap" tabindex="0"><div class="notegrid" id="grid"></div></div>'
         + '<div class="grid-lines" id="grid-lines"></div>'
+        + '<div class="grid-head" id="grid-head"></div>'
         + '<canvas class="ch-waves" id="ch-waves"></canvas>'
         + '<div class="ch-meters" id="ch-meters"></div>';
       this.el = host.querySelector('#grid');
       this.wrap = host.querySelector('#grid-wrap');
       this.wrap.addEventListener('mousedown', e => this.onMouseDown(e));
       this.wrap.addEventListener('contextmenu', e => e.preventDefault());
-      this.wrap.addEventListener('scroll', () => { this.onScroll(); this.placeMeters(); this.placeLines(); }, { passive: true });
+      this.wrap.addEventListener('scroll', () => { this.onScroll(); this.placeMeters(); this.placeLines(); this.placeHead(); }, { passive: true });
       window.addEventListener('mousemove', e => this.onMouseMove(e));
       window.addEventListener('mouseup', () => {
         if (this.dragging) MW.touchStatus('selection', ['selection']);
         this.dragging = false;
       });
-      window.addEventListener('resize', () => { this.updatePadding(); this.placeMeters(); this.placeLines(); });
+      if (!this.resizeBound) {
+        window.addEventListener('resize', () => {
+          if (this.wrap && this.wrap.isConnected) this.render();
+        });
+        this.resizeBound = true;
+      }
       this.render();
       if (typeof requestAnimationFrame === 'function') {
         requestAnimationFrame(() => this.centerLine(MW.app.cursor.line));
@@ -48,7 +54,9 @@
 
       const shown = MW.app.no16 && block.tracks > 8 ? 8 : block.tracks;
       this.el.classList.toggle('many', shown > 4);
+      this.el.classList.toggle('compact', shown > 8);
       const tw = this.trackWidth(shown);
+      this.el.style.fontSize = shown > 8 ? Math.max(8, Math.min(14, Math.floor((tw - 4) / 6))) + 'px' : '';
       let html = '';
       for (let l = 0; l < block.lines; l++) {
         const isCur = l === cur.line;
@@ -70,9 +78,9 @@
           const noteTxt = c.note ? MW.noteName(c.note, MW.app.hb) : (c.ins ? '-|-' : '---');
           const insTxt = c.ins ? MW.insName(c.ins) : '00';
 
-          /* OctaMED v4 and later show every command as two hex digits,
-             so a cell is always instrument + command + data: six digits */
-          const cmdTxt = c.cmd.toString(16).toUpperCase().padStart(2, '0');
+          /* OctaMED v4 prints one hex digit for the ordinary 0-F commands;
+             MMD1 extended commands (0x10 and up) need a second digit. */
+          const cmdTxt = this.commandText(c.cmd);
 
           html += `<div class="track${muted}" data-track="${t}" style="width:${tw}px">`
             + `<span class="cell note" data-f="0">${noteTxt}${caret(0)}</span>`
@@ -93,6 +101,54 @@
       this.centerLine(cur.line);
       this.placeMeters(shown);
       this.placeLines();
+      this.placeHead(shown);
+    },
+
+    commandText(cmd) {
+      const v = cmd | 0;
+      return v >= 0x10 ? v.toString(16).toUpperCase().padStart(2, '0')
+        : (v & 0xf).toString(16).toUpperCase();
+    },
+
+    /* the track numbers sit at the top of the display, above the blank
+       space the separators run through; the track count is stacked in
+       the left margin, as in the original */
+    headLabels(n) {
+      return Array.from({ length: n }, (_, i) => (i & 0xf).toString(16).toUpperCase());
+    },
+
+    countStack(n) {
+      return String(n).split('');
+    },
+
+    placeHead(n) {
+      const overlay = document.getElementById('grid-head');
+      if (!overlay || !this.el) return;
+      const row = this.el.querySelector('.grid-row');
+      if (!row) return;
+      const tracks = row.querySelectorAll('.track');
+      const count = n || tracks.length;
+      const want = tracks.length + 1;
+      if (overlay.children.length !== want) {
+        overlay.innerHTML = '<b class="grid-count"></b>'
+          + this.headLabels(tracks.length).map(() => '<span class="grid-track-num"></span>').join('');
+      }
+      const base = overlay.getBoundingClientRect();
+      overlay.classList.toggle('compact', tracks.length > 8);
+      const stack = overlay.firstElementChild;
+      if (stack) {
+        stack.innerHTML = this.countStack(count).map(d => `<i>${d}</i>`).join('');
+        const first = tracks[0] && (tracks[0].querySelector('.cell.note') || tracks[0]);
+        if (first) stack.style.left = Math.max(0, first.getBoundingClientRect().left - base.left - 20) + 'px';
+      }
+      tracks.forEach((tr, i) => {
+        const label = overlay.children[i + 1];
+        if (!label) return;
+        const cell = tr.querySelector('.cell.note') || tr;
+        const r = cell.getBoundingClientRect();
+        label.textContent = this.headLabels(tracks.length)[i];
+        label.style.left = (r.left - base.left + r.width / 2) + 'px';
+      });
     },
 
     /* full-height column rules, through the blank space above and below */
@@ -128,7 +184,7 @@
         const m = overlay.children[i];
         if (!m) return;
         const r = tr.getBoundingClientRect();
-        m.style.left = Math.max(0, (r.right - wrapLeft - 36)) + 'px';
+        m.style.left = Math.max(0, (r.left - wrapLeft) + Math.round(r.width * 0.61)) + 'px';
       });
     },
 
@@ -187,16 +243,19 @@
       if (!meters.length) return;
       const loop = levels || [];
       meters.forEach((m, i) => {
-        const v = loop[i] || 0;
-        m.style.height = Math.round(v * 100) + '%';
+        const v = MW.clamp(loop[i] || 0, 0, 1);
+        m.style.clipPath = `inset(${Math.round((1 - v) * 100)}% 0 0 0)`;
       });
     },
 
     trackWidth(tracks) {
-      const avail = (this.wrap ? this.wrap.clientWidth : 900) - 84;
-      const n = tracks || (this.block().tracks);
-      /* the narrow cut carries more columns, so it can be squeezed further */
-      return MW.clamp(Math.floor(avail / n), n > 4 ? 130 : 180, 300);
+      const n = tracks || this.block().tracks;
+      /* leave room for the line-number gutter and a little slack so every
+         track of a 12- or 16-track block fits without scrolling. Cells are
+         five digits now, so the 5-8 track cut can be narrower. */
+      const avail = (this.wrap ? this.wrap.clientWidth : 900) - (n > 8 ? 44 : 88) - 8;
+      // Wider blocks use compact columns; preserve a minimum width on small screens.
+      return MW.clamp(Math.floor(avail / n), n > 8 ? 54 : n > 4 ? 112 : 180, 300);
     },
 
     refreshLine(line) {

@@ -27,10 +27,77 @@
 
   const CMD_ARGS = {
     vol: new Set([0xfe, 0xfa, 0xf4, 0xf5, 0xf3, 0xf2, 0xf1, 0xf0]),
-    wf: new Set([0xfe, 0xf7, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0])
+    wf: new Set([0xfe, 0xfa, 0xf7, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0])
   };
 
   MW.synthArgs = CMD_ARGS;
+
+  MW.synthCommandKey = function (list, key, shifted) {
+    const common = { d: 0xf2, u: 0xf3, w: 0xf1, j: 0xfe, h: 0xfb, s: 0xf0 };
+    const special = list === 'vol' ? { e: shifted ? 0xf5 : 0xf4 } : { a: 0xfc, e: 0xfd, v: shifted ? 0xf5 : 0xf4, r: 0xf6 };
+    key = key.toLowerCase();
+    if (shifted && key === 'j') return 0xfa;
+    if (shifted && key === 'w' && list === 'wf') return 0xf7;
+    return special[key] ?? common[key] ?? null;
+  };
+  MW.synthSequenceKinds = function (list, table) {
+    const kinds = new Array(table.length).fill('value');
+    let argument = false, arpeggio = false;
+    for (let i = 0; i < table.length; i++) {
+      const byte = table[i];
+      if (argument) { argument = false; continue; }
+      if (arpeggio && byte !== 0xfd && byte !== 0xff) continue;
+      if (arpeggio) arpeggio = false;
+      if (MW.synthNames[list][byte]) {
+        kinds[i] = 'command';
+        argument = CMD_ARGS[list].has(byte);
+        if (list === 'wf' && byte === 0xfc) arpeggio = true;
+      }
+    }
+    return kinds;
+  };
+  MW.synthSequenceEnd = function (list, table) {
+    const kinds = MW.synthSequenceKinds(list, table);
+    return table.findIndex((byte, i) => byte === 0xff && kinds[i] === 'command');
+  };
+
+  MW.editSynthSequence = function (syn, list, action, index) {
+    const target = list === 'vol' ? syn.voltbl : syn.wftbl;
+    if (!target || !Number.isInteger(index) || index < 0 || index >= target.length) return false;
+    const end = MW.synthSequenceEnd(list, target);
+    if (end < 0 || index > end) return false;
+    if (action === 'insert' && end + 1 >= 127) return false;
+    if (action === 'delete' && (end === 0 || index === end)) return false;
+    if (action !== 'insert' && action !== 'delete') return false;
+    const refs = [];
+    for (const kind of ['vol', 'wf']) {
+      const table = kind === 'vol' ? syn.voltbl : syn.wftbl;
+      if (!table) continue;
+      for (let i = 0; i < table.length; i++) {
+        const op = table[i];
+        if (op === 0xff) break;
+        if (kind === 'wf' && op === 0xfc) {
+          while (i + 1 < table.length && table[i + 1] !== 0xfd && table[i + 1] !== 0xff) i++;
+          if (table[i + 1] === 0xfd) i++;
+          continue;
+        }
+        if (CMD_ARGS[kind].has(op) && i + 1 < table.length) {
+          if ((op === 0xfe && kind === list) || (op === 0xfa && kind !== list)) refs.push({ table, opIndex: i, argIndex: i + 1, value: table[i + 1] });
+          i++;
+        }
+      }
+    }
+    target.splice(end + 1);
+    if (action === 'insert') target.splice(index, 0, 0);
+    else target.splice(index, 1);
+    for (const ref of refs) {
+      if (ref.table === target && action === 'delete' && (index === ref.opIndex || index === ref.argIndex)) continue;
+      const argIndex = ref.argIndex + (ref.table === target && index <= ref.argIndex ? (action === 'insert' ? 1 : -1) : 0);
+      const value = action === 'insert' && ref.value >= index ? ref.value + 1 : action === 'delete' && ref.value > index ? ref.value - 1 : ref.value;
+      ref.table[argIndex] = Math.min(0xff, value);
+    }
+    return true;
+  };
 
   function tableAt(tbl, i) {
     return i >= 0 && i < tbl.length ? tbl[i] : 0xff;
@@ -196,21 +263,23 @@
         let shape = Math.sin(vibPos);
         if (vibWave && vibWave.length > 1) {
           const t = ((vibPos / (Math.PI * 2)) % 1 + 1) % 1;
-          shape = vibWave[Math.floor(t * vibWave.length)] / 128;
+          shape = vibWave[Math.floor(t * vibWave.length)];
         }
         rate *= Math.pow(2, (shape * vibDepth) / 480);
       }
 
-      phase += (wf.length * rate) / sampleRate;
-      if (phase >= wf.length) phase -= wf.length;
+      // MED's synth period table is four times its PCM table (C-2: 1712
+      // versus 428). Advance in waveform samples, not whole cycles: a
+      // 64-byte waveform must sound an octave below a 32-byte waveform.
+      phase = (phase + (8363 / 4) * rate / sampleRate) % wf.length;
       const idx = phase | 0;
       const frac = phase - idx;
       const a = wf[idx], b = wf[(idx + 1) % wf.length];
-      let v = (a + (b - a) * frac) / 128;
+      let v = (a + (b - a) * frac);
 
       // 128-byte envelope waveforms
       if (env) {
-        const e = env[envPos | 0] / 128;
+        const e = env[envPos | 0];
         v *= Math.max(0, Math.min(1, 0.5 + e * 0.5));
         envPos += 1;
         if (envPos >= env.length) {
