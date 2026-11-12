@@ -291,13 +291,22 @@
       const version = dv.getUint8(mdhd.body);
       const rate = version === 1 ? u32(dv, mdhd.body + 20, false) : u32(dv, mdhd.body + 12, false);
       if (!rate) continue;
+      let channels = 2, bits = null;
+      const minf = findBox(dv, mdia.body, mdia.end, 'minf');
+      const stbl = minf && findBox(dv, minf.body, minf.end, 'stbl');
+      const stsd = stbl && findBox(dv, stbl.body, stbl.end, 'stsd');
+      if (stsd && stsd.body + 44 <= stsd.end) {
+        const entry = stsd.body + 8;
+        channels = u16(dv, entry + 24, false) || channels;
+        bits = u16(dv, entry + 26, false) || null;
+      }
       /** @type {number|null} */ let duration = null;
       if (version === 1 && mdhd.body + 32 <= mdhd.end) {
         duration = Number(dv.getBigUint64(mdhd.body + 24, false)) / rate;
       } else if (version === 0 && mdhd.body + 20 <= mdhd.end) {
         duration = u32(dv, mdhd.body + 16, false) / rate;
       }
-      return base('m4a', { rate, bits: null, channels: 2, duration, durationExact: duration != null, compressed: true });
+      return base('m4a', { rate, bits, channels, duration, durationExact: duration != null, compressed: true });
     }
     return null;
   }
@@ -567,6 +576,14 @@
     return { rate, c2rate: Math.max(1, Math.round(rate * period / 428)), sourceRate };
   }
 
+  function describeTarget(decoded, settings) {
+    const p = plan(decoded, settings);
+    const frames = decoded.channels && decoded.channels[0] ? decoded.channels[0].length : 0;
+    const sourceRate = decoded.rate || p.rate;
+    const outputFrames = sourceRate > 0 ? Math.floor(frames * p.rate / sourceRate) : 0;
+    return { ...p, outputFrames, trimmed: outputFrames > MAX_FRAMES };
+  }
+
   function resample(channels, from, to, allowAliasing) {
     if (!channels || !channels.length) return [];
     if (!(from > 0) || !(to > 0) || to >= from) return channels.map(c => Float32Array.from(c));
@@ -750,6 +767,7 @@
     readWav,
     readAiff,
     plan,
+    describeTarget,
     resample,
     build,
     defaults,

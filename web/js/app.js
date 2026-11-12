@@ -1568,13 +1568,10 @@
     }
 
     /** @type {any} */
-    let decoded = null;
-    /** @type {any} */
     let built = null;
     if (!settings && meta.asks) {
       const choice = await openImportDialog(buffer, name, meta);
       if (!choice) return null;
-      decoded = choice.decoded;
       built = choice.built;
       settings = choice.settings;
     }
@@ -1582,8 +1579,7 @@
     /** @type {any} */
     let result = null;
     try {
-      if (built) result = { ...built, meta, decoded };
-      else if (decoded) result = { ...MW.sampleImport.build(decoded, settings || MW.sampleImport.defaults()), meta, decoded };
+      if (built) result = { ...built, meta };
       else result = await MW.sampleImport.load(buffer, settings);
     } catch (err) {
       MW.toast(err.message || 'Could not read that instrument', true);
@@ -1679,6 +1675,7 @@
           </div>
           <div class="flex flex-wrap items-center gap-2 text-[13px]">
             <label class="flex items-center gap-1"><input type="checkbox" id="import-normalise"${app.importNormalise ? ' checked' : ''}> NORMALISE</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="import-aliasing"${app.importAliasing ? ' checked' : ''}> ALLOW ALIASING</label>
             <label class="flex items-center gap-1"><input type="checkbox" id="import-preview"> PREVIEW</label>
           </div>
           <div class="req-note" id="import-target"></div>
@@ -1698,6 +1695,7 @@
       const stereoEl = el.querySelector('#import-stereo');
       const loopEl = el.querySelector('#import-loop');
       const normaliseEl = el.querySelector('#import-normalise');
+      const aliasingEl = el.querySelector('#import-aliasing');
       const previewEl = el.querySelector('#import-preview');
       const state = { decoded: null, built: null, settings: null, preview: null, done: false };
 
@@ -1716,17 +1714,17 @@
           channel: channelEl ? channelEl.value : 'mixed',
           stereo: stereoEl ? !!stereoEl.checked : false,
           loop: loopEl ? !!loopEl.checked : false,
-          normalise: !!normaliseEl.checked
+          normalise: !!normaliseEl.checked,
+          allowAliasing: !!aliasingEl.checked
         };
       };
       const refresh = () => {
         if (!state.decoded) return;
         const settings = collect();
-        const p = MW.sampleImport.plan(state.decoded, settings);
-        const outFrames = Math.floor(state.decoded.channels[0].length * p.rate / state.decoded.rate);
+        const p = MW.sampleImport.describeTarget(state.decoded, settings);
         target.textContent = 'New rate: ' + p.rate + ' Hz (C-2 ' + p.c2rate + ')' +
           (p.rate < state.decoded.rate ? '' : ' - stays') +
-          (outFrames > MW.sampleImport.MAX_FRAMES ? ' - trimmed to ' + MW.sampleImport.MAX_FRAMES : '');
+          (p.trimmed ? ' - trimmed to ' + MW.sampleImport.MAX_FRAMES : '');
         try {
           state.built = MW.sampleImport.build(state.decoded, settings);
           state.settings = settings;
@@ -1745,17 +1743,23 @@
         stopPreview();
         el.remove();
         document.removeEventListener('keydown', onKey);
+        state.decoded = null;
+        state.settings = null;
+        state.built = null;
         resolve(value);
       };
       const load = () => {
-        if (!state.decoded || !state.built) return;
+        const built = state.built;
+        const settings = state.settings;
+        if (!built || !settings) return;
         app.importNote = noteEl.value;
         if (channelEl) app.importChannel = channelEl.value;
         if (stereoEl) app.importStereo = !!stereoEl.checked;
         if (loopEl) app.importLoop = !!loopEl.checked;
         app.importNormalise = !!normaliseEl.checked;
+        app.importAliasing = !!aliasingEl.checked;
         prefs.save();
-        finish({ decoded: state.decoded, settings: state.settings, built: state.built });
+        finish({ settings, built });
       };
       const onKey = e => {
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(null); }
@@ -2345,7 +2349,8 @@
           importChannel: app.importChannel,
           importStereo: app.importStereo,
           importLoop: app.importLoop,
-          importNormalise: app.importNormalise
+          importNormalise: app.importNormalise,
+          importAliasing: app.importAliasing
         }));
       } catch (e) { /* private mode, ignore */ }
     },
@@ -2375,6 +2380,7 @@
         app.importStereo = !!p.importStereo;
         app.importLoop = p.importLoop !== false;
         app.importNormalise = !!p.importNormalise;
+        app.importAliasing = !!p.importAliasing;
       } catch (e) { /* ignore */ }
     },
     reset() {

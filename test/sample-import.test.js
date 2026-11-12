@@ -233,7 +233,7 @@ class FakeContext {
 class BrokenContext {
   async decodeAudioData() { throw new Error('no decoder'); }
 }
-function m4aBox(rate) {
+function m4aBox(rate, channels = 2) {
   const box = (type, ...parts) => {
     const body = Buffer.concat(parts);
     const head = Buffer.alloc(8);
@@ -246,10 +246,21 @@ function m4aBox(rate) {
   mdhd.writeUInt32BE(rate * 2, 16);
   const hdlr = Buffer.alloc(12);
   hdlr.write('soun', 8, 'ascii');
+  const sample = Buffer.alloc(36);
+  sample.writeUInt32BE(36, 0);
+  sample.write('mp4a', 4, 'ascii');
+  sample.writeUInt16BE(1, 14);
+  sample.writeUInt16BE(channels, 24);
+  sample.writeUInt16BE(16, 26);
+  sample.writeUInt32BE(rate * 65536, 32);
+  const stsd = Buffer.alloc(8 + sample.length);
+  stsd.writeUInt32BE(1, 4);
+  sample.copy(stsd, 8);
   const out = Buffer.concat([
     box('ftyp', Buffer.from('M4A \0\0\0\0')),
     box('free', Buffer.from([0xff, 0xfb, 0x90, 0x40])),
-    box('moov', box('trak', box('mdia', box('hdlr', hdlr), box('mdhd', mdhd))))
+    box('moov', box('trak', box('mdia', box('hdlr', hdlr), box('mdhd', mdhd),
+      box('minf', box('stbl', box('stsd', stsd))))))
   ]);
   return out.buffer.slice(out.byteOffset, out.byteOffset + out.length);
 }
@@ -270,8 +281,8 @@ test('sniff reads MP3, ADTS AAC, FLAC and M4A rates', () => {
   assert.deepEqual([mw.sampleImport.sniff(new Uint8Array(adts)).format, mw.sampleImport.sniff(new Uint8Array(adts)).rate], ['aac', 48000]);
   const f = mw.sampleImport.sniff(new Uint8Array(flac));
   assert.deepEqual([f.format, f.rate, f.bits, f.channels], ['flac', 44100, 16, 2]);
-  const m = mw.sampleImport.sniff(new Uint8Array(m4aBox(44100)));
-  assert.deepEqual([m.format, m.rate], ['m4a', 44100]);
+  const m = mw.sampleImport.sniff(new Uint8Array(m4aBox(44100, 1)));
+  assert.deepEqual([m.format, m.rate, m.channels], ['m4a', 44100, 1]);
 });
 
 test('sniff prefers raw over a bare sync byte', () => {
@@ -470,4 +481,48 @@ test('right and stereo use the front channels of a multi-channel source', () => 
   const st = build(d, { ...base, stereo: true }).instrument;
   assert.ok(Math.abs(st.data[0] - 0.1) < 1e-6);
   assert.ok(Math.abs(st.dataR[0] - 0.2) < 1e-6);
+});
+
+test('describeTarget reports the kept frames and the trim', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const settings = { note: C3, channel: 'mixed', stereo: false, loop: false, normalise: false };
+  const short = s.describeTarget({ rate: 44100, bits: 16, channels: [new Float32Array(10000)], loop: null, truncated: false }, settings);
+  assert.equal(short.rate, 16726);
+  assert.equal(short.outputFrames, Math.floor(10000 * 16726 / 44100));
+  assert.equal(short.trimmed, false);
+  const long = s.describeTarget({ rate: 44100, bits: 16, channels: [new Float32Array(400000)], loop: null, truncated: false }, settings);
+  assert.equal(long.outputFrames, Math.floor(400000 * 16726 / 44100));
+  assert.equal(long.trimmed, true);
+});
+
+test('resampling at a fractional ratio keeps the length and the envelope', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const ramp = Float32Array.from({ length: 10 }, (_, i) => i / 10);
+  const out = s.resample([ramp], 44100, 16726)[0];
+  assert.equal(out.length, 3);
+  const step = 44100 / 16726;
+  assert.ok(Math.abs(out[0] - (0.1 + 0.2 * (step - 2)) / step) < 1e-6);
+  assert.ok(out[0] < out[1] && out[1] < out[2]);
+});
+
+test('loop points scale at a fractional ratio', () => {
+  const d = decoded(44100, [new Float32Array(10000).fill(0.5)], { loop: { start: 1000, end: 2000 } });
+  const inst = build(d, { ...base, note: C3 }).instrument;
+  assert.equal(inst.loop, Math.round(1000 * 16726 / 44100));
+  assert.equal(inst.loop + inst.looplen, Math.round(2000 * 16726 / 44100));
+});
+
+test('the resampler can keep aliasing when asked', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const out = s.resample([new Float32Array([0, 1, 1, 1])], 16000, 8000, true)[0];
+  assert.deepEqual(Array.from(out), [0, 1]);
+});
+
+test('AIFF decodes float samples', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const data = Buffer.alloc(8);
+  data.writeFloatBE(0.5, 0);
+  data.writeFloatBE(-0.25, 4);
+  const d = s.readAiff(aiff({ compression: 'fl32', bits: 32, data }));
+  assert.deepEqual(Array.from(d.channels[0]), [0.5, -0.25]);
 });

@@ -246,7 +246,7 @@ function audioWav(data, { channels = 1, bits = 16, rate = 44100 } = {}) {
 }
 
 const audio16 = (...v) => Buffer.from(new Int16Array(v).buffer);
-const setupImport = () => runtime(['sample-import', 'loaders', 'store', 'engine', 'synth', 'writer', 'app']);
+const setupImport = () => runtime(['sample-import', 'loaders', 'lha', 'store', 'engine', 'synth', 'writer', 'app']);
 
 test('importInstrumentBuffer places a WAV in the current slot', async () => {
   const mw = setupImport();
@@ -295,4 +295,34 @@ test('recording is built through the sample converter', () => {
   assert.equal(i.data.length, 64);
   assert.equal(i.data[0], 1);
   assert.equal(i.bits16, true);
+});
+
+function makeLha(name, data) {
+  const nameBuf = Buffer.from(name, 'ascii');
+  const length = data.byteLength || data.length;
+  const size = 22 + nameBuf.length + 2;
+  const out = Buffer.alloc(size + 2 + length + 4);
+  out[0] = size;
+  out.write('-lh0-', 2, 'ascii');
+  out.writeUInt32LE(length, 7);
+  out.writeUInt32LE(length, 11);
+  out[20] = 0;
+  out[21] = nameBuf.length;
+  nameBuf.copy(out, 22);
+  out.writeUInt16LE(0, 22 + nameBuf.length);
+  out.writeUInt16LE(0, size);
+  Buffer.from(data).copy(out, size + 2);
+  return out.buffer.slice(out.byteOffset, out.byteOffset + out.length);
+}
+
+test('a single sample inside an archive goes to the sample importer', () => {
+  const mw = setupImport();
+  let got = null;
+  mw.importInstrumentBuffer = (buffer, name) => {
+    got = { name, size: buffer.byteLength };
+    return Promise.resolve(null);
+  };
+  mw.handleFileBuffer(makeLha('kick.wav', audioWav(audio16(0, 1000))), 'one.lha');
+  assert.equal(got && got.name, 'kick.wav');
+  assert.ok(got && got.size > 44);
 });
