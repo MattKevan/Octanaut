@@ -380,7 +380,9 @@
         req.listModland(req.modlandPath || '');
       }
       const path = req.volume === 'DF0:'
-        ? 'DF0: Work'
+        ? 'DF0: Work' + (req.diskUsage
+          ? ` · ${req.diskUsage.files} files · ${MW.formatBytes(req.diskUsage.bytes)}`
+          : '')
         : req.volume === 'DH0:'
           ? 'DH0: Modland' + (req.modlandPath ? ' / ' + req.modlandPath : '')
           : (req.dir ? req.dir.name : (req.title || 'no folder chosen'));

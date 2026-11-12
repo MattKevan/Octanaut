@@ -353,6 +353,13 @@
 
   MW.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+  MW.formatBytes = function (n) {
+    const v = Math.max(0, Number(n) || 0);
+    if (v < 1024) return v + ' B';
+    if (v < 1024 * 1024) return (v / 1024).toFixed(1) + ' KB';
+    return (v / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
   MW.toast = function (msg, isError) {
     const el = document.getElementById('toast');
     if (!el) return;

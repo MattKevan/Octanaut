@@ -54,7 +54,7 @@ The panels follow the V4 layouts. These controls are disabled because they map t
 
 These are implemented with browser equivalents rather than the original file formats:
 
-- **Files:** `DF0:` is a writable work disk in IndexedDB. SAVE writes real module bytes there; EXPORT downloads to the Mac; an OS folder still uses the File System Access API. DEL FILE removes from `DF0:` or the chosen folder. `DH0:` is a read-only Modland mount: it browses the bundled OctaMED index, downloads a module only when chosen, validates it, and caches it locally. Messages and maps save and load as JSON. The working song and editor state autosave to IndexedDB, so a reload restores what was last on screen.
+- **Files:** `DF0:` is a writable work disk in IndexedDB. SAVE writes real module bytes there; EXPORT downloads to the Mac; an OS folder still uses the File System Access API. DEL FILE removes from `DF0:` or the chosen folder. `DH0:` is a read-only Modland mount: it browses the bundled OctaMED index, downloads a module only when chosen, validates it, and caches it locally; IMPORT copies a chosen module straight to `DF0:` without loading it. The Files display shows `DF0:` usage in files and bytes. Messages and maps save and load as JSON. The working song and editor state autosave to IndexedDB, so a reload restores what was last on screen; a Web Locks election makes one tab the writer and marks the others `OTHER TAB`.
 - **Misc:** the RGB palette edits the custom track colour. Paths use directory handles. QUIT closes the tab where the browser allows it, and CONFIRM toggles save prompts.
 - **MIDI:** KEY-UP is a transport toggle. SysEx messages save as JSON, not inside MMD1.
 

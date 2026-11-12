@@ -260,6 +260,12 @@
     /* Held true while boot restores, so mounting panels does not immediately
        write a snapshot back over the one being restored. */
     paused: false,
+    /* Only the tab holding the Web Lock writes. Other tabs stay readable and
+       take over when the leader closes. */
+    leader: true,
+    _tabId: '',
+    _claiming: false,
+    _lockTimer: 0,
 
     init() {
       if (this._inited) return this;
@@ -289,12 +295,58 @@
       if (typeof document !== 'undefined' && document.addEventListener) {
         document.addEventListener('visibilitychange', () => {
           if (document.hidden) this.flush();
+          else if (!this.leader) this.claimLock();
         });
       }
       if (typeof window !== 'undefined' && window.addEventListener) {
         window.addEventListener('pagehide', () => this.flush());
       }
+      this._tabId = Math.random().toString(36).slice(2);
+      this.claimLock();
       return this;
+    },
+
+    /* One writer at a time. The lock is held for the life of the tab; a second
+       tab stays readable, shows OTHER TAB, and takes over if the leader
+       closes. Browsers without Web Locks simply keep the old single-tab
+       behaviour. */
+    claimLock() {
+      if (this._claiming) return;
+      if (typeof navigator === 'undefined' || !navigator.locks || !navigator.locks.request) {
+        this.leader = true;
+        return;
+      }
+      this._claiming = true;
+      try {
+        navigator.locks.request('octanaut-autosave', { ifAvailable: true }, lock => {
+          this._claiming = false;
+          if (!lock) {
+            this.leader = false;
+            this.state = 'locked';
+            MW.emit('save', { state: 'locked', savedAt: this.savedAt });
+            if (!this._lockTimer && typeof setInterval === 'function') {
+              this._lockTimer = setInterval(() => this.claimLock(), 3000);
+            }
+            return;
+          }
+          const wasLeader = this.leader;
+          this.leader = true;
+          if (this._lockTimer) { clearInterval(this._lockTimer); this._lockTimer = 0; }
+          if (!wasLeader) {
+            this.state = 'idle';
+            MW.emit('save', { state: 'idle', savedAt: this.savedAt });
+            /* Pick up any work done while this tab was waiting. */
+            this.schedule();
+          }
+          return new Promise(() => {});
+        }).catch(() => {
+          this._claiming = false;
+          this.leader = true;
+        });
+      } catch (e) {
+        this._claiming = false;
+        this.leader = true;
+      }
     },
 
     /* Swap the backend. Tests pass a memory adapter; the app uses IndexedDB. */
@@ -320,7 +372,7 @@
         const found = await this.adapter.load();
         if (found) {
           this.savedAt = found.savedAt || 0;
-          this.state = 'saved';
+          this.state = this.leader ? 'saved' : 'locked';
         }
         return found ? found.snapshot : null;
       } catch (err) {
@@ -343,7 +395,7 @@
     },
 
     schedule() {
-      if (!this.adapter || this._restoring || this.paused || this._quota) return;
+      if (!this.adapter || this._restoring || this.paused || this._quota || !this.leader) return;
       this._dirty = true;
       this._rev++;
       clearTimeout(this._timer);
@@ -351,7 +403,7 @@
     },
 
     async saveNow(reason) {
-      if (!this.adapter) return false;
+      if (!this.adapter || !this.leader) return false;
       clearTimeout(this._timer);
       if (!this._dirty && this._written === this._rev) return false;
 

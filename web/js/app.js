@@ -2068,13 +2068,16 @@
     else if (state === 'saved') el.textContent = 'SAVED ' + saveClock((ev && ev.savedAt) || MW.storage.savedAt);
     else if (state === 'quota') el.textContent = 'DISK FULL';
     else if (state === 'error') el.textContent = 'SAVE ERR';
+    else if (state === 'locked') el.textContent = 'OTHER TAB';
     else if (state === 'off') el.textContent = 'AUTOSAVE OFF';
     else el.textContent = '';
     el.title = state === 'quota'
       ? 'Browser storage is full — export the song to the Mac'
-      : state === 'off'
-        ? 'This browser will not keep the song between reloads'
-        : 'The working song is saved in this browser';
+      : state === 'locked'
+        ? 'Another tab is editing; this tab takes over if that one closes'
+        : state === 'off'
+          ? 'This browser will not keep the song between reloads'
+          : 'The working song is saved in this browser';
   }
   MW.on('save', renderSaveState);
 
@@ -2580,9 +2583,11 @@
         return;
       }
       try {
-        this.entries = await MW.disk.list('DF0:');
-        this.selected = this.entries.length ? 0 : null;
-        this.note = `${this.entries.length} file${this.entries.length === 1 ? '' : 's'} on DF0:`;
+        const [files, usage] = await Promise.all([MW.disk.list('DF0:'), MW.disk.usage()]);
+        this.entries = files;
+        this.diskUsage = usage;
+        this.selected = files.length ? 0 : null;
+        this.note = `${files.length} file${files.length === 1 ? '' : 's'} on DF0: · ${MW.formatBytes(usage.bytes)}`;
       } catch (err) {
         this.entries = [];
         this.selected = null;
@@ -2631,6 +2636,25 @@
       if (this._onChange) this._onChange();
     },
 
+    async importSelected() {
+      const entry = this.entries[this.selected];
+      if (!entry || entry.dir || !entry.remote) return MW.toast('Pick a Modland file first', true);
+      if (!MW.disk || !MW.disk.available) return MW.toast('DF0: is not available in this browser', true);
+      this.note = 'Importing ' + entry.name + ' to DF0:…';
+      this.render();
+      try {
+        const got = await MW.modland.fetch(entry);
+        const ext = (entry.name.match(/\.[^.]+$/) || [''])[0];
+        await MW.disk.write('DF0:', entry.name, got.bytes, ext);
+        MW.toast('Imported ' + entry.name + ' to DF0:');
+        this.note = 'Imported ' + entry.name + ' to DF0:';
+      } catch (err) {
+        this.note = 'Import failed: ' + err.message;
+        MW.toast('Import failed: ' + err.message, true);
+      }
+      this.render();
+    },
+
     build(title) {
       if (this.el) this.el.remove();
       const el = document.createElement('div');
@@ -2649,6 +2673,7 @@
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-os" title="A folder on this Mac">OS:</button>
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-dh0" title="Modland archive">DH0:</button>
             <span class="spacer"></span>
+            <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-import" title="Copy the selected Modland file to DF0:">Import</button>
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-cancel">Cancel</button>
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-ok">Load</button>
           </div>
@@ -2663,6 +2688,7 @@
       el.querySelector('#req-df0').onclick = () => this.setVolume('DF0:');
       el.querySelector('#req-os').onclick = () => this.setVolume('OS');
       el.querySelector('#req-dh0').onclick = () => this.setVolume('DH0:');
+      el.querySelector('#req-import').onclick = () => this.importSelected();
       const search = el.querySelector('#req-search');
       search.oninput = () => { if (this.volume === 'DH0:') this.searchModland(search.value); };
       search.onkeydown = e => {
@@ -2704,6 +2730,13 @@
       if (search) {
         search.disabled = this.volume !== 'DH0:';
         search.placeholder = this.volume === 'DH0:' ? 'Search Modland…' : 'Search (DH0: only)';
+      }
+      const importBtn = this.el.querySelector('#req-import');
+      if (importBtn) {
+        const entry = this.selected != null ? this.entries[this.selected] : null;
+        const canImport = this.volume === 'DH0:' && entry && !entry.dir && entry.remote;
+        importBtn.disabled = !canImport;
+        importBtn.classList.toggle('opacity-40', !canImport);
       }
 
       if (!this.entries.length) {

@@ -190,6 +190,22 @@ test('a full browser storage stops the autosave loop until it is cleared', async
   assert.equal(mw.storage._quota, false);
 });
 
+test('a tab without the save lock does not write', async () => {
+  const { mw, app } = setup();
+  mw.app = app;
+  mw.storage.init();
+  mw.storage.use(mw.storage.memoryAdapter());
+
+  mw.storage.leader = false;
+  mw.storage.schedule();
+  assert.equal(await mw.storage.saveNow(), false);
+  assert.equal(await mw.storage.adapter.load(), null);
+
+  mw.storage.leader = true;
+  mw.storage.schedule();
+  assert.equal(await mw.storage.saveNow(), true);
+});
+
 /* The browser path: the same contract against a real IndexedDB
    implementation, including the pointer flip and the corrupt-slot fallback. */
 function idbRequest(store, mode, fn) {
