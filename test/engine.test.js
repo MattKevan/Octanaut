@@ -282,3 +282,21 @@ test('a note without an instrument keeps the decayed track silent', () => {
   assert.equal(ch.volume, 0, 'no instrument does not reset the volume');
   assert.equal(ch.over, true, 'and it does not revive the track');
 });
+
+test('a hold cell carrying a command is not a hold', () => {
+  const block = { lines: 3, tracks: 1, rows: [
+    [{ note: 25, ins: 1, cmd: 0, dat: 0 }],
+    [{ note: 0, ins: 1, cmd: 0x0d, dat: 1 }],
+    [{ note: 0, ins: 0, cmd: 0, dat: 0 }]
+  ] };
+  assert.equal(player.lineHolds(block, 1, 0), false);
+});
+
+test('an over track can still have its instrument volume set', () => {
+  player.song = song({ flags: { volhex: 1 } });
+  const { ch } = tickChannel({ over: true, volume: 0, inst: { volume: 64 } });
+  ch.cmd = 0x0c; ch.dat = 0x90;
+  player.startEffect(ch, 0, null);
+  assert.equal(ch.inst.volume, 16, '0x90 sets the instrument to 16');
+  assert.equal(ch.volume, 0, 'the track stays silent');
+});

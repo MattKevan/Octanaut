@@ -33,6 +33,8 @@ export function EditPanel() {
   const setField = (field: string, raw: string) => {
     const value = String(raw || '').trim().toLowerCase();
     const next = { ...liveDef() };
+    /* a field edit replaces a range definition with a single cell */
+    delete next.cells;
     if (!value || /^x+$/.test(value)) next[field] = null;
     else if (field === 'note') next.note = MW.noteIndex(value.toUpperCase()) || 0;
     else if (field === 'ins') next.ins = parseInt(value, 32) || 0;

@@ -109,3 +109,11 @@ test('a definition with no fields leaves the cell alone', () => {
   assert.equal(block.rows[0][0].note, 30);
   assert.equal(block.rows[0][0].dat, 0x40);
 });
+
+test('group insertion reports only the lines that fit', () => {
+  const block = MW.createBlock(1, 4);
+  const cells = [21, 22, 23, 24, 25].map(note => ({ note, ins: 1, cmd: 0, dat: 0 }));
+  assert.equal(MW.applyProgDefinition(block, 0, 2, { cells }), 2);
+  assert.equal(block.rows[2][0].note, 21);
+  assert.equal(block.rows[3][0].note, 22);
+});

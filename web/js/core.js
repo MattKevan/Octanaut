@@ -154,12 +154,15 @@
   };
 
   MW.insertProgGroup = function (block, track, line, cells) {
-    if (!block || !cells) return;
+    if (!block || !cells) return 0;
+    let written = 0;
     for (let i = 0; i < cells.length; i++) {
       const row = block.rows[line + i];
       if (!row) break;
       row[track] = { ...cells[i] };
+      written++;
     }
+    return written;
   };
 
   /* Apply a definition at the cursor; null fields are wildcards. Returns
@@ -167,8 +170,7 @@
   MW.applyProgDefinition = function (block, track, line, def) {
     if (!block || !def) return 0;
     if (def.cells && def.cells.length) {
-      MW.insertProgGroup(block, track, line, def.cells);
-      return def.cells.length;
+      return MW.insertProgGroup(block, track, line, def.cells);
     }
     const row = block.rows[line];
     if (!row) return 0;

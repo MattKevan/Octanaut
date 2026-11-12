@@ -787,7 +787,9 @@
           this.pendingSeq = ch.dat;
           break;
         case 0x0c:
-          if (ch.over) break;
+          /* a run-out track ignores the track volume, but its instrument
+             volume can still be set */
+          if (ch.over && ch.dat < 0x80) break;
           if (ch.dat >= 0x80 && inst) {
             inst.volume = MW.clamp(ch.dat - 0x80, 0, 64);
           } else {
@@ -910,7 +912,8 @@
     lineHolds(block, line, track) {
       const row = block && block.rows[line];
       const cell = row && row[track];
-      return !!(cell && cell.ins && !cell.note);
+      /* the same test readLine uses: a cell with a command is not a hold */
+      return !!(cell && cell.ins && !cell.note && !cell.cmd && !cell.dat);
     },
 
     midiCC(inst, controller, value) {
