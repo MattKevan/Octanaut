@@ -3371,7 +3371,7 @@
         const rowOf = k => {
           const idx = Math.min(wave.length - 1, Math.floor((k / samples) * wave.length));
           /* a little gain so a quiet channel still fills the scope */
-          const v = MW.clamp((wave[idx] || 0) * 5, -1, 1);
+          const v = MW.clamp((wave[idx] || 0) * 3, -1, 1);
           return Math.round(top + height / 2 - v * (height / 2));
         };
         for (let k = 1; k <= samples; k++) {
