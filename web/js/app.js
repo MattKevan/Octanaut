@@ -100,6 +100,17 @@
   }
   MW.refreshAll = refreshAll;
 
+  /* length of the song encoded as it would be saved, for the module side of
+     the memory readout */
+  MW.moduleBytes = function (song, others) {
+    try {
+      const buf = MW.writeMMD1(song, others || [], { instruments: true });
+      return buf ? (buf.byteLength || buf.length || 0) : 0;
+    } catch (e) {
+      return 0;
+    }
+  };
+
   function updateStatus() {
     const s = app.song;
     if (!s) return;
@@ -129,14 +140,25 @@
     const songName = el('st-songname');
     if (songName && document.activeElement !== songName) songName.value = s.name || '';
 
-    /* memory readout: sample data against the classic 2 MB machine */
+    /* memory readout: chip RAM for the sample data, and the module size.
+       Encoding a whole module is cheap but not free, so it is recomputed
+       behind a short timer instead of on every status update. */
     let used = 0;
     s.instruments.forEach(i => { if (i && i.data) used += i.data.length; });
     const cap = 2 * 1024 * 1024;
+    if (app._moduleBytes == null || Date.now() - (app._moduleAt || 0) > 400) {
+      app._moduleAt = Date.now();
+      clearTimeout(app._moduleTimer);
+      app._moduleTimer = setTimeout(() => {
+        app._moduleAt = Date.now();
+        app._moduleBytes = MW.moduleBytes(app.song, (app.songList || []).filter(x => x !== app.song));
+        MW.touchStatus('memory', ['song']);
+      }, 120);
+    }
     const usedEl = el('mem-used');
     if (usedEl) usedEl.textContent = String(used).padStart(6, '0');
     const totEl = el('mem-total');
-    if (totEl) totEl.textContent = String(cap).padStart(6, '0');
+    if (totEl) totEl.textContent = String(app._moduleBytes || 0).padStart(6, '0');
     const frac = MW.clamp(used / cap, 0, 1);
     const barA = el('mem-bar-a');
     if (barA) barA.style.width = Math.max(1, frac * 48) + '%';

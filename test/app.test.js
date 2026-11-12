@@ -1,0 +1,162 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const runtime = require('./helpers/runtime');
+const setup = () => runtime(['store', 'engine', 'synth', 'writer', 'app']);
+
+test('join remaps removed and subsequent block references', () => {
+  const mw = setup(); const s = mw.app.song;
+  s.blocks = [mw.createBlock(4, 2), mw.createBlock(4, 3), mw.createBlock(4, 2)];
+  s.playseq = [0, 1, 2, 1];
+  s.blocks[1].rows[2][0].note = 25;
+  mw.ops.joinBlock();
+  assert.deepEqual(Array.from(s.playseq), [0, 0, 1, 0]);
+  assert.equal(s.blocks[0].rows[4][0].note, 25);
+  mw.app.cursor.block = 0; mw.ops.joinBlock();
+  assert.ok(s.playseq.every(n => s.blocks[n]));
+});
+
+for (const action of ['file-new', 'misc-clear-all']) {
+  test(`${action} replaces all songs and clears selection`, () => {
+    const mw = setup(); const a = mw.app;
+    a.songList = [a.song, mw.createSong()]; a.songIndex = 1;
+    a.song = a.songList[1]; a.selection = { l0: 1, l1: 9, t0: 0, t1: 2 };
+    a.mutedTracks[0] = true; a.selectedTracks[0] = true;
+    mw.runAction(action);
+    assert.equal(a.songList.length, 1);
+    assert.equal(a.songList[0], a.song);
+    assert.equal(a.songIndex, 0);
+    assert.equal(a.selection, null);
+    assert.ok(a.mutedTracks.every(v => !v));
+    assert.equal(mw.player.song, a.song);
+  });
+}
+
+for (const rate of [44100, 48000]) {
+  test(`recording preserves capture rate ${rate} and clears old stereo/loop state`, async () => {
+    const mw = setup();
+    const i = mw.app.song.instruments[0] = mw.createInstrument();
+    Object.assign(i, { data: new Float32Array(100), dataR: new Float32Array(100), loop: 50, looplen: 40 });
+    const node = () => ({ connect() {}, disconnect() {}, gain: {} });
+    const stream = { getTracks: () => [{ stop() {} }] };
+    const ctx = { sampleRate: rate, destination: {}, createMediaStreamDestination: () => ({ stream }),
+      createMediaStreamSource: node, createScriptProcessor: node, createGain: node };
+    mw.audio.init = () => ctx; mw.audio.unlock = () => {}; mw.audio.limiter = node();
+    mw.sampler.refreshDevices = async () => [];
+    await mw.sampler.start('record', rate, 'app');
+    mw.sampler.node.onaudioprocess({ inputBuffer: { getChannelData: () => new Float32Array(rate).fill(0.25) } });
+    assert.equal(i.c2rate, rate);
+    assert.equal(i.data.length / i.c2rate, 1);
+    assert.equal(i.dataR, null);
+    assert.equal(i.looplen, 0);
+  });
+}
+
+test('instrument navigation clamps at the first and last slots', () => {
+  const mw = setup();
+  mw.setInstrument(0);
+  assert.equal(mw.app.currentIns, 1);
+  mw.setInstrument(2);
+  assert.equal(mw.app.currentIns, 2);
+  assert.equal(mw.app.lastIns, 1);
+  mw.setInstrument(64);
+  assert.equal(mw.app.currentIns, 63);
+});
+
+test('range paste uses cursor tracks unless selected-track paste is requested', () => {
+  const mw = setup(); const app = mw.app; const b = app.song.blocks[0];
+  b.rows[0][0].note = 25;
+  app.selection = { l0: 0, l1: 0, t0: 0, t1: 0 };
+  mw.ops.copyRange(false);
+  app.cursor.line = 1; app.cursor.track = 1; app.selectedTracks[3] = true;
+  mw.ops.pasteRange(false);
+  assert.equal(b.rows[1][1].note, 25);
+  assert.equal(b.rows[1][3].note, 0);
+  app.cursor.line = 2;
+  mw.ops.pasteRange(true);
+  assert.equal(b.rows[2][3].note, 25);
+});
+
+
+test('loading a module replaces old sounds even when a merge confirmation would be accepted', () => {
+  const mw = runtime(['store', 'engine', 'synth', 'writer', 'app'], { confirm: () => true });
+  const old = mw.createInstrument(); old.name = 'old sound'; mw.app.song.instruments[0] = old;
+  const incoming = mw.createSong(); const sound = mw.createInstrument(); sound.name = 'new sound'; incoming.instruments[0] = sound;
+  mw.loadModule = () => incoming; mw.toast = () => {}; mw.emit = () => {};
+  mw.openBuffer(new ArrayBuffer(1), 'new.mmd0');
+  assert.equal(mw.app.song.instruments[0].name, 'new sound');
+});
+
+test('the bundled startup song contains both real synth and sample instruments', () => {
+  const fs = require('node:fs'); const path = require('node:path');
+  const mw = runtime(['loaders']);
+  const data = fs.readFileSync(path.join(__dirname, '../web/fixtures/maniac-beat.mmd1'));
+  const song = mw.loadModule(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
+  assert.ok(song.blocks.length > 1);
+  assert.ok(song.instruments.some(i => i && i.type === 'synth' && i.synth.waveforms.length));
+  assert.ok(song.instruments.some(i => i && i.type === 'sample' && i.data && i.data.length));
+});
+
+
+test('example loading does not replace a song opened while the fixture is fetching', async () => {
+  let respond;
+  const mw = runtime(['store', 'engine', 'synth', 'writer', 'app'], { fetch: () => new Promise(resolve => { respond = resolve; }) });
+  const incoming = mw.createSong(); const userSong = mw.createSong();
+  mw.loadModule = () => incoming; mw.toast = () => {}; mw.emit = () => {};
+  const pending = mw.loadExample(true);
+  mw.app.song = userSong;
+  respond({ ok: true, arrayBuffer: async () => new ArrayBuffer(1) });
+  await pending;
+  assert.equal(mw.app.song, userSong);
+});
+
+test('module loading does not warn about unused credit-only instrument slots', () => {
+  const mw = setup(); const song = mw.createSong(); song.format = 'MMD1';
+  const credit = mw.createInstrument(); credit.name = 'Copyright'; credit.missing = true;
+  song.instruments[3] = credit;
+  const messages = []; mw.loadModule = () => song; mw.toast = message => messages.push(message); mw.emit = () => {};
+  mw.openBuffer(new ArrayBuffer(1), 'song.mmd1');
+  assert.match(messages.at(-1), /^Loaded MMD/);
+  assert.doesNotMatch(messages.at(-1), /external samples/);
+});
+
+test('loading a different song clears song-specific score settings', () => {
+  const mw = setup(); const app = mw.app;
+  app.notaPresets = [{ tracks: { 0: false }, ghost: { 1: true }, track: 1 }];
+  app.notaPresetReady = true; app.notaSelectedTrack = 1;
+  app.notaInstruments = { 1: { hide: true, transpose: 12 } };
+  mw.runAction('file-new');
+  assert.ok(!app.notaPresetReady);
+  assert.equal(app.notaSelectedTrack, null);
+  assert.deepEqual(Object.keys(app.notaInstruments || {}), []);
+});
+
+test('playback following redraws the notation measure and block', () => {
+  const mw = setup();
+  const draws = [];
+  mw.app.song.blocks.push(mw.createBlock(4, 64));
+  mw.app.follow = true;
+  mw.displays.current = 'notation';
+  mw.displays.refreshNotation = () => draws.push([mw.app.cursor.block, mw.app.cursor.line]);
+  mw.followPlaybackRow({ block: 0, line: 17, seq: 0 });
+  mw.followPlaybackRow({ block: 1, line: 3, seq: 1 });
+  assert.deepEqual(draws, [[0, 17], [1, 3]]);
+  mw.app.follow = false;
+  mw.followPlaybackRow({ block: 0, line: 0, seq: 0 });
+  assert.equal(draws.length, 2);
+});
+
+test('inserting a MIDI message selects the newly inserted message', () => {
+  const mw = setup(); const a = mw.app;
+  a.midiMessages = [{name:'first', data:[0xf0]}, {name:'second', data:[0xf7]}]; a.midiMsgIndex = 1;
+  mw.runAction('midi-msg-insert');
+  assert.equal(a.midiMsgIndex, 1);
+  assert.equal(a.midiMessages[1].name, '');
+  assert.equal(a.midiMessages[2].name, 'second');
+});
+
+test('module size grows with a second block', () => {
+  const mw = setup();
+  const before = mw.moduleBytes(mw.app.song);
+  mw.app.song.blocks.push(mw.createBlock(4, 64));
+  assert.ok(mw.moduleBytes(mw.app.song) > before);
+});
