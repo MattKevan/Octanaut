@@ -11,31 +11,76 @@
   function nativeInstrument(inst) {
     if (!inst || inst.type !== 'sample' || !inst.data || (inst.c2rate || 8363) === 8363) return inst;
     const ratio = (inst.c2rate || 8363) / 8363;
-    const src = inst.data;
-    const data = new Float32Array(Math.max(src.length ? 1 : 0, Math.round(src.length / ratio)));
-    for (let i = 0; i < data.length; i++) {
-      if (ratio > 1) {
-        // Average each source interval to reduce aliasing on downsampling.
-        const start = i * ratio, end = Math.min(src.length, (i + 1) * ratio);
-        let sum = 0;
-        for (let k = Math.floor(start); k < end; k++) {
-          sum += src[k] * (Math.min(k + 1, end) - Math.max(k, start));
+    const resample = src => {
+      const out = new Float32Array(Math.max(src.length ? 1 : 0, Math.round(src.length / ratio)));
+      for (let i = 0; i < out.length; i++) {
+        if (ratio > 1) {
+          // Average each source interval to reduce aliasing on downsampling.
+          const start = i * ratio, end = Math.min(src.length, (i + 1) * ratio);
+          let sum = 0;
+          for (let k = Math.floor(start); k < end; k++) {
+            sum += src[k] * (Math.min(k + 1, end) - Math.max(k, start));
+          }
+          out[i] = end > start ? sum / (end - start) : 0;
+        } else {
+          const pos = i * ratio, at = Math.floor(pos), frac = pos - at;
+          out[i] = src[at] * (1 - frac) + src[Math.min(at + 1, src.length - 1)] * frac;
         }
-        data[i] = end > start ? sum / (end - start) : 0;
-      } else {
-        const pos = i * ratio, at = Math.floor(pos), frac = pos - at;
-        data[i] = src[at] * (1 - frac) + src[Math.min(at + 1, src.length - 1)] * frac;
       }
-    }
-    const limit = data.length & ~1;
-    const loop = Math.min(limit, Math.max(0, Math.round((inst.loop || 0) / ratio / 2) * 2));
-    const end = Math.min(limit, Math.max(loop, Math.round(((inst.loop || 0) + (inst.looplen || 0)) / ratio / 2) * 2));
+      return out;
+    };
+    const data = resample(inst.data);
+    const dataR = inst.dataR ? resample(inst.dataR) : null;
+    const align = inst.bits16 ? 1 : 2;
+    const limit = inst.bits16 ? data.length : (data.length & ~1);
+    const loop = Math.min(limit, Math.max(0, Math.round((inst.loop || 0) / ratio / align) * align));
+    const end = Math.min(limit, Math.max(loop, Math.round(((inst.loop || 0) + (inst.looplen || 0)) / ratio / align) * align));
     const looplen = inst.looplen > 2 ? end - loop : 0;
     if (looplen && (loop > 131070 || looplen > 131070)) {
       throw new Error('Resampled loop is too large for MMD0/MMD1');
     }
-    return { ...inst, data, c2rate: 8363, loop: looplen ? loop : 0, looplen };
+    return { ...inst, data, dataR, c2rate: 8363, loop: looplen ? loop : 0, looplen };
   }
+
+  function flattenForMmd0(inst) {
+    if (!inst || inst.type !== 'sample') return inst;
+    return { ...inst, dataR: null, bits16: false, stereo16: false };
+  }
+
+  function sampleBytes(inst) {
+    if (!inst || inst.type === 'synth' || inst.type === 'hybrid') return 0;
+    const frames = inst.data ? inst.data.length : 0;
+    return frames * (inst.bits16 ? 2 : 1) * (inst.dataR ? 2 : 1);
+  }
+
+  /* 16-bit WAV at the sample's own rate. Stereo when dataR is present. */
+  MW.writeWav = function (inst) {
+    const data = inst.data || new Float32Array(0);
+    const right = inst.dataR || null;
+    const channels = right ? 2 : 1;
+    const rate = Math.max(1, Math.round(inst.c2rate || 8363));
+    const frames = data.length;
+    const block = channels * 2;
+    const buffer = new ArrayBuffer(44 + frames * block);
+    const dv = new DataView(buffer);
+    const str = (off, text) => {
+      for (let i = 0; i < text.length; i++) dv.setUint8(off + i, text.charCodeAt(i) & 255);
+    };
+    str(0, 'RIFF'); dv.setUint32(4, 36 + frames * block, true); str(8, 'WAVE');
+    str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+    dv.setUint16(22, channels, true);
+    dv.setUint32(24, rate, true);
+    dv.setUint32(28, rate * block, true);
+    dv.setUint16(32, block, true);
+    dv.setUint16(34, 16, true);
+    str(36, 'data'); dv.setUint32(40, frames * block, true);
+    const value = v => Math.max(-32768, Math.min(32767, Math.round((v || 0) * 32767)));
+    for (let i = 0; i < frames; i++) {
+      dv.setInt16(44 + i * block, value(data[i]), true);
+      if (right) dv.setInt16(46 + i * block, value(right[i]), true);
+    }
+    return buffer;
+  };
 
   MW.write8SVX = function (inst) {
     const data = inst.data || new Float32Array(0);
@@ -113,7 +158,7 @@
       }
     }
     const n = songs.length;
-    const elements = song.instruments.map(nativeInstrument);
+    const elements = song.instruments.map(nativeInstrument).map(flattenForMmd0);
 
     /* ---- first pass: measure ---- */
     let cursor = n * 52;
@@ -142,7 +187,7 @@
       sampleOffsets.push(cursor);
       cursor += (inst.type === 'synth' || inst.type === 'hybrid')
         ? synthSize(inst)
-        : 6 + (inst.data ? inst.data.length : 0);
+        : 6 + sampleBytes(inst);
       cursor += cursor & 1;
       if (cursor > 8_000_000) throw new Error('module too large to save as MMD0');
     }
@@ -373,7 +418,7 @@
       sampleOffsets.push(cursor);
       cursor += (inst.type === 'synth' || inst.type === 'hybrid')
         ? synthSize(inst)
-        : 6 + (inst.data ? inst.data.length : 0);
+        : 6 + sampleBytes(inst);
       cursor += cursor & 1;
       if (cursor > 16_000_000) throw new Error('module too large to save as MMD1');
     }
@@ -425,8 +470,9 @@
       let p = songOff[i];
       for (let k = 0; k < 63; k++) {
         const inst = elements[k];
-        dv.setUint16(p, inst ? Math.round((inst.loop || 0) / 2) : 0, false);
-        dv.setUint16(p + 2, inst ? Math.round((inst.looplen || 0) / 2) : 0, false);
+        const frameBytes = inst && inst.bits16 ? 2 : 1;
+        dv.setUint16(p, inst ? Math.round((inst.loop || 0) * frameBytes / 2) : 0, false);
+        dv.setUint16(p + 2, inst ? Math.round((inst.looplen || 0) * frameBytes / 2) : 0, false);
         dv.setUint8(p + 4, inst ? inst.midiChannel || 0 : 0);
         dv.setUint8(p + 5, inst ? inst.midiPreset || 0 : 0);
         dv.setUint8(p + 6, inst ? (inst.volume == null ? 64 : inst.volume) : 64);
@@ -516,11 +562,25 @@
           writeSynth(dv, at, inst);
         } else {
           const data = inst.data || new Float32Array(0);
-          dv.setUint32(at, data.length, false);
-          dv.setInt16(at + 4, 0, false);
-          for (let k = 0; k < data.length; k++) {
-            dv.setInt8(at + 6 + k, Math.max(-128, Math.min(127, Math.round(data[k] * 127))));
-          }
+          const frameBytes = inst.bits16 ? 2 : 1;
+          const stereo = !!(inst.stereo16 && inst.dataR);
+          const type = (inst.bits16 ? 0x10 : 0) | (stereo ? 0x20 : 0);
+          dv.setUint32(at, data.length * frameBytes, false);
+          dv.setInt16(at + 4, type, false);
+          let p = at + 6;
+          const write = channel => {
+            for (let k = 0; k < data.length; k++) {
+              const v = Math.max(-1, Math.min(1, channel[k] || 0));
+              if (frameBytes === 2) {
+                dv.setInt16(p, Math.max(-32768, Math.min(32767, Math.round(v * 32767))), false);
+              } else {
+                dv.setInt8(p, Math.max(-128, Math.min(127, Math.round(v * 127))));
+              }
+              p += frameBytes;
+            }
+          };
+          write(data);
+          if (stereo) write(inst.dataR);
         }
       }
     }

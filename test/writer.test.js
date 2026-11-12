@@ -29,3 +29,52 @@ test('native export rejects resampled loops that exceed its 16-bit word fields',
     assert.throws(() => write(s), /loop.*too large/i);
   }
 });
+
+test('MMD1 round-trips a 16-bit stereo sample', () => {
+  const mw = runtime(['loaders', 'writer']);
+  const s = mw.createSong();
+  const i = s.instruments[0] = mw.createInstrument();
+  Object.assign(i, { data: new Float32Array([1, 0.5, -1]), dataR: new Float32Array([-1, 0.5, 1]), bits16: true, stereo16: true });
+  const out = mw.loadModule(mw.writeMMD1(s));
+  assert.equal(out.instruments[0].bits16, true);
+  assert.equal(out.instruments[0].stereo16, true);
+  assert.ok(Math.abs(out.instruments[0].data[0] - 1) < 1e-4);
+  assert.ok(Math.abs(out.instruments[0].dataR[0] + 1) < 1e-4);
+});
+
+test('MMD0 still writes 8-bit mono', () => {
+  const mw = runtime(['loaders', 'writer']);
+  const s = mw.createSong();
+  const i = s.instruments[0] = mw.createInstrument();
+  Object.assign(i, { data: new Float32Array([0.5]), dataR: new Float32Array([-0.5]), bits16: true, stereo16: true });
+  const out = mw.loadModule(mw.writeMMD0(s));
+  assert.equal(out.instruments[0].bits16, false);
+  assert.equal(out.instruments[0].stereo16, false);
+});
+
+test('MMD1 keeps 16-bit loop points in frames', () => {
+  const mw = runtime(['loaders', 'writer']);
+  const s = mw.createSong();
+  const i = s.instruments[0] = mw.createInstrument();
+  Object.assign(i, { data: new Float32Array(16), loop: 8, looplen: 4, bits16: true });
+  const out = mw.loadModule(mw.writeMMD1(s));
+  assert.equal(out.instruments[0].loop, 8);
+  assert.equal(out.instruments[0].looplen, 4);
+});
+
+test('WAV export keeps the sample rate, 16-bit depth and stereo', () => {
+  const mw = runtime(['writer']);
+  const i = mw.createInstrument();
+  Object.assign(i, { c2rate: 22050, data: new Float32Array([0, 0.5, -1]), dataR: new Float32Array([0, -0.5, 1]) });
+  const b = Buffer.from(mw.writeWav(i));
+  assert.equal(b.toString('ascii', 0, 4), 'RIFF');
+  assert.equal(b.toString('ascii', 8, 12), 'WAVE');
+  assert.equal(b.readUInt16LE(22), 2);
+  assert.equal(b.readUInt32LE(24), 22050);
+  assert.equal(b.readUInt16LE(34), 16);
+  assert.equal(b.readUInt32LE(40), 12);
+  assert.equal(b.readInt16LE(44), 0);
+  assert.equal(b.readInt16LE(46), 0);
+  assert.equal(b.readInt16LE(48), 16384);
+  assert.equal(b.readInt16LE(50), -16383);
+});

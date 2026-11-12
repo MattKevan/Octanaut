@@ -3407,26 +3407,9 @@
   MW.exportWav = function () {
     const inst = app.song.instruments[app.currentIns - 1];
     if (!inst || !inst.data) return MW.toast('No sample loaded', true);
-    const rate = 22050;
-    const src = inst.data;
-    const srcRate = inst.c2rate || 8363;
-    const n = Math.floor(src.length * rate / srcRate);
-    const out = new Int16Array(n);
-    for (let i = 0; i < n; i++) {
-      const p = i * srcRate / rate;
-      const a = Math.floor(p), f = p - a;
-      const v = (src[a] || 0) * (1 - f) + (src[a + 1] || 0) * f;
-      out[i] = MW.clamp(Math.round(v * 32767), -32768, 32767);
-    }
-    const buf = new ArrayBuffer(44 + n * 2);
-    const dv = new DataView(buf);
-    const str = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
-    str(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); str(8, 'WAVE');
-    str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
-    dv.setUint16(22, 1, true); dv.setUint32(24, rate, true); dv.setUint32(28, rate * 2, true);
-    dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
-    str(36, 'data'); dv.setUint32(40, n * 2, true);
-    new Int16Array(buf, 44).set(out);
+    let buf;
+    try { buf = MW.writeWav(inst); }
+    catch (err) { return MW.toast('Save failed: ' + err.message, true); }
     const blob = new Blob([buf], { type: 'audio/wav' });
     const aEl = document.createElement('a');
     aEl.href = URL.createObjectURL(blob);
