@@ -39,7 +39,7 @@
     if (looplen && (loop > 131070 || looplen > 131070)) {
       throw new Error('Resampled loop is too large for MMD0/MMD1');
     }
-    return { ...inst, data, dataR, c2rate: 8363, loop: looplen ? loop : 0, looplen };
+    return { ...inst, data, dataR, c2rate: 8363, samplerate: 8363, loop: looplen ? loop : 0, looplen };
   }
 
   function flattenForMmd0(inst) {
@@ -50,7 +50,8 @@
   function sampleBytes(inst) {
     if (!inst || inst.type === 'synth' || inst.type === 'hybrid') return 0;
     const frames = inst.data ? inst.data.length : 0;
-    return frames * (inst.bits16 ? 2 : 1) * (inst.dataR ? 2 : 1);
+    const frameBytes = inst.bits16 || (inst.stereo16 && inst.dataR) ? 2 : 1;
+    return frames * frameBytes * (inst.dataR ? 2 : 1);
   }
 
   /* 16-bit WAV at the sample's own rate. Stereo when dataR is present. */
@@ -58,7 +59,7 @@
     const data = inst.data || new Float32Array(0);
     const right = inst.dataR || null;
     const channels = right ? 2 : 1;
-    const rate = Math.max(1, Math.round(inst.c2rate || 8363));
+    const rate = Math.max(1, Math.round(inst.samplerate || inst.c2rate || 8363));
     const frames = data.length;
     const block = channels * 2;
     const buffer = new ArrayBuffer(44 + frames * block);
@@ -83,9 +84,12 @@
   };
 
   MW.write8SVX = function (inst) {
-    const data = inst.data || new Float32Array(0);
+    const source = inst.data || new Float32Array(0);
+    const data = inst.dataR
+      ? Float32Array.from({ length: source.length }, (_, i) => ((source[i] || 0) + (inst.dataR[i] || 0)) / 2)
+      : source;
     const name = (inst.name || 'sample').slice(0, 30) + '\0';
-    const rate = Math.round(inst.c2rate || 8363);
+    const rate = Math.round(inst.samplerate || inst.c2rate || 8363);
     if (rate < 1 || rate > 65535) throw new Error('8SVX sample rate must fit in 16 bits');
     const size = 12 + 28 + 8 + name.length + (name.length & 1) + 8 + data.length + (data.length & 1);
     const buffer = new ArrayBuffer(size);
@@ -470,7 +474,7 @@
       let p = songOff[i];
       for (let k = 0; k < 63; k++) {
         const inst = elements[k];
-        const frameBytes = inst && inst.bits16 ? 2 : 1;
+        const frameBytes = inst && (inst.bits16 || (inst.stereo16 && inst.dataR)) ? 2 : 1;
         dv.setUint16(p, inst ? Math.round((inst.loop || 0) * frameBytes / 2) : 0, false);
         dv.setUint16(p + 2, inst ? Math.round((inst.looplen || 0) * frameBytes / 2) : 0, false);
         dv.setUint8(p + 4, inst ? inst.midiChannel || 0 : 0);
@@ -562,9 +566,9 @@
           writeSynth(dv, at, inst);
         } else {
           const data = inst.data || new Float32Array(0);
-          const frameBytes = inst.bits16 ? 2 : 1;
+          const frameBytes = inst.bits16 || (inst.stereo16 && inst.dataR) ? 2 : 1;
           const stereo = !!(inst.stereo16 && inst.dataR);
-          const type = (inst.bits16 ? 0x10 : 0) | (stereo ? 0x20 : 0);
+          const type = (frameBytes === 2 ? 0x10 : 0) | (stereo ? 0x20 : 0);
           dv.setUint32(at, data.length * frameBytes, false);
           dv.setInt16(at + 4, type, false);
           let p = at + 6;

@@ -365,3 +365,109 @@ test('damaged AIFF fails with a readable message', () => {
   const s = runtime(['sample-import']).sampleImport;
   assert.throws(() => s.readAiff(aiff({ data: Buffer.alloc(2) }).slice(0, 12)), /AIFF file is damaged/);
 });
+
+function oggPage(packet, granule = 0, type = 0) {
+  const head = Buffer.alloc(27);
+  head.write('OggS', 0, 'ascii');
+  head[4] = 0; head[5] = type;
+  head.writeBigUInt64LE(BigInt(granule), 6);
+  head[26] = 1;
+  return Buffer.concat([head, Buffer.from([packet.length]), packet]);
+}
+function vorbisId(rate = 44100, channels = 2) {
+  const p = Buffer.alloc(30);
+  p.write('\x01vorbis', 0, 'latin1');
+  p.writeUInt32LE(0, 7);
+  p[11] = channels;
+  p.writeUInt32LE(rate, 12);
+  return p;
+}
+function adtsFrames(count, rateIndex = 3, channels = 2, len = 64) {
+  const out = Buffer.alloc(count * len);
+  for (let i = 0; i < count; i++) {
+    const p = i * len;
+    out[p] = 0xff; out[p + 1] = 0xf1;
+    out[p + 2] = (1 << 6) | (rateIndex << 2) | ((channels >> 2) & 1);
+    out[p + 3] = ((channels & 3) << 6) | ((len >> 11) & 3);
+    out[p + 4] = (len >> 3) & 0xff;
+    out[p + 5] = ((len & 7) << 5) | 0x1f;
+  }
+  return out;
+}
+function xingMp3({ frames = 1000, withXing = true } = {}) {
+  const side = 32;
+  const b = Buffer.alloc(withXing ? 4 + side + 12 : 48);
+  b[0] = 0xff; b[1] = 0xfb; b[2] = 0x10; b[3] = 0x40; // MPEG1 L3, 32 kbps, 44100, stereo
+  if (withXing) {
+    b.write('Xing', 4 + side, 'ascii');
+    b.writeUInt32BE(1, 4 + side + 4);
+    b.writeUInt32BE(frames, 4 + side + 8);
+  }
+  return b;
+}
+
+test('sniff reads a Vorbis identification page and its duration', () => {
+  const mw = runtime(['sample-import']);
+  const bytes = Buffer.concat([oggPage(vorbisId(44100, 2)), oggPage(Buffer.from([4, 0]), 441000)]);
+  const meta = mw.sampleImport.sniff(new Uint8Array(bytes));
+  assert.deepEqual([meta.format, meta.rate, meta.channels], ['ogg', 44100, 2]);
+  assert.ok(Math.abs(meta.duration - 10) < 1e-6);
+  assert.equal(meta.durationExact, true);
+});
+
+test('sniff does not mistake a raw sample for an MP3', () => {
+  const mw = runtime(['sample-import']);
+  const raw = Buffer.alloc(5000);
+  Buffer.from([0xff, 0xfb, 0x90, 0x40]).copy(raw, 64);
+  assert.equal(mw.sampleImport.sniff(new Uint8Array(raw)).format, 'raw');
+});
+
+test('sniff finds an MP3 after an ID3 tag', () => {
+  const mw = runtime(['sample-import']);
+  const id3 = Buffer.concat([Buffer.from('ID3\x04\x00\x00\x00\x00\x00\x0a'), Buffer.alloc(10)]);
+  const meta = mw.sampleImport.sniff(new Uint8Array(Buffer.concat([id3, mp3])));
+  assert.deepEqual([meta.format, meta.rate], ['mp3', 44100]);
+});
+
+test('MP3 duration uses a Xing frame count and only refuses exact overruns', () => {
+  const mw = runtime(['sample-import']);
+  const exact = mw.sampleImport.sniff(new Uint8Array(xingMp3({ frames: 1000 })));
+  assert.equal(exact.durationExact, true);
+  assert.ok(Math.abs(exact.duration - 1000 * 1152 / 44100) < 1e-6);
+  const estimate = mw.sampleImport.sniff(new Uint8Array(xingMp3({ withXing: false })));
+  assert.equal(estimate.durationExact, false);
+});
+
+test('ADTS duration counts frames', () => {
+  const mw = runtime(['sample-import']);
+  const meta = mw.sampleImport.sniff(new Uint8Array(adtsFrames(3, 3, 2, 64)));
+  assert.equal(meta.format, 'aac');
+  assert.ok(Math.abs(meta.duration - 3 * 1024 / 48000) < 1e-6);
+  assert.equal(meta.durationExact, true);
+});
+
+test('the native reader keeps enough source audio for the 131072 output cap', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const decoded = s.readWav(wav({ data: Buffer.alloc(600000, 0x40) }));
+  assert.equal(decoded.channels[0].length, 300000);
+  const built = s.build(decoded, { note: C3, channel: 'mixed', stereo: false, loop: false, normalise: false });
+  assert.ok(built.instrument.data.length > 100000, built.instrument.data.length);
+});
+
+test('build records the data rate separately from c2rate', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const d = { rate: 44100, bits: 16, channels: [new Float32Array(100).fill(0.5)], loop: null, truncated: false };
+  const built = s.build(d, { note: C3, channel: 'mixed', stereo: false, loop: false, normalise: false });
+  assert.equal(built.instrument.c2rate, 8363);
+  assert.equal(built.instrument.samplerate, 16726);
+});
+
+test('right and stereo use the front channels of a multi-channel source', () => {
+  const d = decoded(8000, [
+    new Float32Array([0.1]), new Float32Array([0.2]), new Float32Array([0.3]), new Float32Array([0.4])
+  ]);
+  assert.ok(Math.abs(build(d, { ...base, channel: 'right' }).instrument.data[0] - 0.2) < 1e-6);
+  const st = build(d, { ...base, stereo: true }).instrument;
+  assert.ok(Math.abs(st.data[0] - 0.1) < 1e-6);
+  assert.ok(Math.abs(st.dataR[0] - 0.2) < 1e-6);
+});

@@ -10,6 +10,7 @@
   const MW = global.MW = global.MW || {};
 
   const MAX_FRAMES = 131072;
+  const MAX_SOURCE_FRAMES = 2000000;
   const DEFAULT_RATE = 48000;
   const MAX_COMPRESSED_BYTES = 16 * 1024 * 1024;
   const MAX_SECONDS = 600;
@@ -17,6 +18,12 @@
   function tag(dv, off) {
     return String.fromCharCode(
       dv.getUint8(off), dv.getUint8(off + 1), dv.getUint8(off + 2), dv.getUint8(off + 3));
+  }
+
+  function tagN(dv, off, n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += String.fromCharCode(dv.getUint8(off + i));
+    return out;
   }
 
   function u16(dv, off, little) { return dv.getUint16(off, !!little); }
@@ -38,6 +45,7 @@
       channels: null,
       frames: null,
       duration: null,
+      durationExact: false,
       loop: null,
       asks: true,
       compressed: false
@@ -80,7 +88,8 @@
     }
     return base('wav', {
       rate, bits, channels, frames, loop,
-      duration: rate && frames ? frames / rate : null
+      duration: rate && frames ? frames / rate : null,
+      durationExact: !!(rate && frames)
     });
   }
 
@@ -116,7 +125,7 @@
       }
       pos = body + size + (size & 1);
     }
-    return base('aiff', { rate, bits, channels, frames, duration: rate && frames ? frames / rate : null });
+    return base('aiff', { rate, bits, channels, frames, duration: rate && frames ? frames / rate : null, durationExact: !!(rate && frames) });
   }
 
   function extended80(dv, off) {
@@ -138,7 +147,7 @@
 
   function sniffMp3(dv) {
     let pos = 0;
-    if (dv.byteLength >= 10 && tag(dv, 0) === 'ID3') {
+    if (dv.byteLength >= 10 && tagN(dv, 0, 3) === 'ID3') {
       const size = ((dv.getUint8(6) & 0x7f) << 21) | ((dv.getUint8(7) & 0x7f) << 14) |
         ((dv.getUint8(8) & 0x7f) << 7) | (dv.getUint8(9) & 0x7f);
       pos = 10 + size + ((dv.getUint8(5) & 0x10) ? 10 : 0);
@@ -157,12 +166,46 @@
       if (version === 1 || layer !== 1 || rateIndex === 3 || bitrateIndex === 0 || bitrateIndex === 15) continue;
       const rate = MP3_RATES[version][rateIndex];
       const bitrate = (MP3_BITRATES[version === 3 ? 3 : 2][bitrateIndex] || 0) * 1000;
-      const duration = bitrate > 0 ? (dv.byteLength - pos) * 8 / bitrate : null;
+      if (!rate || !bitrate) continue;
+      const mono = ((b3 >> 6) & 3) === 3;
+      const samples = version === 3 ? 1152 : 576;
+      const frameLen = Math.floor((version === 3 ? 144 : 72) * bitrate / rate) + ((b2 >> 1) & 1);
+
+      /* A sync word in the middle of raw data is not a frame. Accept the
+         first frame after any ID3 tag, or a frame followed by another. */
+      let valid = p === pos;
+      const next = p + frameLen;
+      if (!valid && next + 4 <= dv.byteLength) {
+        const n1 = dv.getUint8(next);
+        const n2 = dv.getUint8(next + 1);
+        valid = n1 === 0xff && (n2 & 0xe0) === 0xe0 &&
+          ((n2 >> 3) & 3) === version && ((n2 >> 1) & 3) === layer;
+      }
+      if (!valid) continue;
+
+      const side = version === 3 ? (mono ? 17 : 32) : (mono ? 9 : 17);
+      const xing = p + 4 + side;
+      let duration = (dv.byteLength - pos) * 8 / bitrate;
+      let exact = false;
+      if (xing + 12 <= dv.byteLength) {
+        const id = tag(dv, xing);
+        if (id === 'Xing' || id === 'Info') {
+          const flags = u32(dv, xing + 4, false);
+          if (flags & 1) {
+            const frames = u32(dv, xing + 8, false);
+            if (frames > 0) {
+              duration = frames * samples / rate;
+              exact = true;
+            }
+          }
+        }
+      }
       return base('mp3', {
         rate,
         bits: null,
-        channels: ((b3 >> 6) & 3) === 3 ? 1 : 2,
+        channels: mono ? 1 : 2,
         duration,
+        durationExact: exact,
         compressed: true
       });
     }
@@ -174,11 +217,23 @@
     if (dv.getUint8(0) !== 0xff || (dv.getUint8(1) & 0xf6) !== 0xf0) return null;
     const index = (dv.getUint8(2) >> 2) & 0xf;
     if (index > 12) return null;
+    const rate = AAC_RATES[index];
     const channels = ((dv.getUint8(2) & 1) << 2) | (dv.getUint8(3) >> 6);
+    let p = 0, frames = 0;
+    while (p + 7 <= dv.byteLength && frames < 1000000) {
+      if (dv.getUint8(p) !== 0xff || (dv.getUint8(p + 1) & 0xf6) !== 0xf0) break;
+      const length = ((dv.getUint8(p + 3) & 3) << 11) | (dv.getUint8(p + 4) << 3) | (dv.getUint8(p + 5) >> 5);
+      if (length < 7) break;
+      p += length;
+      frames++;
+    }
+    const duration = frames > 1 ? frames * 1024 / rate : null;
     return base('aac', {
-      rate: AAC_RATES[index],
+      rate,
       bits: null,
       channels: channels || 2,
+      duration,
+      durationExact: duration != null,
       compressed: true
     });
   }
@@ -242,7 +297,7 @@
       } else if (version === 0 && mdhd.body + 20 <= mdhd.end) {
         duration = u32(dv, mdhd.body + 16, false) / rate;
       }
-      return base('m4a', { rate, bits: null, channels: 2, duration, compressed: true });
+      return base('m4a', { rate, bits: null, channels: 2, duration, durationExact: duration != null, compressed: true });
     }
     return null;
   }
@@ -260,6 +315,7 @@
       channels,
       frames: total || null,
       duration: rate && total ? total / rate : null,
+      durationExact: !!(rate && total),
       compressed: true
     });
   }
@@ -267,22 +323,35 @@
   function sniffOgg(dv) {
     if (dv.byteLength < 28 || tag(dv, 0) !== 'OggS') return base('ogg', { compressed: true });
     const segments = dv.getUint8(26);
-    let packet = 27 + segments;
-    if (packet + 16 > dv.byteLength) return base('ogg', { compressed: true });
-    if (tag(dv, packet) === '\x01vorbis') {
-      const channels = dv.getUint8(packet + 11);
-      const rate = u32(dv, packet + 12, true);
-      return base('ogg', { rate: rate || null, bits: null, channels, compressed: true });
+    const packet = 27 + segments;
+    /** @type {number|null} */ let rate = null;
+    /** @type {number|null} */ let channels = null;
+    if (packet + 16 <= dv.byteLength) {
+      if (dv.getUint8(packet) === 1 && tagN(dv, packet + 1, 6) === 'vorbis') {
+        channels = dv.getUint8(packet + 11);
+        rate = u32(dv, packet + 12, true) || null;
+      } else if (tag(dv, packet) === 'Opus') {
+        rate = 48000;
+        channels = dv.getUint8(packet + 9) || 2;
+      }
     }
-    if (tag(dv, packet) === 'Opus') {
-      return base('ogg', {
-        rate: 48000,
-        bits: null,
-        channels: dv.getUint8(packet + 9) || 2,
-        compressed: true
-      });
+    /** @type {number|null} */ let duration = null;
+    const floor = Math.max(0, dv.byteLength - 65536);
+    for (let p = dv.byteLength - 27; p >= floor; p--) {
+      if (tag(dv, p) === 'OggS' && p + 14 <= dv.byteLength) {
+        const granule = Number(dv.getBigUint64(p + 6, true));
+        if (rate && granule > 0) duration = granule / rate;
+        break;
+      }
     }
-    return base('ogg', { compressed: true });
+    return base('ogg', {
+      rate,
+      bits: null,
+      channels,
+      duration,
+      durationExact: duration != null,
+      compressed: true
+    });
   }
 
   function sniff(bytes) {
@@ -310,7 +379,7 @@
     if (byteLength < 12 || tag(dv, 0) !== 'RIFF' || tag(dv, 8) !== 'WAVE') {
       throw new Error('WAV file is damaged');
     }
-    const max = maxFrames == null ? MAX_FRAMES : Math.max(0, maxFrames | 0);
+    const max = maxFrames == null ? MAX_SOURCE_FRAMES : Math.max(0, maxFrames | 0);
     /** @type {any} */
     let fmt = null;
     let dataOff = -1;
@@ -411,7 +480,7 @@
       (tag(dv, 8) !== 'AIFF' && tag(dv, 8) !== 'AIFC')) {
       throw new Error('AIFF file is damaged');
     }
-    const max = maxFrames == null ? MAX_FRAMES : Math.max(0, maxFrames | 0);
+    const max = maxFrames == null ? MAX_SOURCE_FRAMES : Math.max(0, maxFrames | 0);
     let channels = 0, frames = 0, bits = 0, rate = 0;
     let compression = 'NONE';
     let soundOff = -1, soundSize = 0;
@@ -537,9 +606,9 @@
     let right = null;
     if (stereo) {
       left = Float32Array.from(resampled[0]);
-      right = Float32Array.from(resampled[resampled.length - 1]);
+      right = Float32Array.from(resampled[1]);
     } else if (s.channel === 'right' && resampled.length > 1) {
-      left = Float32Array.from(resampled[resampled.length - 1]);
+      left = Float32Array.from(resampled[1]);
     } else if (s.channel === 'left' || resampled.length === 1) {
       left = Float32Array.from(resampled[0]);
     } else {
@@ -596,6 +665,7 @@
     inst.data = left;
     inst.dataR = right;
     inst.c2rate = p.c2rate;
+    inst.samplerate = p.rate;
     inst.bits16 = decoded.bits == null ? true : decoded.bits > 8;
     inst.stereo16 = stereo;
     inst.loop = loop ? loop.start : 0;
@@ -633,7 +703,7 @@
     if (meta && meta.format === 'wav') return readWav(buffer);
     if (meta && meta.format === 'aiff') return readAiff(buffer);
     if (meta && meta.compressed) {
-      if (meta.duration != null && meta.duration > MAX_SECONDS) {
+      if (meta.durationExact !== false && meta.duration != null && meta.duration > MAX_SECONDS) {
         throw new Error('That file is longer than 10 minutes. Import a shorter sample.');
       }
       if (buffer.byteLength > MAX_COMPRESSED_BYTES) {

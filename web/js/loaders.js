@@ -307,6 +307,7 @@
         inst.data = pcm.left;
         if (pcm.right) inst.dataR = pcm.right;
         inst.c2rate = 8363;
+        inst.samplerate = 8363;
         inst.loop = 0;
         inst.looplen = 0;
         inst.bits16 = !!(type & 0x10);
@@ -959,6 +960,7 @@
         inst.volume = Math.min(64, Math.round((vol / 65536) * 64));
         inst.octaves = octaves || 1;
         inst.c2rate = rate || 8363;
+        inst.samplerate = inst.c2rate;
       } else if (id === 'BODY' && bodyOff < 0) {
         bodyOff = body;
         bodySize = size;
@@ -987,7 +989,7 @@
         inst.importWarning = '8SVX octave copies are short; kept as one';
       }
       inst.octaves = 1;
-      inst.importWarning = '8SVX with ' + copies + ' octaves kept as one';
+      if (!inst.importWarning) inst.importWarning = '8SVX with ' + copies + ' octaves kept as one';
     }
 
     inst.data = data;
@@ -1050,6 +1052,7 @@
     // bare raw sample
     const inst = MW.createInstrument('sample');
     inst.data = pcm8(new DataView(buffer), 0, buffer.byteLength);
+    inst.samplerate = 8363;
     return inst;
   };
 

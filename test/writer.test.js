@@ -78,3 +78,35 @@ test('WAV export keeps the sample rate, 16-bit depth and stereo', () => {
   assert.equal(b.readInt16LE(48), 16384);
   assert.equal(b.readInt16LE(50), -16383);
 });
+
+test('MMD1 keeps both channels of an 8-bit stereo sample', () => {
+  const mw = runtime(['loaders', 'writer']);
+  const s = mw.createSong();
+  const i = s.instruments[0] = mw.createInstrument();
+  Object.assign(i, {
+    data: new Float32Array([1, 0.5, -1]),
+    dataR: new Float32Array([-1, 0.5, 1]),
+    bits16: false,
+    stereo16: true
+  });
+  const out = mw.loadModule(mw.writeMMD1(s)).instruments[0];
+  assert.equal(out.stereo16, true);
+  assert.ok(out.dataR);
+  assert.ok(Math.abs(out.dataR[0] + 1) < 1e-3);
+});
+
+test('WAV export uses the data rate, not c2rate', () => {
+  const mw = runtime(['writer']);
+  const i = mw.createInstrument();
+  Object.assign(i, { c2rate: 8363, samplerate: 16726, data: new Float32Array([0]) });
+  const b = Buffer.from(mw.writeWav(i));
+  assert.equal(b.readUInt32LE(24), 16726);
+});
+
+test('8SVX mixes stereo to mono instead of dropping a channel', () => {
+  const mw = runtime(['loaders', 'writer']);
+  const i = mw.createInstrument();
+  Object.assign(i, { data: new Float32Array([1, -1]), dataR: new Float32Array([0, 1]), c2rate: 8363 });
+  const loaded = mw.loadInstrument(mw.write8SVX(i));
+  assert.deepEqual(Array.from(loaded.data).map(v => Math.round(v * 128)), [64, 0]);
+});

@@ -641,7 +641,7 @@
       const inst = this.inst();
       if (!inst || !inst.data || !inst.data.length) {
         const canCreate = !inst || (inst.type === 'sample' && !inst.synth);
-        host.innerHTML = `<div class="empty">No sample in slot ${MW.insName(app.currentIns)}.<br>Load a raw sample or an IFF 8SVX from the Instr panel.${canCreate ? '<div class="sample-create"><label>BUFFSIZE: <input id="sample-create-size" class="sample-field" type="number" min="1" max="131072" value="1024" aria-label="New sample buffer size"></label><button type="button" class="sample-btn" data-create-sample>CREATE</button></div>' : ''}</div>`;
+        host.innerHTML = `<div class="empty">No sample in slot ${MW.insName(app.currentIns)}.<br>Load a sample from the Instr panel.${canCreate ? '<div class="sample-create"><label>BUFFSIZE: <input id="sample-create-size" class="sample-field" type="number" min="1" max="131072" value="1024" aria-label="New sample buffer size"></label><button type="button" class="sample-btn" data-create-sample>CREATE</button></div>' : ''}</div>`;
         if (canCreate) host.querySelector('[data-create-sample]').onclick = () => {
           const size = Number(host.querySelector('#sample-create-size').value);
           if (!MW.sampleCreateBuffer(app, size)) return MW.toast('Enter a buffer size from 1 to 131072', true);

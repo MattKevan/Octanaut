@@ -281,7 +281,7 @@ The V4 gaps that matter most:
 2. **MIDI messages in modules.** Editing, sending, capture, maps and dumps work, but SysEx messages are not written into MMD1.
 3. **Instrument names from MED_Paths.** The list browses real folders and keeps them across reloads, but it does not read a MED_Paths file or resolve missing instrument names by path.
 4. **Multi-octave IFF playback.** Imports keep the longest copy as a one-octave sample.
-4. **MIDI data in saved modules.** Commands 10 and 1C work while playing, but MIDI messages are not written into MMD1, so a saved module loses them.
+5. **MIDI data in saved modules.** Commands 10 and 1C work while playing, but MIDI messages are not written into MMD1, so a saved module loses them.
 5. **Editor polish.** Sample/synth range tools and notation print modes.
 6. **Filesystem-adjacent features.** INFO/ICON on save, absolute instrument names and paths add/remove; the RGB palette editor is only partly there.
 7. **MP3 export.** WAV and AAC work without extra code; MP3 waits for a browser encoder or a bundled one.

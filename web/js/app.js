@@ -1620,6 +1620,12 @@
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     src.playbackRate.value = 428 / MW.period(note || 13);
+    if (inst.looplen > 2) {
+      const c2 = inst.c2rate || 8363;
+      src.loop = true;
+      src.loopStart = (inst.loop || 0) / c2;
+      src.loopEnd = ((inst.loop || 0) + inst.looplen) / c2;
+    }
     const gain = ctx.createGain();
     gain.gain.value = 0.26;
     src.connect(gain);
@@ -1637,6 +1643,10 @@
   };
 
   function openImportDialog(buffer, name, meta) {
+    if (document.querySelector('.import-sample')) {
+      MW.toast('Close the sample dialog first', true);
+      return Promise.resolve(null);
+    }
     return new Promise(resolve => {
       const stereo = (meta.channels || 1) > 1;
       const noteChoice = app.importNote || 'c3';
@@ -1713,10 +1723,10 @@
         if (!state.decoded) return;
         const settings = collect();
         const p = MW.sampleImport.plan(state.decoded, settings);
-        const frames = Math.min(state.decoded.channels[0].length, MW.sampleImport.MAX_FRAMES);
+        const outFrames = Math.floor(state.decoded.channels[0].length * p.rate / state.decoded.rate);
         target.textContent = 'New rate: ' + p.rate + ' Hz (C-2 ' + p.c2rate + ')' +
           (p.rate < state.decoded.rate ? '' : ' - stays') +
-          (frames >= MW.sampleImport.MAX_FRAMES ? ' - trimmed to ' + MW.sampleImport.MAX_FRAMES : '');
+          (outFrames > MW.sampleImport.MAX_FRAMES ? ' - trimmed to ' + MW.sampleImport.MAX_FRAMES : '');
         try {
           state.built = MW.sampleImport.build(state.decoded, settings);
           state.settings = settings;
@@ -1748,8 +1758,8 @@
         finish({ decoded: state.decoded, settings: state.settings, built: state.built });
       };
       const onKey = e => {
-        if (e.key === 'Escape') { e.preventDefault(); finish(null); }
-        else if (e.key === 'Return') { e.preventDefault(); load(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(null); }
+        else if (e.key === 'Return') { e.preventDefault(); e.stopPropagation(); load(); }
       };
 
       el.querySelectorAll('select,input').forEach(input => { input.onchange = refresh; });
@@ -2286,6 +2296,7 @@
             inst.data = built.data;
             inst.dataR = null;
             inst.c2rate = built.c2rate;
+            inst.samplerate = built.samplerate;
             inst.bits16 = true;
             inst.stereo16 = false;
             inst.loop = 0;
@@ -3419,7 +3430,7 @@
     a.download = (inst.name || 'sample') + '.8svx';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    MW.toast('Saved IFF 8SVX');
+    MW.toast('Saved IFF 8SVX' + (inst.dataR ? ' (stereo mixed to mono)' : ''));
   };
 
   /* ------------------------------------------------------------ wav export */
@@ -3948,20 +3959,7 @@
       const f = e.dataTransfer.files[0];
       if (!f) return;
       const reader = new FileReader();
-      reader.onload = () => {
-        const buf = reader.result;
-        if (MW.isLHA(new Uint8Array(buf))) return handleFileBuffer(buf, f.name);
-        const song = (() => { try { return MW.loadModule(buf); } catch (err) { return null; } })();
-        if (song) openBuffer(buf, f.name);
-        else {
-          const inst = MW.loadInstrument(buf);
-          if (inst) {
-            app.song.instruments[app.currentIns - 1] = inst;
-            refreshAll();
-            MW.toast('Instrument loaded into ' + MW.insName(app.currentIns));
-          } else MW.toast('Unrecognised file', true);
-        }
-      };
+      reader.onload = () => handleFileBuffer(reader.result, f.name);
       reader.readAsArrayBuffer(f);
     });
 
