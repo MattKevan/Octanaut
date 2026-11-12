@@ -74,3 +74,13 @@ test('SAVE ALL skips empty slots and continues after a failure', async () => {
   assert.equal(result.failed, 1);
   assert.equal(result.saved, 1);
 });
+
+test('deleting a library file removes it and reports a missing one', async () => {
+  const mw = runtime(['ui-displays']);
+  const removed = [];
+  const dir = { async removeEntry(name) { removed.push(name); } };
+  assert.equal(await mw.removeLibraryFile(dir, 'a.msh'), true);
+  assert.equal(removed.join(','), 'a.msh');
+  const missing = { async removeEntry() { throw new Error('not found'); } };
+  assert.equal(await mw.removeLibraryFile(missing, 'gone.msh'), false);
+});

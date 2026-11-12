@@ -32,6 +32,18 @@
     }
     return { saved, failed };
   };
+  /* DELETE: true when the entry was removed, false when it was already
+     gone or the directory refused. */
+  MW.removeLibraryFile = async function (dir, name) {
+    if (!dir || !name) return false;
+    try {
+      await dir.removeEntry(name);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
   MW.listLibraryEntries = async function (dir) {
     const files = [];
     for await (const [name, handle] of dir.entries()) {
@@ -517,6 +529,7 @@
             <button data-library-action="save">SAVE IFF</button>
             <button data-library-action="save-inst" ${library.directory < 0 ? 'disabled' : ''}>SAVE INST</button>
             <button data-library-action="save-all" ${library.directory < 0 ? 'disabled' : ''}>SAVE ALL</button>
+            <button data-library-action="delete" ${library.directory < 0 || library.selected < 0 ? 'disabled' : ''}>DELETE</button>
             <button data-library-action="browse">BROWSE</button>
           </div>
           <div class="library-list" aria-label="Directories"><button type="button" class="library-item${library.directory < 0 ? ' active' : ''}" data-library-dir="-1">SONG INSTRUMENTS</button>${folders}</div>
@@ -578,6 +591,15 @@
               const r = await MW.saveAllInstruments(paths[library.directory], app.song);
               MW.toast(`Saved ${r.saved} instrument${r.saved === 1 ? '' : 's'}` + (r.failed ? `, ${r.failed} failed` : ''));
             } catch (e) { MW.toast('Could not save the instruments', true); }
+          } else if (action === 'delete') {
+            const entry = library.entries[library.selected];
+            if (!entry) return;
+            const ok = await MW.removeLibraryFile(paths[library.directory], entry.name);
+            if (!ok) return MW.toast('Could not delete ' + entry.name, true);
+            library.entries.splice(library.selected, 1);
+            library.selected = -1;
+            show();
+            MW.toast('Deleted ' + entry.name);
           } else if (action === 'browse') MW.runAction('ins-open');
         };
       });
