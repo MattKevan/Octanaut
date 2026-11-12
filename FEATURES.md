@@ -26,7 +26,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | TRK ON SET / CLR | yes | Sets or clears the track switches. |
 | Block name | yes | Stored in BlockInfo and edited on the info line under the grid. |
 | Note echo (DIST / MIN) | yes | Range operation; fills empty lines with halved volume commands. |
-| Sample list / MED_Paths | part | Lists loaded instruments and browses user-selected folders; MED_Paths is not implemented. |
+| Sample list / MED_Paths | yes | Lists loaded instruments and browsable folders, saves the current instrument or all of them into the chosen folder, deletes files there, and remembers the folder list between reloads (the browser stand-in for MED_Paths; permission may need re-granting). |
 | MIDI message editor and command 10 | part | Edit, send, capture and JSON save; messages are not yet written into MMD1. |
 | MIDI input map editor | yes | 128-row list; each key is a note or a transport/edit function. |
 | External MIDI sync | yes | Start, continue, stop and clock tempo follow the incoming MIDI clock. |
@@ -218,7 +218,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 | Notation editor | part | Grand staff, note entry, signatures, track visibility and ghosting, instrument hide/transposition, five presets and printing are implemented. Rests are entry icons rather than engraved gaps; exact original duration engraving still needs comparison. |
 | Synthsound editor | part | Twin waveforms, freehand drawing, range selection and edits, volume, speed, transform and program editing are implemented. Exact original editing semantics for paste and stretch still need comparison. |
 | Sample editor | part | Freehand, RANGE ALL, zoom, buffer operations, sample effects with echo decay, filter/boost averaging and distance, the pixel display, pitch and loop controls are implemented. Exact effect formulas still need comparison with the original. |
-| Sample list | part | Lists loaded instruments and user-selected folders; `MED_Paths` is not supported. |
+| Sample list | yes | Lists loaded instruments and user-selected folders; SAVE INST, SAVE ALL and DELETE act on the chosen folder, and the folder list persists across reloads. `MED_Paths` files themselves are not read; the browser equivalent is a stored handle list. |
 
 ## Playback engine
 
@@ -278,7 +278,7 @@ The V4 gaps that matter most:
 
 1. **MOD1 without instruments.** `.med` always embeds the samples. The instrument-less variant, which resolves names through MED_Paths, is still absent.
 2. **MIDI messages in modules.** Editing, sending, capture, maps and dumps work, but SysEx messages are not written into MMD1.
-3. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
+3. **Instrument names from MED_Paths.** The list browses real folders and keeps them across reloads, but it does not read a MED_Paths file or resolve missing instrument names by path.
 4. **MIDI data in saved modules.** Commands 10 and 1C work while playing, but MIDI messages are not written into MMD1, so a saved module loses them.
 5. **Editor polish.** Sample/synth range tools and notation print modes.
 6. **Filesystem-adjacent features.** INFO/ICON on save, absolute instrument names and paths add/remove; the RGB palette editor is only partly there.

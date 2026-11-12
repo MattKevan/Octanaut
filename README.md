@@ -250,7 +250,7 @@ The loader and writer are standalone: `MW.loadModule(arrayBuffer)` and `MW.write
 
 Run these from `app/`. `npm test` runs the type check, the store and audio-mixing unit tests, and the headless regression checks. `node test/run.js` runs the 32 checks on their own: the LHA decoders against the reference archives, Med's command byte staying whole for MMD1 and later, and the MMD0 and MMD1 writers round-tripping notes, tempo, blocks and V4 metadata. `npm run typecheck` checks the files that opt in with `// @ts-check`, currently the model, the loaders, the LHA decoder, the writers, the synth renderer, the audio engine, the audio export, the store and the TSX panel components. The UI scripts can join them one file at a time.
 
-`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 146 features matching, 16 partial, 6 absent.
+`FEATURES.md` tracks parity with OctaMED Professional V4.00, panel by panel: 148 features matching, 14 partial, 6 absent.
 
 ## Command bytes
 
