@@ -49,15 +49,22 @@
     const v = MW.clamp(volume, 0, 64);
     return hex ? v : Math.floor(v / 10) * 16 + (v % 10);
   };
-  /* Rewrite every 0C so it still sounds the same after a HEX/DEC switch.
-     0x80 and up set the instrument's volume, not the track's, so they stay. */
+  /* Switch the song to a volume base, rewriting every 0C so it still
+     sounds the same. 0x80 and up set the instrument's volume, not the
+     track's, so they stay. Calling it with the base already in use does
+     nothing. */
   MW.rewriteVolumeCommands = function (song, hex) {
+    const to = !!hex;
+    const from = !!(song.flags && song.flags.volhex);
+    if (from === to) return 0;
     let changed = 0;
     (song.blocks || []).forEach(block => block.rows.forEach(row => row.forEach(c => {
       if (!c || c.cmd !== 0x0c || c.dat >= 0x80) return;
-      const next = MW.volumeArg(MW.volumeFromArg(c.dat, !hex), hex);
+      const next = MW.volumeArg(MW.volumeFromArg(c.dat, from), to);
       if (next !== c.dat) { c.dat = next; changed++; }
     })));
+    song.flags = song.flags || {};
+    song.flags.volhex = to ? 1 : 0;
     return changed;
   };
 

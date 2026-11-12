@@ -160,3 +160,41 @@ test('module size grows with a second block', () => {
   mw.app.song.blocks.push(mw.createBlock(4, 64));
   assert.ok(mw.moduleBytes(mw.app.song) > before);
 });
+
+test('the module size is reused until the song changes', () => {
+  const mw = setup();
+  mw.app._moduleBytes = 123;
+  mw.refreshAll();
+  assert.equal(mw.app._moduleBytes, null, 'a refresh invalidates the cached size');
+});
+
+test('Ctrl+Shift+digit picks into that key', () => {
+  const mw = setup();
+  const a = mw.app;
+  a.cursor = { block: 0, line: 0, track: 0, field: 0 };
+  a.song.blocks[0].rows[0][0] = { note: 30, ins: 2, cmd: 0, dat: 0 };
+  mw.pickProgKey(5);
+  assert.equal(a.progTarget, 5);
+  assert.equal(a.prog[5].note, 30);
+  assert.equal(a.prog[5].ins, 2);
+});
+
+test('an unset programmable key leaves the cell alone', () => {
+  const mw = setup();
+  const a = mw.app;
+  a.cursor = { block: 0, line: 0, track: 0, field: 0 };
+  a.song.blocks[0].rows[0][0] = { note: 30, ins: 2, cmd: 0x0c, dat: 0x40 };
+  assert.equal(a.prog[0].note, null, 'definitions start transparent');
+  mw.applyProgKey(0);
+  assert.equal(a.song.blocks[0].rows[0][0].note, 30);
+  assert.equal(a.song.blocks[0].rows[0][0].dat, 0x40);
+});
+
+test('shift-clicking the active volume base does not rewrite anything', () => {
+  const mw = setup();
+  const a = mw.app;
+  a.song.flags.volhex = 1;
+  a.song.blocks[0].rows[0][0] = { note: 1, ins: 1, cmd: 0x0c, dat: 0x28 };
+  mw.setVolumeBase(1, true);
+  assert.equal(a.song.blocks[0].rows[0][0].dat, 0x28);
+});

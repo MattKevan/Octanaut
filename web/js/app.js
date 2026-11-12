@@ -92,6 +92,8 @@
   MW.touchPrefs = touchPrefs;
 
   function refreshAll(keepPanel) {
+    /* the module size is re-encoded only after a change */
+    app._moduleBytes = null;
     if (MW.touchPrefs) MW.touchPrefs();
     MW.panels.refresh();
     MW.displays.refresh();
@@ -146,11 +148,11 @@
     let used = 0;
     s.instruments.forEach(i => { if (i && i.data) used += i.data.length; });
     const cap = 2 * 1024 * 1024;
-    if (app._moduleBytes == null || Date.now() - (app._moduleAt || 0) > 400) {
-      app._moduleAt = Date.now();
+    if (app._moduleBytes == null && !app._modulePending) {
+      app._modulePending = true;
       clearTimeout(app._moduleTimer);
       app._moduleTimer = setTimeout(() => {
-        app._moduleAt = Date.now();
+        app._modulePending = false;
         app._moduleBytes = MW.moduleBytes(app.song, (app.songList || []).filter(x => x !== app.song));
         MW.touchStatus('memory', ['song']);
       }, 120);
@@ -1019,7 +1021,7 @@
   const ADVANCE_ORDER = ['down', 'up', 'right', 'left', 'nexttrk', 'prevtrk'];
 
   /* programmable keys: Shift 0-9 insert a stored note or command */
-  app.prog = app.prog || Array.from({ length: 10 }, () => ({ note: 0, ins: 0, cmd: 0, dat: 0 }));
+  app.prog = app.prog || Array.from({ length: 10 }, () => ({ note: null, ins: null, cmd: null, dat: null }));
   let chordNotes = [];
   app.chordStartTrack = 0;
   let chordTimer = 0;
@@ -1090,9 +1092,11 @@
     return app.progAlt === 'L' ? 'L.Alt' : app.progAlt === 'R' ? 'R.Alt' : 'Shift-' + app.progTarget;
   }
 
-  function pickProgKey() {
+  function pickProgKey(target) {
     const c = curCell();
     if (!c) return;
+    /* Ctrl+Shift+digit picks into that key, wherever the panel is */
+    if (Number.isInteger(target)) { app.progAlt = 'C'; app.progTarget = MW.clamp(target, 0, 9); }
     /* the note characters of the Alt definitions are always wildcards */
     const note = app.progAlt === 'C' ? c.note : null;
     setCurrentDef({ note, ins: c.ins, cmd: c.cmd, dat: c.dat, cells: null });
@@ -2082,13 +2086,18 @@
   /* Shift-clicking HEX/DEC rewrites every volume command so the song keeps
      the volumes it had. */
   function setVolumeBase(hex, rewrite) {
-    app.song.flags.volhex = hex;
-    if (rewrite) {
+    if (rewrite && !!(app.song.flags.volhex) !== !!hex) {
       const n = MW.rewriteVolumeCommands(app.song, !!hex);
       MW.toast(`${hex ? 'HEX' : 'DEC'}: rewrote ${n} volume command${n === 1 ? '' : 's'}`);
+    } else {
+      app.song.flags.volhex = hex ? 1 : 0;
     }
     MW.panels.refresh();
   }
+
+  MW.setVolumeBase = setVolumeBase;
+  MW.pickProgKey = pickProgKey;
+  MW.applyProgKey = applyProgKey;
 
   function lastActionFor(act) {
     const map = {

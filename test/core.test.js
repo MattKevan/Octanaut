@@ -90,3 +90,22 @@ test('a plain definition still inserts a single cell', () => {
   assert.equal(block.rows[1][0].ins, 2);
   assert.equal(block.rows[2][0].note, 0);
 });
+
+test('rewriting volumes twice leaves them unchanged', () => {
+  const song = MW.createSong();
+  song.flags.volhex = 0;
+  song.blocks[0].rows[0][0] = { note: 1, ins: 1, cmd: 0x0c, dat: MW.volumeArg(40, false) };
+  MW.rewriteVolumeCommands(song, true);
+  const once = song.blocks[0].rows[0][0].dat;
+  MW.rewriteVolumeCommands(song, true);
+  assert.equal(song.blocks[0].rows[0][0].dat, once);
+  assert.equal(MW.volumeFromArg(once, true), 40);
+});
+
+test('a definition with no fields leaves the cell alone', () => {
+  const block = MW.createBlock(1, 2);
+  block.rows[0][0] = { note: 30, ins: 2, cmd: 0x0c, dat: 0x40 };
+  MW.applyProgDefinition(block, 0, 0, { note: null, ins: null, cmd: null, dat: null });
+  assert.equal(block.rows[0][0].note, 30);
+  assert.equal(block.rows[0][0].dat, 0x40);
+});

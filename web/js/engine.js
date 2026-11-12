@@ -637,21 +637,30 @@
       ch.period = MW.period(eff);
       ch.target = 0;
       ch.noteOn = true;
-      ch.over = false;
       ch.vibPos = 0;
-      ch.decayLeft = -1;
-      ch.volume = inst.volume == null ? 64 : inst.volume;
       ch.volOffset = 0;
+
+      /* only a note with an instrument starts a new hold and resets the
+         volume; one without carries the track's hold and volume on, so a
+         decayed track stays silent */
+      const withIns = !!(cell && cell.ins);
+      if (withIns) {
+        ch.over = false;
+        ch.decayLeft = -1;
+        ch.volume = inst.volume == null ? 64 : inst.volume;
+      }
 
       /* the footer's E1 graph watches note triggers */
       ch.triggers = (ch.triggers || 0) + 1;
       this.triggers = this.triggers || {};
       this.triggers[ch.idx] = { count: ch.triggers, note, ins: ch.instNum || 0, volume: ch.volume };
 
-      const hold = cell && cell.cmd === 8 ? (cell.dat & 0x0f) : (inst.hold || 0);
-      const decay = cell && cell.cmd === 8 ? (cell.dat >> 4) : (inst.decay || 0);
-      ch.holdLeft = hold > 0 ? hold : -1;
-      ch.decayRate = decay;
+      if (withIns) {
+        const hold = cell && cell.cmd === 8 ? (cell.dat & 0x0f) : (inst.hold || 0);
+        const decay = cell && cell.cmd === 8 ? (cell.dat >> 4) : (inst.decay || 0);
+        ch.holdLeft = hold > 0 ? hold : -1;
+        ch.decayRate = decay;
+      }
 
       /* without an audio context the note state above still stands */
       if (!ctx) return;
@@ -840,9 +849,10 @@
           if (ch.dat === 0) {
             this.loopStart = this.line;
           } else if (this.loopStart >= 0) {
-            if (!this.loopCount) this.loopCount = ch.dat;
-            else this.loopCount--;
-            if (this.loopCount > 0) this.loopLine = this.loopStart;
+            /* ProTracker E6x, which the manual names as the model: the
+               argument counts repeats beyond the first pass */
+            this.loopCount = this.loopCount ? this.loopCount - 1 : ch.dat;
+            this.loopLine = this.loopCount > 0 ? this.loopStart : null;
           }
           break;
         case 0x1c:

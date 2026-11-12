@@ -265,3 +265,20 @@ test('a hold symbol restores the instrument volume', () => {
   player.readLine(player.song.blocks[0], 0, true);
   assert.equal(ch.volume, 50);
 });
+
+test('a note without an instrument keeps the decayed track silent', () => {
+  player.song = song({
+    instruments: [{ volume: 50, hold: 3, decay: 1, data: new Float32Array(4) }],
+    blocks: [{ lines: 2, tracks: 1, rows: [
+      [{ note: 25, ins: 0, cmd: 0, dat: 0 }],
+      [{ note: 0, ins: 0, cmd: 0, dat: 0 }]
+    ] }]
+  });
+  const { ch } = tickChannel({ volume: 0, over: true, noteOn: true });
+  ch.inst = player.song.instruments[0];
+  player.channels = [ch];
+  player.line = 0; player.blockIdx = 0;
+  player.readLine(player.song.blocks[0], 0, false);
+  assert.equal(ch.volume, 0, 'no instrument does not reset the volume');
+  assert.equal(ch.over, true, 'and it does not revive the track');
+});
