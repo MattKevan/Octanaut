@@ -2268,17 +2268,37 @@
         const data = this.buffer.slice(0, this.pos);
         const inst = MW.app.song.instruments[MW.app.currentIns - 1];
         if (inst) {
-          inst.data = data;
-          inst.c2rate = this.sampleRate;
-          inst.dataR = null;
-          inst.bits16 = true;
-          inst.stereo16 = false;
-          inst.loop = 0;
-          inst.looplen = 0;
-          inst._abuf = null;
-          inst._view = { a: 0, b: data.length };
-          MW.refreshAll();
-          MW.toast('Recorded ' + data.length + ' samples');
+          try {
+            const built = MW.sampleImport.build({
+              rate: this.sampleRate,
+              bits: 32,
+              channels: [data],
+              loop: null,
+              truncated: false
+            }, {
+              note: null,
+              channel: 'mixed',
+              stereo: false,
+              loop: false,
+              normalise: false,
+              maxFrames: MW.sampleImport.MAX_FRAMES
+            }).instrument;
+            inst.data = built.data;
+            inst.dataR = null;
+            inst.c2rate = built.c2rate;
+            inst.bits16 = true;
+            inst.stereo16 = false;
+            inst.loop = 0;
+            inst.looplen = 0;
+            inst._abuf = null;
+            inst._synthBuf = null;
+            inst._view = { a: 0, b: inst.data.length };
+            if (MW.player && MW.player.invalidateBuffers) MW.player.invalidateBuffers();
+            MW.refreshAll();
+            MW.toast('Recorded ' + inst.data.length + ' samples');
+          } catch (err) {
+            MW.toast(err.message || 'The recording was empty', true);
+          }
         }
       }
       this.buffer = null;

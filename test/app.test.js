@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const runtime = require('./helpers/runtime');
-const setup = () => runtime(['store', 'engine', 'synth', 'writer', 'app']);
+const setup = () => runtime(['sample-import', 'store', 'engine', 'synth', 'writer', 'app']);
 
 test('join remaps removed and subsequent block references', () => {
   const mw = setup(); const s = mw.app.song;
@@ -276,4 +276,23 @@ test('a failed import leaves the old instrument alone', async () => {
   const result = await mw.importInstrumentBuffer(broken, 'bad.wav', { note: null });
   assert.equal(result, null);
   assert.equal(mw.app.song.instruments[0], old);
+});
+
+test('recording is built through the sample converter', () => {
+  const mw = setupImport();
+  const i = mw.app.song.instruments[0] = mw.createInstrument();
+  i.name = 'take 1';
+  i.volume = 32;
+  mw.sampler.buffer = new Float32Array(64).fill(1.5);
+  mw.sampler.pos = 64;
+  mw.sampler.sampleRate = 48000;
+  mw.sampler.mode = 'record';
+  mw.sampler.writing = true;
+  mw.sampler.stop();
+  assert.equal(i.name, 'take 1');
+  assert.equal(i.volume, 32);
+  assert.equal(i.c2rate, 48000);
+  assert.equal(i.data.length, 64);
+  assert.equal(i.data[0], 1);
+  assert.equal(i.bits16, true);
 });
