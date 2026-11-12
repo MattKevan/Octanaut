@@ -44,6 +44,7 @@
       };
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error('the library database is blocked'));
     });
     const run = async (mode, fn) => {
       const db = await open();
@@ -53,6 +54,7 @@
         let result = null;
         tx.oncomplete = () => resolve(result);
         tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('transaction aborted'));
         const request = fn(store);
         if (request) request.onsuccess = () => { result = request.result; };
       });
@@ -100,7 +102,10 @@
           const permission = typeof handle.queryPermission === 'function'
             ? await handle.queryPermission({ mode: 'read' })
             : 'granted';
-          if (permission === 'granted') keep.push(handle);
+          /* 'prompt' is the normal state after a reload: the folder is still
+             usable once the user clicks it and grants access again. Only a
+             denied or unusable handle is dropped. */
+          if (permission !== 'denied') keep.push(handle);
         } catch (e) { /* a handle that will not answer is not usable */ }
       }
       this.rows = keep;
@@ -120,6 +125,11 @@
       if (index < 0 || index >= this.rows.length) return;
       this.rows.splice(index, 1);
       if (this.adapter) await this.adapter.save(this.rows);
+    },
+
+    async clear() {
+      this.rows = [];
+      if (this.adapter) await this.adapter.clear();
     }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

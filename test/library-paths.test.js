@@ -34,3 +34,32 @@ test('removing a path updates both the list and the adapter', async () => {
   assert.equal(mw.libraryPaths.list().map(d => d.name).join(','), 'B');
   assert.equal(rows.map(d => d.name).join(','), 'B');
 });
+
+test('a folder that needs permission again is kept; a denied one is dropped', async () => {
+  const mw = runtime(['library']);
+  const rows = [];
+  mw.libraryPaths.use({
+    async load() { return rows.slice(); },
+    async save(list) { rows.splice(0, rows.length, ...list); },
+    async clear() { rows.length = 0; }
+  });
+  await mw.libraryPaths.add({ name: 'Needs grant', async queryPermission() { return 'prompt'; } });
+  await mw.libraryPaths.add({ name: 'Denied', async queryPermission() { return 'denied'; } });
+  const restored = await mw.libraryPaths.restore();
+  assert.equal(restored.map(d => d.name).join(','), 'Needs grant');
+  assert.equal(rows.length, 1, 'only the denied handle leaves storage');
+});
+
+test('clearing the library empties the adapter too', async () => {
+  const mw = runtime(['library']);
+  const rows = [];
+  mw.libraryPaths.use({
+    async load() { return rows.slice(); },
+    async save(list) { rows.splice(0, rows.length, ...list); },
+    async clear() { rows.length = 0; }
+  });
+  await mw.libraryPaths.add({ name: 'A' });
+  await mw.libraryPaths.clear();
+  assert.equal(mw.libraryPaths.list().length, 0);
+  assert.equal(rows.length, 0);
+});

@@ -2400,12 +2400,13 @@
       'paths-add': async () => {
         if (!window.showDirectoryPicker) return MW.toast('This browser cannot list folders', true);
         try {
-          const handle = await window.showDirectoryPicker({ mode: 'read' });
+          const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
           app.paths.push(handle);
+          if (MW.libraryPaths) await MW.libraryPaths.add(handle);
           MW.toast('Path added: ' + handle.name);
         } catch (err) { if (!err || err.name !== 'AbortError') MW.toast('Path refused', true); }
       },
-      'paths-rem': () => { app.paths = []; MW.toast('Paths cleared'); },
+      'paths-rem': async () => { app.paths = []; if (MW.libraryPaths) await MW.libraryPaths.clear(); MW.toast('Paths cleared'); },
       'quit-app': () => { window.close(); setTimeout(() => MW.toast('Close the tab to quit', true), 100); },
       'confirm-toggle': () => { app.confirmOn = !app.confirmOn; MW.panels.refresh(); },
       'dep2': () => { app.dep2 = !app.dep2; document.body.classList.toggle('dep2', app.dep2); MW.panels.refresh(); },

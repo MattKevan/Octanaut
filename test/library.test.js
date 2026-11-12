@@ -84,3 +84,20 @@ test('deleting a library file removes it and reports a missing one', async () =>
   const missing = { async removeEntry() { throw new Error('not found'); } };
   assert.equal(await mw.removeLibraryFile(missing, 'gone.msh'), false);
 });
+
+test('a failed write aborts the file instead of committing it', async () => {
+  const mw = runtime(['writer', 'ui-displays']);
+  let aborted = false, closed = false;
+  const dir = {
+    async getFileHandle() {
+      return { async createWritable() { return {
+        async write() { throw new Error('quota'); },
+        async close() { closed = true; },
+        async abort() { aborted = true; }
+      }; } };
+    }
+  };
+  await assert.rejects(mw.writeInstrumentFile(dir, 'x.8svx', { name: 'X', type: 'sample', data: new Float32Array(4), c2rate: 8363 }));
+  assert.equal(aborted, true);
+  assert.equal(closed, false);
+});

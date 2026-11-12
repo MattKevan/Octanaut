@@ -13,8 +13,10 @@
     const writable = await handle.createWritable();
     try {
       await writable.write(bytes);
-    } finally {
       await writable.close();
+    } catch (err) {
+      try { if (writable.abort) await writable.abort(); } catch (e) { /* already gone */ }
+      throw err;
     }
     return bytes.byteLength || bytes.length || 0;
   };
@@ -547,8 +549,19 @@
           const index = parseInt(button.dataset.libraryDir, 10);
           library.directory = index; library.selected = -1; library.entries = [];
           if (index >= 0) {
-            try { library.entries = await MW.listLibraryEntries(paths[index]); }
-            catch (e) { MW.toast('Could not read folder', true); }
+            const dir = paths[index];
+            try {
+              /* after a reload the handle is usually 'prompt'; ask while the
+                 click still counts as a user gesture */
+              if (dir && dir.queryPermission && dir.requestPermission) {
+                const state = await dir.queryPermission({ mode: 'readwrite' });
+                if (state !== 'granted') {
+                  const granted = await dir.requestPermission({ mode: 'readwrite' });
+                  if (granted !== 'granted') throw new Error('permission');
+                }
+              }
+              library.entries = await MW.listLibraryEntries(dir);
+            } catch (e) { MW.toast('Click the folder again to grant access', true); }
           }
           show();
         };
@@ -560,7 +573,7 @@
           else if (action === 'add') {
             if (!window.showDirectoryPicker) return MW.toast('This browser cannot list folders', true);
             try {
-              const dir = await window.showDirectoryPicker({ mode: 'read' });
+              const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
               paths.push(dir);
               if (MW.libraryPaths) await MW.libraryPaths.add(dir);
               library.directory = paths.length - 1; library.selected = -1;
@@ -596,13 +609,20 @@
           } else if (action === 'save-all') {
             try {
               const r = await MW.saveAllInstruments(paths[library.directory], app.song);
-              MW.toast(`Saved ${r.saved} instrument${r.saved === 1 ? '' : 's'}` + (r.failed ? `, ${r.failed} failed` : ''));
+              if (!r.saved && !r.failed) MW.toast('No samples to save');
+              else MW.toast(`Saved ${r.saved} instrument${r.saved === 1 ? '' : 's'}` + (r.failed ? `, ${r.failed} failed` : ''));
             } catch (e) { MW.toast('Could not save the instruments', true); }
           } else if (action === 'delete') {
             const entry = library.entries[library.selected];
             if (!entry) return;
             const ok = await MW.removeLibraryFile(paths[library.directory], entry.name);
-            if (!ok) return MW.toast('Could not delete ' + entry.name, true);
+            if (!ok) {
+              /* the entry may already be gone: re-list so the row disappears */
+              try { library.entries = await MW.listLibraryEntries(paths[library.directory]); } catch (e) { /* keep */ }
+              library.selected = -1;
+              show();
+              return MW.toast('Could not delete ' + entry.name, true);
+            }
             library.entries.splice(library.selected, 1);
             library.selected = -1;
             show();
