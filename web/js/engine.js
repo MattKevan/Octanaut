@@ -523,7 +523,11 @@
             this.trigger(ch, cell.note, time, cell);
           }
         } else if (cell.ins && !cell.cmd && !cell.dat) {
+          /* a hold symbol: the note carries on and the track's volume goes
+             back to the instrument's */
           ch.noteOn = true;
+          ch.over = false;
+          if (ch.inst && ch.inst.volume != null) ch.volume = ch.inst.volume;
         }
 
         this.startEffect(ch, time, cell);
@@ -624,7 +628,7 @@
     trigger(ch, note, time, cell) {
       const ctx = audio.ctx;
       const inst = ch.inst;
-      if (!ctx || !inst) return;
+      if (!inst) return;
 
       const eff = MW.clamp(note + (this.song.playtransp || 0) + (inst.transpose || 0), 1, 120);
       if (!ch._keepStart) ch.synthStart = 0;
@@ -633,6 +637,7 @@
       ch.period = MW.period(eff);
       ch.target = 0;
       ch.noteOn = true;
+      ch.over = false;
       ch.vibPos = 0;
       ch.decayLeft = -1;
       ch.volume = inst.volume == null ? 64 : inst.volume;
@@ -648,6 +653,8 @@
       ch.holdLeft = hold > 0 ? hold : -1;
       ch.decayRate = decay;
 
+      /* without an audio context the note state above still stands */
+      if (!ctx) return;
       const buf = this.bufferFor(inst, ch);
       if (!buf) return;
 
@@ -771,6 +778,7 @@
           this.pendingSeq = ch.dat;
           break;
         case 0x0c:
+          if (ch.over) break;
           if (ch.dat >= 0x80 && inst) {
             inst.volume = MW.clamp(ch.dat - 0x80, 0, 64);
           } else {
@@ -888,6 +896,13 @@
       }
     },
 
+    /* true when the line is a hold symbol for that track */
+    lineHolds(block, line, track) {
+      const row = block && block.rows[line];
+      const cell = row && row[track];
+      return !!(cell && cell.ins && !cell.note);
+    },
+
     midiCC(inst, controller, value) {
       if (!MW.midi || !MW.midi.enabled || !inst || !inst.midiChannel) return;
       MW.midi.send([0xb0 | (inst.midiChannel - 1), controller & 0x7f, value & 0x7f]);
@@ -986,16 +1001,20 @@
           break;
       }
 
+      const block = this.song && this.song.blocks && this.song.blocks[this.blockIdx];
+      const heldOn = block && this.lineHolds(block, this.line + 1, ch.idx);
       if (ch.holdLeft > 0) {
-        ch.holdLeft--;
-        if (ch.holdLeft === 0) {
-          if (ch.decayRate > 0) ch.decayLeft = ch.decayRate * 8;
-          else ch.volume = 0;
+        if (!heldOn) {
+          ch.holdLeft--;
+          if (ch.holdLeft === 0) {
+            if (ch.decayRate > 0) ch.decayLeft = ch.decayRate * 8;
+            else { ch.volume = 0; ch.over = true; }
+          }
         }
       } else if (ch.decayLeft >= 0) {
         ch.decayLeft--;
         ch.volume = Math.max(0, ch.volume - 52 / Math.max(1, ch.decayRate * 8));
-        if (ch.decayLeft <= 0) ch.decayLeft = -1;
+        if (ch.decayLeft <= 0) { ch.decayLeft = -1; ch.over = true; }
       }
 
       ch.rate = rate;

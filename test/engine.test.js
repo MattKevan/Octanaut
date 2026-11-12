@@ -206,3 +206,62 @@ test('1e delays the next line and 1c sends a MIDI preset', () => {
   assert.deepEqual(sent[0], [0xc2, 0x12]);
   delete global.MW.midi;
 });
+
+/* ---- hold and decay rules (manual + OctaMEDIC's libxmp-derived notes) ---- */
+
+test('a hold symbol stops the hold counting down while it continues', () => {
+  player.song = song({ blocks: [{ lines: 4, tracks: 1, rows: [
+    [{ note: 25, ins: 1, cmd: 0, dat: 0 }],
+    [{ note: 0, ins: 1, cmd: 0, dat: 0 }],
+    [{ note: 0, ins: 1, cmd: 0, dat: 0 }],
+    [{ note: 0, ins: 0, cmd: 0, dat: 0 }]
+  ] }] });
+  const { ch } = tickChannel({ note: 25, holdLeft: 2, decayRate: 0, volume: 64 });
+  player.channels = [ch];
+  player.blockIdx = 0; player.line = 0;
+  ch.holdLeft = 2;
+  player.channelTick(ch, 0);
+  assert.equal(ch.holdLeft, 2, 'held while the next line holds');
+  player.line = 2;
+  player.channelTick(ch, 0);
+  assert.equal(ch.holdLeft, 1, 'counts down once the hold chain ends');
+});
+
+test('an instrument with hold 0 ignores hold and decay', () => {
+  player.song = song({
+    instruments: [{ volume: 50, hold: 0, decay: 5, data: new Float32Array(4) }],
+    blocks: [{ lines: 2, tracks: 1, rows: [
+      [{ note: 25, ins: 1, cmd: 0, dat: 0 }],
+      [{ note: 0, ins: 0, cmd: 0, dat: 0 }]
+    ] }]
+  });
+  const { ch } = tickChannel({ volume: 50 });
+  player.channels = [ch];
+  player.line = 0; player.blockIdx = 0;
+  player.readLine(player.song.blocks[0], 0, false);
+  assert.equal(ch.holdLeft, -1);
+  assert.equal(ch.decayLeft, -1);
+});
+
+test('0C does nothing once the track has run out of hold', () => {
+  player.song = song({ flags: { volhex: 1 } });
+  const { ch } = tickChannel({ over: true, volume: 0 });
+  ch.cmd = 0x0c; ch.dat = 0x40;
+  player.startEffect(ch, 0, null);
+  assert.equal(ch.volume, 0, 'over tracks ignore volume commands until restarted');
+});
+
+test('a hold symbol restores the instrument volume', () => {
+  player.song = song({
+    instruments: [{ volume: 50, hold: 3, decay: 1, data: new Float32Array(4) }],
+    blocks: [{ lines: 2, tracks: 1, rows: [
+      [{ note: 0, ins: 1, cmd: 0, dat: 0 }],
+      [{ note: 0, ins: 0, cmd: 0, dat: 0 }]
+    ] }]
+  });
+  const { ch } = tickChannel({ volume: 10 });
+  player.channels = [ch];
+  player.line = 0; player.blockIdx = 0;
+  player.readLine(player.song.blocks[0], 0, true);
+  assert.equal(ch.volume, 50);
+});
