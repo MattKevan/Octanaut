@@ -1318,6 +1318,7 @@
         case 'v': e.preventDefault(); shift ? ops.pasteBlock() : ops.pasteTrack(); return;
         case 't': e.preventDefault(); ops.makeSlide(shift ? 's2' : 's1'); return;
         case 'l': e.preventDefault(); document.getElementById('file-input').click(); return;
+        case 's': e.preventDefault(); if (shift) openSaveAs(); else saveModule(); return;
         case 'p': e.preventDefault(); resetTimer(); MW.player.play(true); return;
         case 'f':
           e.preventDefault();
@@ -1843,6 +1844,71 @@
   }
   MW.exportModule = exportModule;
 
+  /* Save As: a small in-app dialog rather than a native prompt. The name is
+     the same FILE field the panel shows, and the extension follows the save
+     format. */
+  function openSaveAs() {
+    if (document.querySelector('.save-as')) return;
+    const target = app.diskVolume === 'OS' ? 'Mac' : 'DF0:';
+    const el = document.createElement('div');
+    el.className = 'requester save-as';
+    el.innerHTML = `
+      <div class="req-frame">
+        <div class="req-title">Save as</div>
+        <div class="req-path" id="save-as-target">${escapeHtml(target)}</div>
+        <input id="save-as-name" class="h-[26px] w-full border border-ink bg-paper px-2 text-[14px] leading-none text-ink outline-none" maxlength="40" value="${escapeHtml(app.song.name || 'untitled')}" autocomplete="off" spellcheck="false">
+        <div class="req-note" id="save-as-note"></div>
+        <div class="req-buttons">
+          <span class="spacer"></span>
+          <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="save-as-cancel">Cancel</button>
+          <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="save-as-ok">Save</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+
+    const input = el.querySelector('#save-as-name');
+    const note = el.querySelector('#save-as-note');
+    const ext = () => app.saveFormat === 'st' ? '.mod' : app.saveFormat === 'mmd0' ? '.mmd0' : '.med';
+    const fileName = () => MW.diskFileName
+      ? MW.diskFileName(input.value, ext())
+      : (input.value.trim() || 'untitled') + ext();
+    const preview = () => {
+      note.textContent = target + (target.endsWith(':') ? ' ' : ': ') + fileName();
+    };
+    const close = () => el.remove();
+    const commit = async () => {
+      const name = fileName();
+      const base = name.slice(0, -ext().length) || 'untitled';
+      if (app.diskVolume !== 'OS' && MW.disk && MW.disk.available) {
+        try {
+          const files = await MW.disk.list('DF0:');
+          if (files.some(file => file.name.toLowerCase() === name.toLowerCase())) {
+            if (typeof confirm === 'function' && !confirm(name + ' already exists on DF0:. Replace it?')) return;
+          }
+        } catch (e) { /* the save reports its own error */ }
+      }
+      close();
+      app.song.name = base;
+      if (MW.storage) MW.storage.schedule();
+      MW.panels.refresh();
+      MW.touchStatus('songname', ['song']);
+      await saveModule();
+    };
+
+    input.oninput = preview;
+    input.onkeydown = e => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); }
+    };
+    el.querySelector('#save-as-ok').onclick = commit;
+    el.querySelector('#save-as-cancel').onclick = close;
+    el.addEventListener('mousedown', e => { if (e.target === el) close(); });
+    preview();
+    input.focus();
+    input.select();
+  }
+  MW.openSaveAs = openSaveAs;
+
   function saveST() { return saveModule('st'); }
 
   /* ------------------------------------------------------------ sampling */
@@ -2234,6 +2300,7 @@
       'fmt-mmd0': () => { app.saveFormat = 'mmd0'; MW.panels.refresh(); },
       'fmt-st': () => { app.saveFormat = 'st'; MW.panels.refresh(); },
       'file-save-song': () => saveModule(),
+      'file-save-as': () => openSaveAs(),
       'file-del': () => deleteFile(),
       'file-icon': () => MW.missing('Amiga icon files'),
       'file-load-msg': () => loadMidiJson('msg'),

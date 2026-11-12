@@ -27,6 +27,7 @@ export function FilesPanel() {
         <R>
           <B act="missing" name="Amiga icon files" disabled>ICON</B>
           <B act="file-save-song">SAVE SONG</B>
+          <B act="file-save-as" title="Save under a new name (Shift+Cmd/Ctrl+S)">SAVE AS</B>
           <B act="file-save-iff">SAVE INSTR</B>
           <B act="file-save-msg">SAVE MSG</B>
           <B act="file-save-map">MAP</B>
