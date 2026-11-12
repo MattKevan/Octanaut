@@ -1,9 +1,10 @@
 import { useState } from 'preact/hooks';
-import { B, L, N, R, T, FIELD, MW } from '../shared';
+import { B, L, N, R, FIELD, useKeys, MW } from '../shared';
 
 /* ---------------------------------------------------------------- Block */
 
 export function BlockPanel() {
+  useKeys(['song', 'cursor']);
   const app = MW.app;
   const b = app.song.blocks[app.cursor.block];
   const [factor, setFactor] = useState(2);
@@ -38,8 +39,8 @@ export function BlockPanel() {
       </R>
       <R>
         <B act="blk-expand" cls="w-[54px]">EXPAND</B>
-        <input type="number" min="2" max="9" value={factor} class={`${FIELD} w-[28px]`}
-          onChange={(e: any) => setFactor(parseInt(e.currentTarget.value, 10) || 2)} />
+        <input id="blk-factor" type="number" min="2" max="9" value={factor} class={`${FIELD} w-[28px]`}
+          onInput={(e: any) => setFactor(parseInt(e.currentTarget.value, 10) || 2)} />
         <B act="blk-shrink" cls="w-[54px]">SHRINK</B>
         <B act="line-ins" cls="w-[44px]">INS.L.</B>
         <B act="line-del" cls="w-[44px]">DEL.L.</B>
@@ -58,10 +59,6 @@ export function BlockPanel() {
         <B act="blk-del" cls="w-[70px]">DELETE THIS</B>
         <B act="blk-split" cls="w-[42px]">SPLIT</B>
         <B act="blk-join" cls="w-[42px]">JOIN</B>
-      </R>
-      <R>
-        <L cls="w-[42px]">NAME:</L>
-        <T value={b.name || ''} maxlength={40} onInput={(v: string) => { b.name = v; }} cls="flex-1" />
       </R>
     </div>
   );
