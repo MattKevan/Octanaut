@@ -210,11 +210,167 @@
     return { rate: fmt.rate, bits: fmt.bits, channels, loop, truncated };
   }
 
+  /* ---------------------------------------------------------- conversion */
+
+  function defaults() {
+    return { note: 25, channel: 'mixed', stereo: false, loop: true, normalise: false };
+  }
+
+  /** @returns {any} */
+  function plan(source, settings) {
+    const s = settings || defaults();
+    const sourceRate = Math.max(1, Math.round((source && source.rate) || DEFAULT_RATE));
+    const note = s.note;
+    if (!note) return { rate: sourceRate, c2rate: sourceRate, sourceRate };
+    const period = MW.period(note);
+    const noteRate = 8363 * 428 / period;
+    const rate = Math.max(1, Math.round(Math.min(sourceRate, noteRate)));
+    return { rate, c2rate: Math.max(1, Math.round(rate * period / 428)), sourceRate };
+  }
+
+  function resample(channels, from, to, allowAliasing) {
+    if (!channels || !channels.length) return [];
+    if (!(from > 0) || !(to > 0) || to >= from) return channels.map(c => Float32Array.from(c));
+    const step = from / to;
+    const length = Math.max(1, Math.floor(channels[0].length / step));
+    return channels.map(src => {
+      const out = new Float32Array(length);
+      for (let i = 0; i < length; i++) {
+        const start = i * step;
+        const end = Math.min(src.length, start + step);
+        if (allowAliasing) { out[i] = src[Math.floor(start)] || 0; continue; }
+        let sum = 0;
+        let at = start;
+        while (at < end) {
+          const index = Math.floor(at);
+          const next = Math.min(index + 1, end);
+          sum += (src[index] || 0) * (next - at);
+          at = next;
+        }
+        out[i] = end > start ? sum / (end - start) : 0;
+      }
+      return out;
+    });
+  }
+
+  /** @returns {any} */
+  function build(decoded, settings) {
+    const s = { ...defaults(), ...(settings || {}) };
+    const p = plan(decoded, s);
+    const resampled = resample(decoded.channels, decoded.rate, p.rate, s.allowAliasing);
+    if (!resampled.length || !resampled[0].length) throw new Error('No sound in it');
+
+    const stereo = !!s.stereo && resampled.length > 1;
+    /** @type {any} */
+    let left;
+    /** @type {any} */
+    let right = null;
+    if (stereo) {
+      left = Float32Array.from(resampled[0]);
+      right = Float32Array.from(resampled[resampled.length - 1]);
+    } else if (s.channel === 'right' && resampled.length > 1) {
+      left = Float32Array.from(resampled[resampled.length - 1]);
+    } else if (s.channel === 'left' || resampled.length === 1) {
+      left = Float32Array.from(resampled[0]);
+    } else {
+      left = new Float32Array(resampled[0].length);
+      for (let c = 0; c < resampled.length; c++) {
+        const channel = resampled[c];
+        for (let i = 0; i < left.length; i++) left[i] += channel[i] / resampled.length;
+      }
+    }
+
+    const available = left.length;
+    const max = Math.max(1, s.maxFrames || MAX_FRAMES);
+    const frames = Math.min(available, max);
+    if (frames < left.length) {
+      left = left.slice(0, frames);
+      if (right) right = right.slice(0, frames);
+    }
+
+    /** @type {{start:number,end:number}|null} */
+    let loop = null;
+    if (s.loop && decoded.loop) {
+      const scale = p.rate / (decoded.rate || p.rate);
+      const start = Math.round(decoded.loop.start * scale);
+      const end = Math.round(decoded.loop.end * scale);
+      if (start >= 0 && end <= frames && end - start > 2) loop = { start, end };
+    }
+
+    let peak = 0;
+    for (let i = 0; i < frames; i++) {
+      peak = Math.max(peak, Math.abs(left[i]));
+      if (right) peak = Math.max(peak, Math.abs(right[i]));
+    }
+    if (peak === 0) throw new Error('No sound in it');
+
+    if (s.normalise) {
+      const gain = 0.999 / peak;
+      for (let i = 0; i < frames; i++) {
+        left[i] *= gain;
+        if (right) right[i] *= gain;
+      }
+    }
+
+    let clipped = false;
+    const clamp = ch => {
+      for (let i = 0; i < ch.length; i++) {
+        if (ch[i] > 1) { ch[i] = 1; clipped = true; }
+        else if (ch[i] < -1) { ch[i] = -1; clipped = true; }
+      }
+    };
+    clamp(left);
+    if (right) clamp(right);
+
+    const inst = MW.createInstrument('sample');
+    inst.data = left;
+    inst.dataR = right;
+    inst.c2rate = p.c2rate;
+    inst.bits16 = decoded.bits == null ? true : decoded.bits > 8;
+    inst.stereo16 = stereo;
+    inst.loop = loop ? loop.start : 0;
+    inst.looplen = loop ? loop.end - loop.start : 0;
+
+    return {
+      instrument: inst,
+      report: {
+        sourceRate: p.sourceRate,
+        rate: p.rate,
+        c2rate: p.c2rate,
+        frames,
+        truncated: !!decoded.truncated || available > frames,
+        stereo,
+        clipped
+      }
+    };
+  }
+
+  async function decode(buffer, meta) {
+    if (meta && (meta.format === 'wav' || meta.format === 'aiff')) return readWav(buffer);
+    throw new Error('This browser cannot decode that file. WAV always works.');
+  }
+
+  async function load(buffer, settings) {
+    const meta = sniff(new Uint8Array(buffer));
+    if (meta.format === 'msh' || meta.format === '8svx' || meta.format === 'raw') {
+      const instrument = MW.loadInstrument ? MW.loadInstrument(buffer) : null;
+      return instrument ? { instrument, report: null, meta, decoded: null } : null;
+    }
+    const decoded = await decode(buffer, meta);
+    return { ...build(decoded, settings || defaults()), meta, decoded };
+  }
+
   MW.sampleImport = {
     MAX_FRAMES,
     DEFAULT_RATE,
     sniff,
-    readWav
+    readWav,
+    plan,
+    resample,
+    build,
+    defaults,
+    decode,
+    load
   };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);

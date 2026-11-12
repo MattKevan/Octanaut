@@ -978,12 +978,26 @@
   };
 
   MW.loadInstrument = function (buffer) {
-    const dv = new DataView(buffer);
-    if (buffer.byteLength >= 4 && tag(dv, 0) === 'MSH\0') return loadMSH(buffer);
-    if (buffer.byteLength >= 4 && tag(dv, 0) === 'FORM') return load8SVX(buffer);
+    const meta = MW.sampleImport ? MW.sampleImport.sniff(new Uint8Array(buffer)) : null;
+    if (meta) {
+      if (meta.format === 'msh') return loadMSH(buffer);
+      if (meta.format === '8svx') return load8SVX(buffer);
+      if (meta.format === 'wav') {
+        try {
+          return MW.sampleImport.build(MW.sampleImport.readWav(buffer), MW.sampleImport.defaults()).instrument;
+        } catch (e) {
+          return null;
+        }
+      }
+      if (meta.format !== 'raw') return null;
+    } else {
+      const dv = new DataView(buffer);
+      if (buffer.byteLength >= 4 && tag(dv, 0) === 'MSH\0') return loadMSH(buffer);
+      if (buffer.byteLength >= 4 && tag(dv, 0) === 'FORM') return load8SVX(buffer);
+    }
     // bare raw sample
     const inst = MW.createInstrument('sample');
-    inst.data = pcm8(dv, 0, buffer.byteLength);
+    inst.data = pcm8(new DataView(buffer), 0, buffer.byteLength);
     return inst;
   };
 

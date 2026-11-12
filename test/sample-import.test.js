@@ -142,3 +142,80 @@ test('damaged WAV fails with a readable message', () => {
   assert.throws(() => read(wav({ data: pcm16(0) }).slice(0, 14)), /WAV file is damaged/);
   assert.throws(() => read(wav({ format: 2, data: pcm16(0) })), /compressed WAV/i);
 });
+
+const build = (decoded, settings) => runtime(['sample-import']).sampleImport.build(decoded, settings);
+const decoded = (rate, channels, extra = {}) => ({ rate, bits: 16, channels, loop: null, truncated: false, ...extra });
+const C1 = 1, C2 = 13, C3 = 25;
+const base = { note: C3, channel: 'mixed', stereo: false, loop: true, normalise: false };
+
+test('plan puts a 44.1 kHz source at C-3 without upsampling', () => {
+  const p = runtime(['sample-import']).sampleImport.plan({ rate: 44100 }, base);
+  assert.deepEqual({ ...p }, { rate: 16726, c2rate: 8363, sourceRate: 44100 });
+});
+
+test('plan leaves a low-rate source alone but tunes it to the note', () => {
+  const p = runtime(['sample-import']).sampleImport.plan({ rate: 8000 }, base);
+  assert.deepEqual({ ...p }, { rate: 8000, c2rate: 4000, sourceRate: 8000 });
+});
+
+test('plan doubles c2rate for a C-1 target', () => {
+  const p = runtime(['sample-import']).sampleImport.plan({ rate: 22050 }, { ...base, note: C1 });
+  assert.deepEqual({ ...p }, { rate: 4182, c2rate: 8364, sourceRate: 22050 });
+});
+
+test('plan with no note keeps the source rate at C-2', () => {
+  const p = runtime(['sample-import']).sampleImport.plan({ rate: 22050 }, { ...base, note: null });
+  assert.deepEqual({ ...p }, { rate: 22050, c2rate: 22050, sourceRate: 22050 });
+});
+
+test('build mixes, picks and averages stereo channels', () => {
+  const d = decoded(8000, [new Float32Array([1, 0]), new Float32Array([0, -1])]);
+  assert.deepEqual(Array.from(build(d, base).instrument.data), [0.5, -0.5]);
+  assert.deepEqual(Array.from(build(d, { ...base, channel: 'left' }).instrument.data), [1, 0]);
+  assert.deepEqual(Array.from(build(d, { ...base, channel: 'right' }).instrument.data), [0, -1]);
+});
+
+test('anti-phase stereo cancels when mixed', () => {
+  const d = decoded(8000, [new Float32Array([1, -1, 0.5]), new Float32Array([-1, 1, 0.5])]);
+  assert.deepEqual(Array.from(build(d, base).instrument.data), [0, 0, 0.5]);
+});
+
+test('the resampler averages over the source interval and never upsamples', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const out = s.resample([new Float32Array([0.5, -0.5, 0.5, 0.5, 0, 0])], 16000, 8000)[0];
+  assert.equal(out.length, 3);
+  assert.ok(Math.abs(out[0]) < 1e-6 && Math.abs(out[1] - 0.5) < 1e-6 && Math.abs(out[2]) < 1e-6);
+  const same = s.resample([new Float32Array([0, 0, 0, 0])], 8000, 16000)[0];
+  assert.equal(same.length, 4);
+});
+
+test('build scales loop points and drops loops outside the kept range', () => {
+  const d = decoded(16726, [new Float32Array(100).fill(0.5)], { loop: { start: 20, end: 80 } });
+  const { instrument } = build(d, { ...base, note: C2 });
+  assert.equal(instrument.loop, 10);
+  assert.equal(instrument.looplen, 30);
+  const gone = decoded(16726, [new Float32Array(100).fill(0.5)], { loop: { start: 90, end: 140 } });
+  assert.equal(build(gone, { ...base, note: C2 }).instrument.looplen, 0);
+});
+
+test('build caps at 131072 frames and reports it', () => {
+  const d = decoded(8000, [new Float32Array(140000).fill(0.5)]);
+  const { instrument, report } = build(d, { ...base, note: null });
+  assert.equal(instrument.data.length, 131072);
+  assert.equal(report.truncated, true);
+});
+
+test('build sets depth flags, keeps stereo and normalises on request', () => {
+  const eight = build(decoded(8000, [new Float32Array([0.5, 0, 0, 0])], { bits: 8 }), base).instrument;
+  assert.equal(eight.bits16, false);
+  const st = build(decoded(8000, [new Float32Array([1]), new Float32Array([-1])]), { ...base, stereo: true }).instrument;
+  assert.equal(st.stereo16, true);
+  assert.deepEqual(Array.from(st.data), [1]);
+  assert.deepEqual(Array.from(st.dataR), [-1]);
+  const quiet = build(decoded(8000, [new Float32Array([0.25, -0.5])]), { ...base, normalise: true }).instrument;
+  assert.ok(Math.abs(Math.max(...quiet.data.map(Math.abs)) - 0.999) < 1e-6);
+});
+
+test('build refuses silence', () => {
+  assert.throws(() => build(decoded(8000, [new Float32Array(8)]), base), /No sound in it/);
+});
