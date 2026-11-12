@@ -3494,6 +3494,14 @@
     MW.storage.init();
     MW.disk.init();
     MW.modland.init();
+    if (MW.libraryPaths) {
+      MW.libraryPaths.init();
+      MW.libraryPaths.restore().then(list => {
+        if (!list.length) return;
+        app.paths = list;
+        if (MW.displays && MW.displays.current === 'list') MW.displays.refresh();
+      }).catch(() => {});
+    }
     let restored = null;
     try {
       restored = await MW.storage.restore();

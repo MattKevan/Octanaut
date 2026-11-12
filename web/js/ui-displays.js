@@ -561,10 +561,17 @@
             if (!window.showDirectoryPicker) return MW.toast('This browser cannot list folders', true);
             try {
               const dir = await window.showDirectoryPicker({ mode: 'read' });
-              paths.push(dir); library.directory = paths.length - 1; library.selected = -1;
+              paths.push(dir);
+              if (MW.libraryPaths) await MW.libraryPaths.add(dir);
+              library.directory = paths.length - 1; library.selected = -1;
               library.entries = await MW.listLibraryEntries(dir); show();
             } catch (e) { if (e && e.name !== 'AbortError') MW.toast('Could not read folder', true); }
-          } else if (action === 'remove') { paths.splice(library.directory, 1); library.directory = -1; library.entries = []; library.selected = -1; show(); }
+          } else if (action === 'remove') {
+            const index = library.directory;
+            paths.splice(index, 1);
+            if (MW.libraryPaths) await MW.libraryPaths.remove(index);
+            library.directory = -1; library.entries = []; library.selected = -1; show();
+          }
           else if (action === 'load') {
             const entry = library.entries[library.selected];
             if (!entry) return;
