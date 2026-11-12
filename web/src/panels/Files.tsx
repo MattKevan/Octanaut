@@ -33,8 +33,8 @@ export function FilesPanel() {
         </R>
         <R>
           <L cls="w-[38px]">DIR:</L>
-          <B act="dir-df0" on={(app.diskVolume || 'DF0:') === 'DF0:'}>DF0:</B>
-          <B act="dir-os" on={app.diskVolume === 'OS'}>OS</B>
+          <B act="dir-df0" title="Save to DF0:" on={(app.diskVolume || 'DF0:') === 'DF0:'}>DF0:</B>
+          <B act="dir-os" title="Save to the Mac" on={app.diskVolume === 'OS'}>OS</B>
           <B act="file-export-song" cls="ml-auto">EXPORT</B>
         </R>
         <R>

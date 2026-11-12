@@ -369,6 +369,9 @@
     renderFiles(host) {
       const req = MW.requester;
       if (!req) return;
+      const focused = document.activeElement;
+      const restoreSearch = !!(focused && focused.id === 'files-search');
+      const caret = restoreSearch ? focused.selectionStart : 0;
       const draw = () => { if (MW.displays.current === 'files') this.renderFiles(host); };
       req._onChange = draw;
       if (req.volume === 'DF0:' && !req._diskLoaded) {
@@ -411,11 +414,26 @@
           <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="up">UP</button>
           <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="refresh">REFRESH</button>
         </div>
+        ${req.volume === 'DH0:' ? `<div class="flex items-stretch gap-2">
+          <input id="files-search" class="h-[24px] min-w-0 flex-1 border border-ink bg-paper px-2 text-[11px] text-ink outline-none" value="${escapeHtml(req.modlandQuery || '')}" placeholder="Search Modland…" autocomplete="off" spellcheck="false">
+          <span class="flex h-[24px] max-w-[40vw] min-w-0 items-center truncate border border-ink bg-black px-2 text-[10px] text-white">${escapeHtml(req.note || '')}</span>
+        </div>` : ''}
         <div class="files-lists min-h-0 flex-1">
           <div class="req-list min-h-0" aria-label="Files">${files || '<div class="req-empty">No files</div>'}</div>
           <div class="req-list min-h-0" aria-label="Folders">${folders || `<div class="req-empty">${req.volume === 'DF0:' ? 'Work disk' : 'No folders'}</div>`}</div>
         </div>
       </div>`;
+      const filesSearch = host.querySelector('#files-search');
+      if (filesSearch) {
+        filesSearch.oninput = () => {
+          req.modlandQuery = filesSearch.value;
+          req.searchModland(filesSearch.value);
+        };
+        if (restoreSearch) {
+          filesSearch.focus();
+          filesSearch.setSelectionRange(caret, caret);
+        }
+      }
       host.querySelectorAll('[data-files]').forEach(b => {
         b.onclick = async () => {
           const act = b.dataset.files;

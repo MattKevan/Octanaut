@@ -2522,6 +2522,7 @@
     dir: null,
     volume: 'DF0:',
     modlandPath: '',
+    modlandQuery: '',
     selected: null,
     note: '',
 
@@ -2554,6 +2555,7 @@
       this.dir = null;
       this.selected = null;
       this.entries = [];
+      this.modlandQuery = '';
       this.note = '';
       if (this.volume === 'DF0:') {
         await this.listDisk();
@@ -2584,11 +2586,14 @@
       }
       try {
         const [files, usage] = await Promise.all([MW.disk.list('DF0:'), MW.disk.usage()]);
+        /* the user may have switched volumes while the read was in flight */
+        if (this.volume !== 'DF0:') return;
         this.entries = files;
         this.diskUsage = usage;
         this.selected = files.length ? 0 : null;
         this.note = `${files.length} file${files.length === 1 ? '' : 's'} on DF0: · ${MW.formatBytes(usage.bytes)}`;
       } catch (err) {
+        if (this.volume !== 'DF0:') return;
         this.entries = [];
         this.selected = null;
         this.note = 'Could not read DF0: ' + err.message;
@@ -2598,8 +2603,10 @@
     },
 
     async listModland(path) {
+      const target = path || '';
       this.volume = 'DH0:';
-      this.modlandPath = path || '';
+      this.modlandPath = target;
+      this.modlandQuery = '';
       this.dir = null;
       this.selected = null;
       this.entries = [];
@@ -2608,12 +2615,14 @@
       try {
         if (!MW.modland) throw new Error('the Modland mount is not loaded');
         await MW.modland.loadIndex();
-        this.entries = MW.modland.list(this.modlandPath);
+        if (this.volume !== 'DH0:' || this.modlandPath !== target) return;
+        this.entries = MW.modland.list(target);
         this.selected = this.entries.length ? 0 : null;
         this.note = `${this.entries.length} ${this.entries.length === 1 ? 'entry' : 'entries'} · ${MW.modland.describe()}`;
         const search = this.el && this.el.querySelector('#req-search');
         if (search) search.value = '';
       } catch (err) {
+        if (this.volume !== 'DH0:' || this.modlandPath !== target) return;
         this.entries = [];
         this.selected = null;
         this.note = 'Modland: ' + err.message;
@@ -2625,6 +2634,7 @@
     searchModland(query) {
       if (!MW.modland || !MW.modland.index) return;
       const text = String(query == null ? '' : query).trim();
+      this.modlandQuery = text;
       if (!text) {
         this.listModland(this.modlandPath);
         return;
@@ -2781,15 +2791,18 @@
 
     async listDir() {
       if (!this.dir) return;
+      const dir = this.dir;
       const out = [];
       try {
-        for await (const [name, handle] of this.dir.entries()) {
+        for await (const [name, handle] of dir.entries()) {
           if (name.startsWith('.')) continue;
           out.push({ name, handle, dir: handle.kind === 'directory' });
         }
       } catch (e) {
+        if (this.volume !== 'OS' || this.dir !== dir) return;
         this.note = 'Could not list this folder: ' + e.message;
       }
+      if (this.volume !== 'OS' || this.dir !== dir) return;
       out.sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1));
       this.entries = out;
       this.selected = null;
