@@ -24,7 +24,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | Keypad MAP2 maps | yes | Track and instrument variants, including all-on/all-off and the extra instrument keys. |
 | Programmable key editor with `x` wildcards | yes | Per-field digit editor, `x` in any field makes it transparent, C/L/R select the definition, and Alt definitions keep their note fixed at `xxx`. A range pick stores the whole range as a group, and Shift+N inserts it. |
 | TRK ON SET / CLR | yes | Sets or clears the track switches. |
-| Block name | yes | Stored in BlockInfo and editable in the Block panel. |
+| Block name | yes | Stored in BlockInfo and edited on the info line under the grid. |
 | Note echo (DIST / MIN) | yes | Range operation; fills empty lines with halved volume commands. |
 | Sample list / MED_Paths | part | Lists loaded instruments and browses user-selected folders; MED_Paths is not implemented. |
 | MIDI message editor and command 10 | part | Edit, send, capture and JSON save; messages are not yet written into MMD1. |
@@ -78,7 +78,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 | Save ST module | yes | 4 tracks, 31 instruments, blocks over 64 lines truncated, effects translated back to MOD. Verified by re-import. |
 | INFO / ICON on save | no | |
 | Delete file | yes | Removes the selected file from `DF0:` or the open OS folder. |
-| Load / save MIDI messages and maps | no | |
+| Load / save MIDI messages and maps | yes | JSON dumps; messages are not written into modules. |
 | Save instrument as raw or IFF | yes | WAV and IFF 8SVX. |
 | Export audio (browser extra) | part | WAV always; AAC through WebCodecs; MP3 where the browser exposes an encoder. |
 
@@ -93,7 +93,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 | Primary tempo 1–240 | yes | |
 | Secondary tempo 1–20 | yes | |
 | LP filter on/off | yes | Real biquad on the master bus. |
-| E1 / E2 / E3 equalisers | yes | E1 is the instrument/note bar graph under the info line, E2 the per-track V.U. meter from mid-height down, E3 the 42-sample oscilloscope hanging off the play line. All three switch off in split channel modes, and a right click outside the block editor toggles them. |
+| E1 / E2 / E3 equalisers | yes | E1 is the instrument/note bar graph under the info line, E2 the per-track V.U. meter from mid-height down, E3 the oscilloscope over the lower third of the editor. Intentional differences from the original: E1 snaps up and falls smoothly, E2 is wider and draws over the text, E3 spans each channel's full width with 2-px runs. All three switch off in split channel modes, and a right click outside the block editor toggles them. |
 | STS (no effects on the first pulse) | yes | |
 | Volume base hex / decimal | yes | Affects command C and D parsing. |
 | Channel modes 4 / 5 / 6 / 7 / 8 | yes | Channel count drives the mixer and the split model. |
@@ -215,7 +215,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 | Feature | Status | Notes |
 |---|---|---|
 | Vertical note display | yes | Editing, block marks, playhead, selection. |
-| Notation editor | part | Grand staff, note entry, signatures, track visibility and ghosting, instrument hide/transposition, five presets and printing are implemented. Rests and exact original engraving remain incomplete. |
+| Notation editor | part | Grand staff, note entry, signatures, track visibility and ghosting, instrument hide/transposition, five presets and printing are implemented. Rests are entry icons rather than engraved gaps; exact original duration engraving still needs comparison. |
 | Synthsound editor | part | Twin waveforms, freehand drawing, range selection and edits, volume, speed, transform and program editing are implemented. Exact original editing semantics for paste and stretch still need comparison. |
 | Sample editor | part | Freehand, RANGE ALL, zoom, buffer operations, sample effects with echo decay, filter/boost averaging and distance, the pixel display, pitch and loop controls are implemented. Exact effect formulas still need comparison with the original. |
 | Sample list | part | Lists loaded instruments and user-selected folders; `MED_Paths` is not supported. |
@@ -247,11 +247,11 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 | Program change per preset | yes | |
 | Note-off suppression | yes | |
 | Reset, panic | yes | |
-| Active sensing, sync, local control | part | Active sensing and 24 PPQN clock out; local control on/off. External sync is not implemented. |
+| Active sensing, sync, local control | yes | Active sensing, 24 PPQN clock out, local control and incoming external clock sync. |
 | MIDI message editor and command 10 | part | Edit, send, capture and JSON save; messages are not yet written into MMD1. |
-| MIDI input map editor | no | |
-| MIDI dump save / load | no | |
-| SEND OUT, SUPPR.N.OFF | no | |
+| MIDI input map editor | yes | 128 rows; each key is a note or a transport/edit function. |
+| MIDI dump save / load | yes | JSON dumps carrying messages and the input map. |
+| SEND OUT, SUPPR.N.OFF | yes | |
 | ALL OFF / RESET mode selectors | part | Panic and reset exist, not the mode selectors. |
 | MIDI input for note entry | yes | Any connected input; notes enter at the cursor when editing, otherwise play the current instrument. Optional velocity into the data column. |
 
@@ -277,9 +277,9 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 The V4 gaps that matter most:
 
 1. **MOD1 without instruments.** `.med` always embeds the samples. The instrument-less variant, which resolves names through MED_Paths, is still absent.
-2. **MIDI messages and maps.** No SysEx message editor, input map editor, external sync, dump or send-out. Basic note out and input work.
+2. **MIDI messages in modules.** Editing, sending, capture, maps and dumps work, but SysEx messages are not written into MMD1.
 3. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
 4. **MIDI data in saved modules.** Commands 10 and 1C work while playing, but MIDI messages are not written into MMD1, so a saved module loses them.
 5. **Editor polish.** Sample/synth range tools and notation print modes.
-6. **Filesystem-adjacent features.** INFO/ICON on save, delete file, absolute instrument names, paths add/remove and the RGB palette editor.
+6. **Filesystem-adjacent features.** INFO/ICON on save, absolute instrument names and paths add/remove; the RGB palette editor is only partly there.
 7. **MP3 export.** WAV and AAC work without extra code; MP3 waits for a browser encoder or a bundled one.

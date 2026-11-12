@@ -198,3 +198,26 @@ test('shift-clicking the active volume base does not rewrite anything', () => {
   mw.setVolumeBase(1, true);
   assert.equal(a.song.blocks[0].rows[0][0].dat, 0x28);
 });
+
+test('the module size is encoded once after a change, not on every status update', () => {
+  /* immediate timers so the deferred encode can be observed */
+  const mw = runtime(['store', 'engine', 'synth', 'writer', 'app'], {
+    setTimeout: (fn) => fn(),
+    clearTimeout() {}
+  });
+  const a = mw.app;
+  let calls = 0;
+  const real = mw.moduleBytes;
+  mw.moduleBytes = (...args) => { calls++; return real(...args); };
+  a._moduleBytes = 99;
+  a._modulePending = false;
+  mw.touchStatus('play', ['song']);
+  assert.equal(calls, 0, 'no encode while the cached size is valid');
+  assert.equal(a._moduleBytes, 99);
+  mw.refreshAll();
+  assert.equal(calls, 1, 'the invalidated size is encoded once');
+  assert.ok(a._moduleBytes > 0 && a._moduleBytes !== 99, 'the cache is replaced by the real size');
+  mw.touchStatus('play', ['song']);
+  assert.equal(calls, 1, 'playing does not re-encode it');
+});
+

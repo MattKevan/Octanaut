@@ -7,12 +7,14 @@ const vm = require('node:vm');
 module.exports = function runtime(scripts = [], globals = {}) {
   const element = { textContent: '', style: {}, children: [], classList: { toggle() {}, add() {}, remove() {} } };
   const context = vm.createContext({
-    ...globals, console, Float32Array, Uint8Array, ArrayBuffer, DataView, Blob, navigator: {},
+    console, Float32Array, Uint8Array, ArrayBuffer, DataView, Blob, navigator: {},
     setTimeout() {}, clearTimeout() {}, setInterval() {}, clearInterval() {},
     document: {
       readyState: 'loading', addEventListener() {}, querySelectorAll() { return []; },
       getElementById() { return element; }
-    }
+    },
+    /* globals last so a test can supply, say, immediate timers */
+    ...globals
   });
   for (const name of ['core', ...scripts]) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../web/js', name + '.js'), 'utf8'), context);
