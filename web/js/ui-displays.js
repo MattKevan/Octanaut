@@ -3,6 +3,35 @@
   'use strict';
   const MW = global.MW;
   const library = { directory: -1, entries: [], selected: -1 };
+
+  /* Write one instrument into a File System Access directory as 8SVX.
+     The helper only uses getFileHandle/createWritable, so tests can pass a
+     fake directory. */
+  MW.writeInstrumentFile = async function (dir, name, inst) {
+    const bytes = MW.write8SVX(inst);
+    const handle = await dir.getFileHandle(name, { create: true });
+    const writable = await handle.createWritable();
+    try {
+      await writable.write(bytes);
+    } finally {
+      await writable.close();
+    }
+    return bytes.byteLength || bytes.length || 0;
+  };
+
+  /* SAVE ALL: keep going when one file fails and report both counts. */
+  MW.saveAllInstruments = async function (dir, song) {
+    let saved = 0, failed = 0;
+    for (const entry of MW.instrumentSaveList(song)) {
+      try {
+        await MW.writeInstrumentFile(dir, entry.name, entry.inst);
+        saved++;
+      } catch (err) {
+        failed++;
+      }
+    }
+    return { saved, failed };
+  };
   MW.listLibraryEntries = async function (dir) {
     const files = [];
     for await (const [name, handle] of dir.entries()) {
@@ -486,6 +515,8 @@
             <button data-library-action="remove" ${library.directory < 0 ? 'disabled' : ''}>REM DIR</button>
             <button data-library-action="load" ${library.directory < 0 || library.selected < 0 ? 'disabled' : ''}>LOAD</button>
             <button data-library-action="save">SAVE IFF</button>
+            <button data-library-action="save-inst" ${library.directory < 0 ? 'disabled' : ''}>SAVE INST</button>
+            <button data-library-action="save-all" ${library.directory < 0 ? 'disabled' : ''}>SAVE ALL</button>
             <button data-library-action="browse">BROWSE</button>
           </div>
           <div class="library-list" aria-label="Directories"><button type="button" class="library-item${library.directory < 0 ? ' active' : ''}" data-library-dir="-1">SONG INSTRUMENTS</button>${folders}</div>
@@ -534,7 +565,20 @@
               MW.toast('Loaded ' + file.name + ' into ' + MW.insName(app.currentIns));
             } catch (e) { MW.toast('Could not read that instrument', true); }
           } else if (action === 'save') MW.runAction('file-save-iff');
-          else if (action === 'browse') MW.runAction('ins-open');
+          else if (action === 'save-inst') {
+            const inst = app.song.instruments[app.currentIns - 1];
+            if (!inst || !inst.data) return MW.toast('This slot has no sample to save', true);
+            const name = MW.instFileName(inst, app.currentIns);
+            try {
+              await MW.writeInstrumentFile(paths[library.directory], name, inst);
+              MW.toast('Saved ' + name);
+            } catch (e) { MW.toast('Could not save that instrument', true); }
+          } else if (action === 'save-all') {
+            try {
+              const r = await MW.saveAllInstruments(paths[library.directory], app.song);
+              MW.toast(`Saved ${r.saved} instrument${r.saved === 1 ? '' : 's'}` + (r.failed ? `, ${r.failed} failed` : ''));
+            } catch (e) { MW.toast('Could not save the instruments', true); }
+          } else if (action === 'browse') MW.runAction('ins-open');
         };
       });
     },
