@@ -33,11 +33,13 @@ export function FilesPanel() {
         </R>
         <R>
           <L cls="w-[38px]">DIR:</L>
-          <span class="flex h-[24px] flex-1 items-center border border-ink bg-paper px-1 text-[10px] opacity-60">browser</span>
+          <B act="dir-df0" on={(app.diskVolume || 'DF0:') === 'DF0:'}>DF0:</B>
+          <B act="dir-os" on={app.diskVolume === 'OS'}>OS</B>
+          <B act="file-export-song" cls="ml-auto">EXPORT</B>
         </R>
         <R>
           <L cls="w-[38px]">FILE:</L>
-          <T value={app.song.name || ''} maxlength={40} onInput={(v: string) => { app.song.name = v; }} cls="flex-1" />
+          <T value={app.song.name || ''} maxlength={40} onInput={(v: string) => { app.song.name = v; if (MW.storage) MW.storage.schedule(); }} cls="flex-1" />
         </R>
         <R>
           <L>EXPORT</L>

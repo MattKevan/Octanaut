@@ -22,7 +22,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | Instrument finetune -8..+7 | yes | Panel, engine and MMD1 expdata. MMD0 cannot store it. |
 | Last occupied instrument (`>|<`) | yes | Scans down from 1V. |
 | Keypad MAP2 maps | yes | Track and instrument variants, including all-on/all-off and the extra instrument keys. |
-| Programmable key editor with `x` wildcards | yes | Per-field digit editor, `x` in any field makes it transparent, C/L/R select the definition, and Alt definitions keep their note fixed at `xxx`. Range pick still stores one note. |
+| Programmable key editor with `x` wildcards | yes | Per-field digit editor, `x` in any field makes it transparent, C/L/R select the definition, and Alt definitions keep their note fixed at `xxx`. A range pick stores the whole range as a group, and Shift+N inserts it. |
 | TRK ON SET / CLR | yes | Sets or clears the track switches. |
 | Block name | yes | Stored in BlockInfo and editable in the Block panel. |
 | Note echo (DIST / MIN) | yes | Range operation; fills empty lines with halved volume commands. |
@@ -41,7 +41,7 @@ Features V4 adds to the V2 baseline, and where Octanaut stands. This is the summ
 | MIDI commands 0A, 0C, 0D | yes | Poly aftertouch, velocity and channel pressure. |
 | FF8 / FF9 filter | yes | Sets the filter flag and the biquad. |
 | INFO / ICON on save | no | |
-| Delete file | no | Browser leaves this to the OS. |
+| Delete file | yes | Deletes from the `DF0:` work disk; an OS folder still uses the File System Access API. |
 | Absolute instrument names / paths | no | |
 | Palette RGB editor | part | Four fixed palettes. |
 
@@ -54,7 +54,7 @@ The panels follow the V4 layouts. These controls are disabled because they map t
 
 These are implemented with browser equivalents rather than the original file formats:
 
-- **Files:** DEL FILE uses the File System Access API. Messages and maps save and load as JSON.
+- **Files:** `DF0:` is a writable work disk in IndexedDB. SAVE writes real module bytes there; EXPORT downloads to the Mac; an OS folder still uses the File System Access API. DEL FILE removes from `DF0:` or the chosen folder. `DH0:` is a read-only Modland mount: it browses the bundled OctaMED index, downloads a module only when chosen, validates it, and caches it locally. Messages and maps save and load as JSON. The working song and editor state autosave to IndexedDB, so a reload restores what was last on screen.
 - **Misc:** the RGB palette edits the custom track colour. Paths use directory handles. QUIT closes the tab where the browser allows it, and CONFIRM toggles save prompts.
 - **MIDI:** KEY-UP is a transport toggle. SysEx messages save as JSON, not inside MMD1.
 
@@ -66,7 +66,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 
 | Feature | Status | Notes |
 |---|---|---|
-| File requester with Currdir / Devices / Assigns | yes | Drawn in the app's own style, driven by the File System Access API where the browser has it (folder listing, parent, double-click). Elsewhere Browse feeds the same list from the native picker. Devices and assigns do not exist in a browser. |
+| File requester with Currdir / Devices / Assigns | yes | Drawn in the app's own style, with `DF0:`, `DH0:` and an OS folder as volumes. `DF0:` lists instantly from IndexedDB; `DH0:` is the read-only Modland archive, searched from the bundled OctaMED index; the OS volume uses the File System Access API where the browser has it, and Browse feeds the same list from the native picker elsewhere. |
 | Load song (MED 1.12 – 3.20, OctaMED 1–4, MMD0/1, ST modules) | yes | MMD0/1/2/3 and packed MMDC, MED4, MED2, ProTracker, plus MSH and 8SVX instruments. MED 2.00 (`MED` + v3) is rejected with a message. |
 | Load instrument (raw, IFF, synth, hybrid) | yes | |
 | Load ST module | yes | Folded into Load; effects converted. |
@@ -77,7 +77,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 | Save module (MMD0) | yes | Full writer, 7,680-cell round trip verified. |
 | Save ST module | yes | 4 tracks, 31 instruments, blocks over 64 lines truncated, effects translated back to MOD. Verified by re-import. |
 | INFO / ICON on save | no | |
-| Delete file | no | Use the OS. |
+| Delete file | yes | Removes the selected file from `DF0:` or the open OS folder. |
 | Load / save MIDI messages and maps | no | |
 | Save instrument as raw or IFF | yes | WAV and IFF 8SVX. |
 | Export audio (browser extra) | part | WAV always; AAC through WebCodecs; MP3 where the browser exposes an encoder. |
@@ -280,6 +280,6 @@ The V4 gaps that matter most:
 2. **MIDI messages and maps.** No SysEx message editor, input map editor, external sync, dump or send-out. Basic note out and input work.
 3. **Sample list and MED_Paths.** The list shows loaded instruments; it cannot browse a library, add paths or resolve missing instrument names.
 4. **MIDI data in saved modules.** Commands 10 and 1C work while playing, but MIDI messages are not written into MMD1, so a saved module loses them.
-5. **Editor polish.** Programmable-key group entry, sample/synth range tools and notation print modes.
+5. **Editor polish.** Sample/synth range tools and notation print modes.
 6. **Filesystem-adjacent features.** INFO/ICON on save, delete file, absolute instrument names, paths add/remove and the RGB palette editor.
 7. **MP3 export.** WAV and AAC work without extra code; MP3 waits for a browser encoder or a bundled one.

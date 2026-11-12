@@ -227,6 +227,9 @@ app/
     fonts/            Departure Mono and Pixel Operator
     js/core.js        model, note tables, tempo conversion
     js/store.js       app state, patch/commit and subscriptions
+    js/storage.js     IndexedDB autosave and restore
+    js/disk.js        DF0: work disk in IndexedDB
+    js/modland.js     DH0: Modland index, fetch and cache
     js/loaders.js     MMD0-3, MMDC, MED4, MED2, MOD, MSH, 8SVX
     js/lha.js         LHA/LZH archives, levels 0-2, -lh0- to -lh7-
     js/writer.js      MMD0 and MMD1 writers

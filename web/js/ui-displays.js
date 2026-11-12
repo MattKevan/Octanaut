@@ -371,20 +371,39 @@
       if (!req) return;
       const draw = () => { if (MW.displays.current === 'files') this.renderFiles(host); };
       req._onChange = draw;
-      const path = req.dir ? req.dir.name : (req.title || 'no folder chosen');
+      if (req.volume === 'DF0:' && !req._diskLoaded) {
+        req._diskLoaded = true;
+        req.listDisk();
+      }
+      if (req.volume === 'DH0:' && !req._modlandLoaded) {
+        req._modlandLoaded = true;
+        req.listModland(req.modlandPath || '');
+      }
+      const path = req.volume === 'DF0:'
+        ? 'DF0: Work'
+        : req.volume === 'DH0:'
+          ? 'DH0: Modland' + (req.modlandPath ? ' / ' + req.modlandPath : '')
+          : (req.dir ? req.dir.name : (req.title || 'no folder chosen'));
       const entries = req.entries || [];
+      const sizeOf = e => e.dir ? '<dir>'
+        : (e.remote ? 'modland'
+          : e.size != null ? e.size : e.data ? e.data.length : e.file ? e.file.size : '');
       const rowsFor = (directories) => entries.map((e, i) => {
         if (!!e.dir !== directories) return '';
-        const size = e.dir ? '<dir>' : (e.data ? e.data.length : e.file ? e.file.size : '');
         return `<button class="req-row${e.dir ? ' dir' : ''}" data-file="${i}">
-          <span>${escapeHtml(e.name)}</span><span class="float-right opacity-60">${size}</span>
+          <span>${escapeHtml(e.name)}</span><span class="float-right opacity-60">${sizeOf(e)}</span>
         </button>`;
       }).join('');
       const files = rowsFor(false);
       const folders = rowsFor(true);
+      const volumeBtn = (act, label, on) =>
+        `<button class="flex h-[24px] items-center border border-ink px-2 text-[11px] ${on ? 'bg-ink text-paper' : 'bg-paper text-ink'}" data-files="${act}">${label}</button>`;
       host.innerHTML = `<div class="pane files-pane flex h-full flex-col gap-1">
         <div class="flex items-stretch gap-2">
           <span class="flex h-[24px] min-w-0 flex-1 items-center border border-ink bg-black px-2 text-[11px] text-white">DIR: ${escapeHtml(path)}</span>
+          ${volumeBtn('df0', 'DF0:', req.volume === 'DF0:')}
+          ${volumeBtn('os', 'OS:', req.volume === 'OS')}
+          ${volumeBtn('dh0', 'DH0:', req.volume === 'DH0:')}
           <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="folder">FOLDER</button>
           <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="browse">BROWSE</button>
           <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[11px] text-ink" data-files="up">UP</button>
@@ -392,17 +411,24 @@
         </div>
         <div class="files-lists min-h-0 flex-1">
           <div class="req-list min-h-0" aria-label="Files">${files || '<div class="req-empty">No files</div>'}</div>
-          <div class="req-list min-h-0" aria-label="Folders">${folders || '<div class="req-empty">No folders</div>'}</div>
+          <div class="req-list min-h-0" aria-label="Folders">${folders || `<div class="req-empty">${req.volume === 'DF0:' ? 'Work disk' : 'No folders'}</div>`}</div>
         </div>
       </div>`;
       host.querySelectorAll('[data-files]').forEach(b => {
         b.onclick = async () => {
           const act = b.dataset.files;
           try {
-            if (act === 'folder') await req.pickDir();
+            if (act === 'df0') { req._diskLoaded = true; await req.setVolume('DF0:'); }
+            else if (act === 'os') await req.setVolume('OS');
+            else if (act === 'dh0') { req._modlandLoaded = true; await req.setVolume('DH0:'); }
+            else if (act === 'folder') await req.pickDir();
             else if (act === 'browse') req.browse();
             else if (act === 'up') await req.up();
-            else if (act === 'refresh') await req.listDir();
+            else if (act === 'refresh') {
+              if (req.volume === 'DF0:') await req.listDisk();
+              else if (req.volume === 'DH0:') await req.listModland(req.modlandPath || '');
+              else await req.listDir();
+            }
           } catch (e) { /* requester reports its own errors */ }
           draw();
         };

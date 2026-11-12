@@ -6,7 +6,7 @@
 <title>Octanaut — eight channel tracker</title>
 <link rel="preload" href="fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/PixelOperatorMonoHB8.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="stylesheet" href="css/app.css?v=154">
+<link rel="stylesheet" href="css/app.css?v=157">
 </head>
 <body>
 
@@ -87,6 +87,7 @@
       <span id="display-meta" class="sr-only"></span>
       <input id="st-blockname" maxlength="40" aria-label="Block name" placeholder="block name" class="h-[22px] w-[190px] min-w-0 border border-ink bg-paper px-1 text-[13px] leading-none text-ink outline-none">
       <input id="st-songname" maxlength="40" aria-label="Song name" placeholder="song name" class="h-[22px] w-[170px] min-w-0 border border-ink bg-paper px-1 text-[13px] leading-none text-ink outline-none">
+      <span id="save-state" class="shrink-0 px-1 text-[11px] leading-none opacity-60" title="Autosave state"></span>
       <button class="flex h-[24px] items-center border border-ink bg-paper px-2 text-[14px] leading-none active:bg-ink active:text-paper" id="btn-nrm" title="Playback speed: normal, 2/3 or 1/2">NRM</button>
     </div>
     <div class="monitor mt-1.5 h-[117px] border border-ink bg-paper p-1.5"><canvas class="block h-full w-full" id="meters"></canvas></div>
@@ -98,17 +99,20 @@
 
 <div id="toast" class="toast" role="status"></div>
 
-<script src="js/core.js?v=154"></script>
-<script src="js/store.js?v=154"></script>
-<script src="js/loaders.js?v=154"></script>
-<script src="js/lha.js?v=154"></script>
-<script src="js/writer.js?v=154"></script>
-<script src="js/synth.js?v=154"></script>
-<script src="js/engine.js?v=154"></script>
-<script src="js/audio-export.js?v=154"></script>
-<script src="js/ui-grid.js?v=154"></script>
-<script src="js/ui-displays.js?v=154"></script>
-<script src="js/panels.js?v=154"></script>
-<script src="js/app.js?v=154"></script>
+<script src="js/core.js?v=157"></script>
+<script src="js/store.js?v=157"></script>
+<script src="js/storage.js?v=157"></script>
+<script src="js/disk.js?v=157"></script>
+<script src="js/modland.js?v=157"></script>
+<script src="js/loaders.js?v=157"></script>
+<script src="js/lha.js?v=157"></script>
+<script src="js/writer.js?v=157"></script>
+<script src="js/synth.js?v=157"></script>
+<script src="js/engine.js?v=157"></script>
+<script src="js/audio-export.js?v=157"></script>
+<script src="js/ui-grid.js?v=157"></script>
+<script src="js/ui-displays.js?v=157"></script>
+<script src="js/panels.js?v=157"></script>
+<script src="js/app.js?v=157"></script>
 </body>
 </html>

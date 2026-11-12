@@ -49,6 +49,7 @@
     clipRange: null,
     saveFormat: 'mmd1',
     saveInfo: true,
+    diskVolume: 'DF0:',
     volTrack: 0,
     padMap2: false,
     midiAllOff: 'cc',
@@ -85,6 +86,7 @@
   /* ------------------------------------------------------------ refresh */
 
   let prefTimer = 0;
+  let booting = true;
   function touchPrefs() {
     clearTimeout(prefTimer);
     prefTimer = setTimeout(() => prefs.save(), 600);
@@ -99,6 +101,7 @@
     MW.displays.refresh();
     if (MW.renderSeqBox) MW.renderSeqBox();
     MW.touchStatus('refresh');
+    if (!booting && MW.storage) MW.storage.schedule();
   }
   MW.refreshAll = refreshAll;
 
@@ -1121,9 +1124,11 @@
 
   function pickProgBuffer() {
     if (clipboard.kind !== 'range' || !clipboard.tracks.length) return MW.toast('Copy a range first', true);
-    const first = clipboard.tracks[0][0];
+    const track = clipboard.tracks[0];
+    const first = track[0];
     const note = app.progAlt === 'C' ? first.note : null;
-    setCurrentDef({ note, ins: first.ins, cmd: first.cmd, dat: first.dat });
+    const cells = track.slice(0, 16).map(c => ({ note: c.note || 0, ins: c.ins || 0, cmd: c.cmd || 0, dat: c.dat || 0 }));
+    setCurrentDef({ note, ins: first.ins, cmd: first.cmd, dat: first.dat, cells });
     MW.toast(defName() + ' picked from the buffer');
     MW.panels.refresh();
   }
@@ -1548,7 +1553,7 @@
 
   /* ------------------------------------------------------------ file io */
 
-  function handleFileBuffer(buffer, name) {
+  function handleFileBuffer(buffer, name, source) {
     let bytes;
     try {
       bytes = new Uint8Array(buffer);
@@ -1572,12 +1577,12 @@
       }
       if (mods.length === 1) {
         MW.toast('Extracted ' + mods[0].name + ' from ' + (name || 'the archive'));
-        return openBuffer(mods[0].data.slice().buffer, mods[0].name.split('/').pop());
+        return openBuffer(mods[0].data.slice().buffer, mods[0].name.split('/').pop(), source);
       }
       return MW.requester.openEntries(mods, name || 'Archive');
     }
 
-    openBuffer(buffer, name);
+    openBuffer(buffer, name, source);
   }
   MW.handleFileBuffer = handleFileBuffer;
 
@@ -1606,7 +1611,39 @@
     refreshAll();
   }
 
-  function openBuffer(buffer, name) {
+  /* Bring back an autosaved snapshot. Mirrors replaceModule but keeps the
+     song list, the active song and the cursor instead of resetting them. */
+  function applyRestored(snap) {
+    const list = snap.songList;
+    const root = list[0];
+    const shared = root.instruments;
+    list.forEach(part => { part.instruments = shared; });
+    root.multis = list.slice(1);
+
+    app.songList = list;
+    app.songIndex = MW.clamp(snap.songIndex || 0, 0, list.length - 1);
+    app.song = list[app.songIndex] || root;
+
+    const cursor = snap.cursor || {};
+    const blockIndex = MW.clamp(cursor.block || 0, 0, Math.max(0, app.song.blocks.length - 1));
+    const block = app.song.blocks[blockIndex] || app.song.blocks[0];
+    app.cursor = {
+      block: app.song.blocks.indexOf(block),
+      line: MW.clamp(cursor.line || 0, 0, Math.max(0, block.lines - 1)),
+      track: MW.clamp(cursor.track || 0, 0, Math.max(0, block.tracks - 1)),
+      field: MW.clamp(cursor.field || 0, 0, 3),
+      seq: MW.clamp(cursor.seq || 0, 0, Math.max(0, app.song.playseq.length - 1))
+    };
+    app.currentIns = MW.clamp(snap.currentIns || 1, 1, 63);
+    Object.assign(app, snap.workspace || {});
+    app.mutedTracks = Array.from({ length: 16 }, (_, i) => !!(app.mutedTracks && app.mutedTracks[i]));
+    app.selectedTracks = Array.from({ length: 16 }, (_, i) => !!(app.selectedTracks && app.selectedTracks[i]));
+    app.seq = app.cursor.seq;
+    MW.lastSeq = -1;
+    if (MW.grid) MW.grid.lastPlayLine = -1;
+  }
+
+  function openBuffer(buffer, name, source) {
     let song;
     try {
       song = MW.loadModule(buffer);
@@ -1618,6 +1655,7 @@
 
     if (song.channels > 16) song.channels = 16;
     song.name = name ? name.replace(/\.[^.]+$/, '') : song.name;
+    if (source) song.annotation = song.annotation ? song.annotation + '\n' + source : source;
     replaceModule(song);
     MW.panels.show('play');
 
@@ -1627,6 +1665,9 @@
     if (missing) MW.toast(`Loaded ${song.format}. ${missing} instrument slots reference external samples.`);
     else MW.toast(`Loaded ${song.format}: ${song.blocks.length} blocks, ${song.channels} tracks`);
     MW.emit('song', song);
+    /* a freshly loaded module should survive a reload even if it happens
+       inside the autosave debounce */
+    if (MW.storage) MW.storage.flush();
   }
   MW.missing = function (name) {
     MW.toast((name || 'That feature') + ' is not implemented yet', true);
@@ -1697,8 +1738,16 @@
   async function deleteFile() {
     const req = MW.requester;
     const entry = req && req.entries && req.entries[req.selected];
-    if (!req || !req.dir || !entry || entry.dir) return MW.toast('Pick a file in a folder first', true);
+    if (!req || !entry || entry.dir) return MW.toast('Pick a file first', true);
     try {
+      if (entry.remote) return MW.toast('DH0: is read-only — load it, then SAVE SONG to DF0:', true);
+      if (entry.volume) {
+        await MW.disk.remove(entry.volume, entry.name);
+        await req.listDisk();
+        MW.toast('Deleted ' + entry.name + ' from ' + entry.volume);
+        return;
+      }
+      if (!req.dir) return MW.toast('Pick a file in a folder first', true);
       await req.dir.removeEntry(entry.name);
       await req.listDir();
       MW.toast('Deleted ' + entry.name);
@@ -1707,55 +1756,94 @@
     }
   }
 
-  function saveModule(format) {
+  function buildModule(format) {
+    if (app.notaPresetReady && MW.captureNotation) {
+      app.song.notation = app.notaSave ? MW.captureNotation(app) : null;
+    }
+    const chosen = format === 'st' ? 'st'
+      : format === 0 ? 'mmd0'
+        : format === 1 ? 'mmd1'
+          : (app.saveFormat || 'mmd1');
+    if (chosen === 'st') {
+      return {
+        buf: MW.writeMOD(app.song),
+        ext: '.mod',
+        label: 'ProTracker module (4 tracks, 31 instruments)',
+        others: []
+      };
+    }
+
+    const noInstr = chosen === 'mmd1n';
+    const mmd1 = chosen !== 'mmd0';
+    const list = (app.songList && app.songList.length > 1) ? app.songList : [app.song];
+    let others = [];
+    if (list.length > 1) {
+      const all = typeof confirm === 'function'
+        ? confirm(`This module holds ${list.length} songs. Save all of them? Cancel saves only the current song.`)
+        : true;
+      others = all ? list.filter(s => s !== app.song) : [];
+    }
+    const buf = mmd1
+      ? MW.writeMMD1(app.song, others, { instruments: !noInstr })
+      : MW.writeMMD0(app.song, others);
+    return {
+      buf,
+      ext: mmd1 ? '.med' : '.mmd0',
+      label: (mmd1 ? (noInstr ? 'MMD1 (.med, no instruments)' : 'MMD1 (.med)') : 'MMD0') +
+        (others.length ? ` with ${others.length + 1} songs` : ''),
+      others
+    };
+  }
+
+  function fileNameFor(ext) {
+    if (MW.diskFileName) return MW.diskFileName(app.song.name, ext);
+    const base = String(app.song.name || 'untitled').replace(/[\\/:*?"<>|]/g, '_').trim() || 'untitled';
+    return base + ext;
+  }
+
+  function downloadBytes(buf, name) {
+    const blob = new Blob([buf], { type: 'application/octet-stream' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  async function saveModule(format) {
     try {
-      if (app.notaPresetReady && MW.captureNotation) app.song.notation = app.notaSave ? MW.captureNotation(app) : null;
-      const chosen = format === 0 ? 'mmd0' : format === 1 ? 'mmd1' : (app.saveFormat || 'mmd1');
-      if (chosen === 'st') { saveST(); return; }
-      const noInstr = chosen === 'mmd1n';
-      const mmd1 = chosen !== 'mmd0';
-      const list = (app.songList && app.songList.length > 1)
-        ? app.songList
-        : [app.song];
-      let others = [];
-      if (list.length > 1) {
-        const all = typeof confirm === 'function'
-          ? confirm(`This module holds ${list.length} songs. Save all of them? Cancel saves only the current song.`)
-          : true;
-        others = all ? list.filter(s => s !== app.song) : [];
+      const built = buildModule(format);
+      const name = fileNameFor(built.ext);
+      if (app.diskVolume !== 'OS' && MW.disk && MW.disk.available) {
+        await MW.disk.write('DF0:', name, built.buf, built.ext);
+        MW.toast(`Saved ${name} to DF0: — ${built.label}`);
+        if (MW.displays && MW.displays.current === 'files' && MW.requester) MW.requester.listDisk();
+      } else {
+        downloadBytes(built.buf, name);
+        MW.toast('Exported ' + name);
       }
-      const buf = mmd1
-        ? MW.writeMMD1(app.song, others, { instruments: !noInstr })
-        : MW.writeMMD0(app.song, others);
-      const blob = new Blob([buf], { type: 'application/octet-stream' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (app.song.name || 'untitled') + (mmd1 ? '.med' : '.mmd0');
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      MW.toast('Saved ' + (mmd1 ? (noInstr ? 'MMD1 (.med, no instruments)' : 'MMD1 (.med)') : 'MMD0') + (others.length ? ` with ${others.length + 1} songs` : ''));
+      return name;
     } catch (err) {
       MW.toast('Save failed: ' + err.message, true);
+      return null;
     }
   }
   MW.saveModule = () => saveModule(1);
   MW.saveMMD0 = () => saveModule(0);
 
-
-  function saveST() {
+  async function exportModule(format) {
     try {
-      const buf = MW.writeMOD(app.song);
-      const blob = new Blob([buf], { type: 'application/octet-stream' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (app.song.name || 'untitled') + '.mod';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      MW.toast('Saved ProTracker module: 4 tracks, 31 instruments, effects converted');
+      const built = buildModule(format);
+      const name = fileNameFor(built.ext);
+      downloadBytes(built.buf, name);
+      MW.toast('Exported ' + name + ' to the Mac');
     } catch (err) {
       MW.toast('Export failed: ' + err.message, true);
     }
   }
+  MW.exportModule = exportModule;
+
+  function saveST() { return saveModule('st'); }
 
   /* ------------------------------------------------------------ sampling */
 
@@ -1963,6 +2051,33 @@
     }
   };
 
+  /* ------------------------------------------------------------ autosave */
+
+  function saveClock(ts) {
+    const d = new Date(ts || Date.now());
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function renderSaveState(ev) {
+    const el = document.getElementById('save-state');
+    if (!el) return;
+    const state = ev && ev.state;
+    const bad = state === 'error' || state === 'quota';
+    el.classList.toggle('err', bad);
+    if (state === 'saving') el.textContent = 'SAVING';
+    else if (state === 'saved') el.textContent = 'SAVED ' + saveClock((ev && ev.savedAt) || MW.storage.savedAt);
+    else if (state === 'quota') el.textContent = 'DISK FULL';
+    else if (state === 'error') el.textContent = 'SAVE ERR';
+    else if (state === 'off') el.textContent = 'AUTOSAVE OFF';
+    else el.textContent = '';
+    el.title = state === 'quota'
+      ? 'Browser storage is full — export the song to the Mac'
+      : state === 'off'
+        ? 'This browser will not keep the song between reloads'
+        : 'The working song is saved in this browser';
+  }
+  MW.on('save', renderSaveState);
+
   /* ------------------------------------------------------------ demo song */
 
   function buildDemo() {
@@ -2088,6 +2203,7 @@
   function setVolumeBase(hex, rewrite) {
     if (rewrite && !!(app.song.flags.volhex) !== !!hex) {
       const n = MW.rewriteVolumeCommands(app.song, !!hex);
+      MW.grid.render();
       MW.toast(`${hex ? 'HEX' : 'DEC'}: rewrote ${n} volume command${n === 1 ? '' : 's'}`);
     } else {
       app.song.flags.volhex = hex ? 1 : 0;
@@ -2105,7 +2221,10 @@
       'edit-space': () => { app.spaceAsDel = !app.spaceAsDel; MW.touchStatus('space', ['spaceAsDel']); },
       'edit-chord': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
       'chord-toggle': () => { app.chordMode = !app.chordMode; MW.panels.refresh(); MW.touchStatus('chord', ['chordMode']); },
-      'file-open': () => MW.requester.open(),
+      'file-open': () => MW.requester.open({ volume: app.diskVolume }),
+      'dir-df0': () => { app.diskVolume = 'DF0:'; MW.panels.refresh(); MW.toast('Saving to DF0:'); },
+      'dir-os': () => { app.diskVolume = 'OS'; MW.panels.refresh(); MW.toast('Saving to the Mac'); },
+      'file-export-song': () => exportModule(),
       'file-info': () => { app.saveInfo = !app.saveInfo; MW.panels.refresh(); },
       'fmt-mmd1': () => { app.saveFormat = 'mmd1'; MW.panels.refresh(); },
       'fmt-mmd1n': () => { app.saveFormat = 'mmd1n'; MW.panels.refresh(); },
@@ -2398,34 +2517,118 @@
     el: null,
     entries: [],
     dir: null,
+    volume: 'DF0:',
+    modlandPath: '',
     selected: null,
     note: '',
 
-    open() {
+    open(options) {
+      const opts = options || {};
       this.entries = [];
       this.dir = null;
-      this.title = '';
+      this.title = opts.title || '';
       this.selected = null;
       this.note = '';
+      this.volume = opts.volume || (MW.disk && MW.disk.defaultVolume) || 'DF0:';
       this.build();
-      this.render();
-      if (window.showDirectoryPicker) {
-        this.pickDir();
-      } else {
-        this.note = 'This browser does not let a page list folders. Use Browse to pick files.';
-        this.render();
-      }
+      this.setVolume(this.volume);
     },
 
     /* entries lifted out of an archive */
     openEntries(list, title) {
       this.entries = list;
       this.dir = null;
+      this.volume = null;
       this.title = title || '';
       this.selected = 0;
       this.build(title || 'Choose a module');
       this.note = list.length + ' module' + (list.length === 1 ? '' : 's') + ' in the archive';
       this.render();
+    },
+
+    async setVolume(volume) {
+      this.volume = volume || 'DF0:';
+      this.dir = null;
+      this.selected = null;
+      this.entries = [];
+      this.note = '';
+      if (this.volume === 'DF0:') {
+        await this.listDisk();
+        return;
+      }
+      if (this.volume === 'DH0:') {
+        this.modlandPath = '';
+        await this.listModland('');
+        return;
+      }
+      this.volume = 'OS';
+      if (window.showDirectoryPicker) {
+        await this.pickDir();
+      } else {
+        this.note = 'This browser does not let a page list folders. Use Browse to pick files.';
+        this.render();
+      }
+    },
+
+    async listDisk() {
+      if (!MW.disk || !MW.disk.available) {
+        this.entries = [];
+        this.selected = null;
+        this.note = 'DF0: is not available in this browser';
+        this.render();
+        if (this._onChange) this._onChange();
+        return;
+      }
+      try {
+        this.entries = await MW.disk.list('DF0:');
+        this.selected = this.entries.length ? 0 : null;
+        this.note = `${this.entries.length} file${this.entries.length === 1 ? '' : 's'} on DF0:`;
+      } catch (err) {
+        this.entries = [];
+        this.selected = null;
+        this.note = 'Could not read DF0: ' + err.message;
+      }
+      this.render();
+      if (this._onChange) this._onChange();
+    },
+
+    async listModland(path) {
+      this.volume = 'DH0:';
+      this.modlandPath = path || '';
+      this.dir = null;
+      this.selected = null;
+      this.entries = [];
+      this.note = 'Loading the Modland index…';
+      this.render();
+      try {
+        if (!MW.modland) throw new Error('the Modland mount is not loaded');
+        await MW.modland.loadIndex();
+        this.entries = MW.modland.list(this.modlandPath);
+        this.selected = this.entries.length ? 0 : null;
+        this.note = `${this.entries.length} ${this.entries.length === 1 ? 'entry' : 'entries'} · ${MW.modland.describe()}`;
+        const search = this.el && this.el.querySelector('#req-search');
+        if (search) search.value = '';
+      } catch (err) {
+        this.entries = [];
+        this.selected = null;
+        this.note = 'Modland: ' + err.message;
+      }
+      this.render();
+      if (this._onChange) this._onChange();
+    },
+
+    searchModland(query) {
+      if (!MW.modland || !MW.modland.index) return;
+      const text = String(query == null ? '' : query).trim();
+      if (!text) {
+        this.listModland(this.modlandPath);
+        return;
+      }
+      this.entries = MW.modland.search(text, 300);
+      this.selected = this.entries.length ? 0 : null;
+      this.note = `${this.entries.length} match${this.entries.length === 1 ? '' : 'es'} for “${text}”`;
+      this.render();
+      if (this._onChange) this._onChange();
     },
 
     build(title) {
@@ -2436,11 +2639,15 @@
         <div class="req-frame">
           <div class="req-title">${escapeHtml(title || 'Load a module')}</div>
           <div class="req-path" id="req-path">no folder chosen</div>
+          <input id="req-search" class="mb-1 h-[26px] w-full border border-ink bg-paper px-2 text-[12px] leading-none text-ink outline-none" placeholder="Search Modland…" autocomplete="off" spellcheck="false">
           <div class="req-list" id="req-list"></div>
           <div class="req-note" id="req-note"></div>
           <div class="req-buttons">
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-up">Parent</button>
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-browse">Browse…</button>
+            <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-df0" title="Octanaut's work disk">DF0:</button>
+            <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-os" title="A folder on this Mac">OS:</button>
+            <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-dh0" title="Modland archive">DH0:</button>
             <span class="spacer"></span>
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-cancel">Cancel</button>
             <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="req-ok">Load</button>
@@ -2453,6 +2660,14 @@
       el.querySelector('#req-ok').onclick = () => this.choose();
       el.querySelector('#req-browse').onclick = () => this.browse();
       el.querySelector('#req-up').onclick = () => this.up();
+      el.querySelector('#req-df0').onclick = () => this.setVolume('DF0:');
+      el.querySelector('#req-os').onclick = () => this.setVolume('OS');
+      el.querySelector('#req-dh0').onclick = () => this.setVolume('DH0:');
+      const search = el.querySelector('#req-search');
+      search.oninput = () => { if (this.volume === 'DH0:') this.searchModland(search.value); };
+      search.onkeydown = e => {
+        if (e.key === 'Enter' && this.volume === 'DH0:') { e.preventDefault(); this.choose(); }
+      };
       el.addEventListener('mousedown', e => { if (e.target === el) this.close(); });
       document.addEventListener('keydown', this.esc = e => {
         if (e.key === 'Escape' && this.el) { e.stopPropagation(); this.close(); }
@@ -2471,10 +2686,25 @@
       const list = this.el.querySelector('#req-list');
       const note = this.el.querySelector('#req-note');
 
-      path.textContent = this.dir
-        ? this.dir.name
-        : (this.title || (this.entries.length ? 'selected files' : 'no folder chosen'));
+      path.textContent = this.volume === 'DF0:'
+        ? 'DF0: Work'
+        : this.volume === 'DH0:'
+          ? 'DH0: Modland' + (this.modlandPath ? ' / ' + this.modlandPath : '')
+          : this.dir
+            ? this.dir.name
+            : (this.title || (this.entries.length ? 'selected files' : 'no folder chosen'));
       note.textContent = this.note;
+      const df0 = this.el.querySelector('#req-df0');
+      const os = this.el.querySelector('#req-os');
+      const dh0 = this.el.querySelector('#req-dh0');
+      if (df0) df0.classList.toggle('on', this.volume === 'DF0:');
+      if (os) os.classList.toggle('on', this.volume === 'OS');
+      if (dh0) dh0.classList.toggle('on', this.volume === 'DH0:');
+      const search = this.el.querySelector('#req-search');
+      if (search) {
+        search.disabled = this.volume !== 'DH0:';
+        search.placeholder = this.volume === 'DH0:' ? 'Search Modland…' : 'Search (DH0: only)';
+      }
 
       if (!this.entries.length) {
         list.innerHTML = '<div class="req-empty">Nothing here yet.</div>';
@@ -2505,6 +2735,7 @@
     },
 
     async pickDir() {
+      this.volume = 'OS';
       try {
         this.dir = await window.showDirectoryPicker({ mode: 'readwrite' });
         await this.listDir();
@@ -2535,11 +2766,21 @@
     },
 
     async enter(entry) {
+      if (entry.remote) {
+        await this.listModland(entry.path);
+        return;
+      }
       this.dir = entry.handle;
       await this.listDir();
     },
 
     async up() {
+      if (this.volume === 'DH0:') {
+        const parts = String(this.modlandPath || '').split('/').filter(Boolean);
+        parts.pop();
+        await this.listModland(parts.join('/'));
+        return;
+      }
       if (!this.dir || !this.dir.parent) return;
       try {
         const parent = await this.dir.parent();
@@ -2550,6 +2791,8 @@
     },
 
     browse() {
+      this.volume = 'OS';
+      this.dir = null;
       const input = document.createElement('input');
       input.type = 'file';
       input.multiple = true;
@@ -2569,8 +2812,25 @@
       const e = this.entries[this.selected];
       if (!e) return;
       try {
-        if (e.dir) { this.enter(e); return; }
+        if (e.dir) { await this.enter(e); return; }
+        if (e.remote) {
+          this.note = 'Downloading ' + e.name + ' from Modland…';
+          this.render();
+          const got = await MW.modland.fetch(e);
+          this.close();
+          handleFileBuffer(got.bytes.slice().buffer, e.name, 'Modland: ' + e.path);
+          MW.toast((got.cached ? 'Loaded ' : 'Downloaded ') + e.name +
+            (got.cached ? ' from the DH0: cache' : ' from Modland'));
+          return;
+        }
         let buffer, name = e.name;
+        if (e.volume) {
+          const bytes = await MW.disk.read(e.volume, e.name);
+          if (!bytes) throw new Error('that file is no longer on ' + e.volume);
+          this.close();
+          handleFileBuffer(bytes.slice().buffer, e.name);
+          return;
+        }
         if (e.data) {
           buffer = e.data.slice().buffer;
         } else {
@@ -2582,7 +2842,7 @@
         this.close();
         handleFileBuffer(buffer, name.split('/').pop());
       } catch (err) {
-        this.note = 'Could not read that file: ' + err.message;
+        this.note = (e.remote ? 'Modland: ' : 'Could not read that file: ') + err.message;
         this.render();
       }
     }
@@ -3105,10 +3365,25 @@
   }
   MW.loadExample = loadExample;
 
-  function boot() {
+  async function boot() {
     app.song = MW.createSong();
     app.eq = [true, true, true];
     prefs.load();
+
+    MW.storage.paused = true;
+    MW.storage.init();
+    MW.disk.init();
+    MW.modland.init();
+    let restored = null;
+    try {
+      restored = await MW.storage.restore();
+      if (restored) applyRestored(restored);
+    } catch (err) {
+      /* A damaged snapshot must never stop the app from booting. */
+      restored = null;
+      app.song = MW.createSong();
+    }
+
     MW.player.setSong(app.song);
 
     MW.panels.mount(document.getElementById('panel'));
@@ -3132,9 +3407,13 @@
     if (blockNameBox) blockNameBox.addEventListener('input', () => {
       const b = app.song.blocks[app.cursor.block];
       if (b) b.name = blockNameBox.value;
+      if (MW.storage) MW.storage.schedule();
     });
     const songNameBox = document.getElementById('st-songname');
-    if (songNameBox) songNameBox.addEventListener('input', () => { app.song.name = songNameBox.value; });
+    if (songNameBox) songNameBox.addEventListener('input', () => {
+      app.song.name = songNameBox.value;
+      if (MW.storage) MW.storage.schedule();
+    });
 
     const nrm = document.getElementById('btn-nrm');
     if (nrm) {
@@ -3373,8 +3652,10 @@
       return origTrigger.call(this, ch, note, time, cell);
     };
 
-    app.songList = [app.song];
-    app.songIndex = 0;
+    if (!restored) {
+      app.songList = [app.song];
+      app.songIndex = 0;
+    }
     document.body.classList.toggle('dep2', !!app.dep2);
     MW.audio.setFilter(!!app.song.flags.filteron);
 
@@ -3386,8 +3667,13 @@
     });
 
     refreshAll();
-    MW.toast('Loading example song…');
-    loadExample(true);
+    booting = false;
+    MW.storage.paused = false;
+    renderSaveState({ state: MW.storage.state, savedAt: MW.storage.savedAt });
+    if (restored) {
+      MW.toast('Restored ' + (app.song.name || 'last session') + ' — autosaved ' + saveClock(MW.storage.savedAt));
+    }
+    MW.booted = true;
   }
 
   function jumpToSeq() {

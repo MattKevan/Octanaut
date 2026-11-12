@@ -58,6 +58,8 @@ MW.panels = {
   },
   refresh() {
     emit();
+    /* A panel edit may not touch refreshAll, but it is still a song change. */
+    if (MW.storage) MW.storage.schedule();
     if (MW.displays.current === 'midi') {
       const host = document.getElementById('display-body');
       if (host) MW.panels.mountMidi(host);
