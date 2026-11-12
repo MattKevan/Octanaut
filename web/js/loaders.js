@@ -930,6 +930,10 @@
     let pos = 12;
     /** @type {any} */
     let inst = null;
+    /** @type {any} */
+    let header = null;
+    let bodyOff = -1;
+    let bodySize = 0;
     let name = '';
     while (pos + 8 <= end) {
       const id = tag(dv, pos);
@@ -942,27 +946,72 @@
         name = nm.replace(/\0.*$/, '').trim();
       } else if (id === 'VHDR') {
         if (size < 20) throw new Error('Invalid 8SVX voice header');
-        if (u8(dv, body + 15) !== 0) throw new Error('Compressed 8SVX is not supported');
         const oneShot = u32(dv, body);
         const repeat = u32(dv, body + 4);
         const rate = u16(dv, body + 12);
         const octaves = u8(dv, body + 14);
+        const compression = u8(dv, body + 15);
         const vol = u32(dv, body + 16);
+        header = { oneShot, repeat, rate, octaves: octaves || 1, compression };
         inst = MW.createInstrument('sample');
         inst.loop = oneShot;
         inst.looplen = repeat;
         inst.volume = Math.min(64, Math.round((vol / 65536) * 64));
         inst.octaves = octaves || 1;
         inst.c2rate = rate || 8363;
-      } else if (id === 'BODY') {
-        if (!inst) inst = MW.createInstrument('sample');
-        inst.data = pcm8(dv, body, size);
+      } else if (id === 'BODY' && bodyOff < 0) {
+        bodyOff = body;
+        bodySize = size;
       }
       pos = body + size + (size & 1);
     }
-    if (!inst || !inst.data) return null;
+    if (!inst || !header || bodyOff < 0) return null;
+
+    /** @type {Float32Array} */
+    let data;
+    if (header.compression === 0) data = pcm8(dv, bodyOff, bodySize);
+    else if (header.compression === 1) data = unpackFibonacci(dv, bodyOff, bodySize);
+    else throw new Error('Unknown IFF packing');
+
+    if (header.octaves > 1) {
+      const copies = Math.min(7, header.octaves);
+      const base = header.oneShot + header.repeat;
+      const total = (1 << copies) - 1;
+      if (base > 0 && data.length >= base * total) {
+        const shift = copies - 1;
+        const start = base * ((1 << shift) - 1);
+        data = data.slice(start, start + (base << shift));
+        inst.loop = header.oneShot << shift;
+        inst.looplen = header.repeat << shift;
+      } else {
+        inst.importWarning = '8SVX octave copies are short; kept as one';
+      }
+      inst.octaves = 1;
+      inst.importWarning = '8SVX with ' + copies + ' octaves kept as one';
+    }
+
+    inst.data = data;
     inst.name = name || inst.name;
     return inst;
+  }
+
+  /* Fibonacci-delta bodies: a pad byte, the first sample, then one 4-bit step
+     per output sample, high nibble first. */
+  function unpackFibonacci(dv, off, size) {
+    const deltas = [-34, -21, -13, -8, -5, -3, -2, -1, 0, 1, 2, 3, 5, 8, 13, 21];
+    if (size < 2) return new Float32Array(0);
+    const out = [];
+    let sample = dv.getInt8(off + 1);
+    for (let i = 2; i < size; i++) {
+      const byte = dv.getUint8(off + i);
+      for (const nibble of [byte >> 4, byte & 0x0f]) {
+        sample += deltas[nibble];
+        if (sample > 127) sample -= 256;
+        if (sample < -128) sample += 256;
+        out.push(sample / 128);
+      }
+    }
+    return Float32Array.from(out);
   }
 
   /* ------------------------------------------------------------ dispatch */
