@@ -12,6 +12,7 @@
     step: 1,
     advance: 'down',
     spaceAsDel: false,
+    autoSpace: false,
     chordMode: false,
     follow: true,
     hb: false,
@@ -25,9 +26,11 @@
     lastIns: 1,
     altL: { note: null, ins: null, cmd: null, dat: null },
     altR: { note: null, ins: null, cmd: null, dat: null },
+    altHeld: null,
     padMode: 'track',
     playOnNote: false,
     progTarget: 0,
+    progAlt: 'C',
     transposeInstrScope: 'all',
     paletteIndex: 0,
     paletteRGB: { r: 136, g: 136, b: 136 },
@@ -69,7 +72,7 @@
      object itself, so direct reads keep working; a commit tells the
      panels that a slice changed. */
   const store = MW.store = MW.createStore(app);
-  const STATUS_KEYS = ['song', 'cursor', 'currentIns', 'editMode', 'spaceAsDel',
+  const STATUS_KEYS = ['song', 'cursor', 'currentIns', 'editMode', 'spaceAsDel', 'autoSpace',
     'chordMode', 'octave', 'advance', 'mutedTracks', 'songIndex', 'songList', 'seq'];
   MW.statusKeys = STATUS_KEYS;
   /* commit the given slices; with none, repaint the whole status strip */
@@ -104,11 +107,12 @@
     const b = s.blocks[app.cursor.block] || s.blocks[0];
     const seqLen = Math.max(1, s.playseq.length);
 
-    el('st-seq').textContent = `${String(Math.min(MW.player.seqPos + 1, seqLen)).padStart(4, '0')}/${String(seqLen).padStart(4, '0')}`;
+    const seqAt = MW.player.playing ? Math.min(MW.player.seqPos + 1, seqLen) : Math.min(app.cursor.seq + 1, seqLen);
+    el('st-seq').textContent = `${String(seqAt).padStart(4, '0')}/${String(seqLen).padStart(4, '0')}`;
     el('st-block').textContent = `${String(app.cursor.block).padStart(4, '0')}/${String(Math.max(0, s.blocks.length - 1)).padStart(4, '0')}`;
     el('st-oct').textContent = (app.octave + 1).toString(36).toUpperCase() + '+' + (app.octave + 2).toString(36).toUpperCase();
     el('st-edit').classList.toggle('on', app.editMode);
-    el('st-space').classList.toggle('on', app.spaceAsDel);
+    el('st-space').classList.toggle('on', app.autoSpace);
     el('st-chord').classList.toggle('on', app.chordMode);
     el('st-ins').textContent = MW.insName(app.currentIns);
 
@@ -119,6 +123,11 @@
 
     const meta = el('display-meta');
     if (meta) meta.textContent = `${s.blocks.length} blocks · ${b.tracks} tracks · ${b.lines} lines`;
+
+    const blockName = el('st-blockname');
+    if (blockName && document.activeElement !== blockName) blockName.value = b.name || '';
+    const songName = el('st-songname');
+    if (songName && document.activeElement !== songName) songName.value = s.name || '';
 
     /* memory readout: sample data against the classic 2 MB machine */
     let used = 0;
@@ -166,6 +175,22 @@
   }
 
   /* ------------------------------------------------------------ operations */
+
+  MW.sampleMoveLoop = function (inst, endpoint, direction) {
+    if (!inst || !inst.data || !inst.looplen) return;
+    const data = inst.data;
+    let start = inst.loop || 0, end = start + inst.looplen;
+    let pos = endpoint === 'end' ? end : start;
+    const delta = direction.endsWith('left') ? -1 : 1;
+    const min = endpoint === 'end' ? start + 1 : 0;
+    const max = endpoint === 'end' ? data.length : end - 1;
+    if (direction.startsWith('zero')) {
+      pos = MW.clamp(pos + delta, min, max);
+      while (pos > min && pos < max && Math.abs(data[Math.min(pos, data.length - 1)]) > 0.02) pos += delta;
+    } else pos = MW.clamp(pos + delta * 2, min, max);
+    if (endpoint === 'end') end = pos; else start = pos;
+    inst.loop = start; inst.looplen = end - start;
+  };
 
   const ops = MW.ops = {
 
@@ -402,7 +427,7 @@
       for (let l = 0; l < a.lines; l++) for (let t = 0; t < merged.tracks; t++) merged.rows[l][t] = a.rows[l][t] || MW.cell();
       for (let l = 0; l < b.lines; l++) for (let t = 0; t < merged.tracks; t++) merged.rows[a.lines + l][t] = b.rows[l][t] || MW.cell();
       app.song.blocks.splice(idx, 2, merged);
-      app.song.playseq = app.song.playseq.map(v => (v > idx + 1 ? v - 1 : v));
+      app.song.playseq = app.song.playseq.map(v => (v === idx + 1 ? idx : v > idx + 1 ? v - 1 : v));
       refreshAll();
     },
 
@@ -437,8 +462,14 @@
     },
 
     noteChange(exchange) {
-      const from = parseInt(document.getElementById('tr-from') && document.getElementById('tr-from').value, 10) || 0;
-      const to = parseInt(document.getElementById('tr-to') && document.getElementById('tr-to').value, 10) || 0;
+      const readNote = id => {
+        const el = document.getElementById(id);
+        if (!el) return 0;
+        const value = String(el.value || '').trim();
+        return MW.noteIndex(value.toUpperCase()) || parseInt(value, 10) || 0;
+      };
+      const from = readNote('tr-from');
+      const to = readNote('tr-to');
       if (!from || !to) return;
       const b = block();
       b.rows.forEach(r => r.forEach(c => {
@@ -449,8 +480,15 @@
     },
 
     instrumentChange(exchange) {
-      const from = parseInt(document.getElementById('tr-ins-from') && document.getElementById('tr-ins-from').value, 10) || 0;
-      const to = parseInt(document.getElementById('tr-ins-to') && document.getElementById('tr-ins-to').value, 10) || 0;
+      const readIns = id => {
+        const el = document.getElementById(id);
+        if (!el) return 0;
+        const value = String(el.value || '').trim().toUpperCase();
+        const base32 = parseInt(value, 32);
+        return Number.isFinite(base32) ? base32 : parseInt(value, 10) || 0;
+      };
+      const from = readIns('tr-ins-from');
+      const to = readIns('tr-ins-to');
       if (!from || !to) return;
       const b = block();
       b.rows.forEach(r => r.forEach(c => {
@@ -461,7 +499,9 @@
     },
 
     instrumentDelete() {
-      const from = parseInt(document.getElementById('tr-ins-from') && document.getElementById('tr-ins-from').value, 10) || 0;
+      const el = document.getElementById('tr-ins-from');
+      const value = el ? String(el.value || '').trim().toUpperCase() : '';
+      const from = parseInt(value, 32) || parseInt(value, 10) || 0;
       if (!from) return;
       const b = block();
       b.rows.forEach(r => r.forEach(c => {
@@ -537,10 +577,10 @@
       MW.toast(made ? 'Note echo: ' + made + ' notes' : 'No empty lines for the echo', !made);
     },
 
-    pasteRange() {
+    pasteRange(selectedOnly = false) {
       if (clipboard.kind !== 'range') return MW.toast('Nothing copied', true);
       const b = block();
-      const sel = app.selectedTracks.some(Boolean)
+      const sel = selectedOnly
         ? app.selectedTracks.map((v, i) => (v ? i : -1)).filter(i => i >= 0 && i < b.tracks)
         : Array.from({ length: clipboard.tracksCount }, (_, i) => app.cursor.track + i).filter(i => i < b.tracks);
       for (let l = 0; l < clipboard.lines; l++) {
@@ -623,6 +663,57 @@
       const d = inst.data;
       if (a > b) { const t = a; a = b; b = t; }
       switch (act) {
+        case 'samp-copy':
+          sampleClip.data = d.slice(a, b);
+          MW.toast('Range copied to the buffer');
+          return;
+        case 'samp-clear':
+          d.fill(0, a, b);
+          break;
+        case 'samp-cut':
+          if (b - a >= d.length) { MW.toast('Cannot cut the entire sample', true); return false; }
+          sampleClip.data = d.slice(a, b);
+          // Cutting removes the same frames as delete, after copying them.
+          // falls through
+        case 'samp-delete': {
+          if (b - a >= d.length) { MW.toast('Cannot delete the entire sample', true); return false; }
+          const next = new Float32Array(d.length - (b - a));
+          next.set(d.subarray(0, a));
+          next.set(d.subarray(b), a);
+          inst.data = next;
+          inst._sel = null;
+          inst._view = null;
+          const map = p => p <= a ? p : p >= b ? p - (b - a) : a;
+          const loopEnd = map((inst.loop || 0) + (inst.looplen || 0));
+          inst.loop = map(inst.loop || 0);
+          inst.looplen = Math.max(0, loopEnd - inst.loop);
+          break;
+        }
+        case 'samp-paste': {
+          if (!sampleClip.data) return MW.toast('Buffer is empty', true);
+          const next = new Float32Array(d.length + sampleClip.data.length);
+          next.set(d.subarray(0, a));
+          next.set(sampleClip.data, a);
+          next.set(d.subarray(a), a + sampleClip.data.length);
+          inst.data = next;
+          inst._sel = null;
+          inst._view = null;
+          if (inst.looplen) {
+            if (a <= inst.loop) inst.loop += sampleClip.data.length;
+            else if (a < inst.loop + inst.looplen) inst.looplen += sampleClip.data.length;
+          }
+          break;
+        }
+        case 'samp-volume': {
+          const start = Number(arg && arg.startVolume) / 100;
+          const end = Number(arg && arg.endVolume) / 100;
+          if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
+          for (let i = a; i < b; i++) {
+            const fraction = (i - a) / Math.max(1, b - a - 1);
+            d[i] = MW.clamp(d[i] * (start + (end - start) * fraction), -1, 1);
+          }
+          break;
+        }
         case 'samp-copyall':
           sampleClip.data = d.slice();
           MW.toast('Sample copied to the buffer');
@@ -635,18 +726,22 @@
         case 'samp-mix': {
           if (!sampleClip.data) return MW.toast('Buffer is empty', true);
           const src = sampleClip.data;
-          for (let i = 0; i < src.length && a + i < d.length; i++) {
+          const limit = arg && arg.ranged ? Math.min(b, d.length) : d.length;
+          for (let i = 0; i < src.length && a + i < limit; i++) {
             d[a + i] = MW.clamp(d[a + i] + src[i] * 0.7, -1, 1);
           }
           break;
         }
         case 'samp-echo': {
-          const delay = Math.max(1, Math.round((arg && arg.delay) || 2200));
+          const delay = Math.max(1, Math.round((arg && arg.delay) || 400));
+          const decr = MW.clamp(Math.round((arg && arg.decr) || 0), 0, 100);
           const echoes = Math.max(1, Math.min(16, (arg && arg.count) || 3));
           const seg = d.slice(a, b);
+          const fade = 1 - decr / 100;
           for (let e = 1; e <= echoes; e++) {
             const off = delay * e;
-            const gain = Math.pow(0.55, e);
+            const gain = Math.pow(fade, e);
+            if (gain <= 0) break;
             for (let i = 0; i < seg.length; i++) {
               const j = a + off + i;
               if (j >= d.length) break;
@@ -656,17 +751,28 @@
           break;
         }
         case 'samp-filter': {
+          const avg = MW.clamp(Math.round((arg && arg.avg) || 16), 1, 128);
+          const dist = MW.clamp(Math.round((arg && arg.dist) || 1), 1, 128);
           const seg = d.slice();
-          for (let i = a + 1; i < b - 1; i++) d[i] = (seg[i - 1] + seg[i] * 2 + seg[i + 1]) / 4;
+          const at = j => seg[Math.max(0, Math.min(seg.length - 1, j))];
+          for (let i = a; i < b; i++) {
+            d[i] = MW.clamp((at(i - dist) * avg + at(i) + at(i + dist) * avg) / (2 * avg + 1), -1, 1);
+          }
           break;
         }
         case 'samp-boost': {
+          const avg = MW.clamp(Math.round((arg && arg.avg) || 16), 1, 128);
+          const dist = MW.clamp(Math.round((arg && arg.dist) || 1), 1, 128);
           const seg = d.slice();
-          for (let i = a + 1; i < b - 1; i++) d[i] = MW.clamp(seg[i] * 2 - (seg[i - 1] + seg[i + 1]) / 2, -1, 1);
+          const at = j => seg[Math.max(0, Math.min(seg.length - 1, j))];
+          for (let i = a; i < b; i++) {
+            const smoothed = (at(i - dist) * avg + at(i) + at(i + dist) * avg) / (2 * avg + 1);
+            d[i] = MW.clamp(at(i) + (at(i) - smoothed), -1, 1);
+          }
           break;
         }
         case 'samp-noise': {
-          const level = ((arg && arg.level) || 24) / 128;
+          const level = (arg && arg.level != null ? arg.level : 24) / 128;
           for (let i = a; i < b; i++) d[i] = MW.clamp(d[i] + (Math.random() * 2 - 1) * level, -1, 1);
           break;
         }
@@ -703,22 +809,34 @@
           const next = new Float32Array(want);
           next.set(d.subarray(0, Math.min(want, d.length)));
           inst.data = next;
+          if (inst.dataR) {
+            const right = new Float32Array(want);
+            right.set(inst.dataR.subarray(0, Math.min(want, inst.dataR.length)));
+            inst.dataR = right;
+          }
+          inst.loop = Math.min(inst.loop || 0, want - 1);
+          inst.looplen = Math.min(inst.looplen || 0, want - inst.loop);
+          inst._sel = null;
           inst._view = { a: 0, b: want };
           inst._abuf = null;
           break;
         }
         case 'samp-rate-up':
-        case 'samp-rate-down': {
-          const f = act === 'samp-rate-up' ? 2 : 0.5;
+        case 'samp-rate-down':
+        case 'samp-change-rate': {
+          const f = act === 'samp-rate-up' ? 2 : act === 'samp-rate-down' ? 0.5 : Number(arg && arg.sourcePeriod) / Number(arg && arg.destPeriod);
+          if (!Number.isFinite(f) || f <= 0) { MW.toast('Enter valid source and destination periods', true); return false; }
           const n = Math.max(2, Math.round(d.length / f));
+          if (n > 131072) { MW.toast('Converted sample exceeds buffer size', true); return false; }
           const out = new Float32Array(n);
           for (let i = 0; i < n; i++) {
             const src = i * f;
             const a0 = Math.floor(src), fr = src - a0;
-            out[i] = (d[a0] || 0) * (1 - fr) + (d[a0 + 1] || 0) * fr;
+            out[i] = d[Math.min(a0, d.length - 1)] * (1 - fr) + d[Math.min(a0 + 1, d.length - 1)] * fr;
           }
           inst.data = out;
           inst._view = { a: 0, b: n };
+          inst._sel = null;
           inst.loop = Math.round((inst.loop || 0) / f);
           inst.looplen = Math.round((inst.looplen || 0) / f);
           inst._abuf = null;
@@ -734,7 +852,8 @@
           MW.voicePreview(25, app.currentIns);
           return;
         case 'samp-loop':
-          inst.looplen = inst.looplen > 2 ? 0 : Math.round(d.length / 2);
+          if (inst.looplen > 2) { inst._loopSaved = { start: inst.loop, length: inst.looplen }; inst.looplen = 0; }
+          else { const saved = inst._loopSaved; inst.loop = saved ? Math.min(saved.start, d.length - 1) : 0; inst.looplen = saved ? Math.min(saved.length, d.length - inst.loop) : d.length; }
           return;
         case 'samp-rev': {
           const seg = d.slice(a, b).reverse();
@@ -841,16 +960,18 @@
     afterEdit();
   }
 
-  function advanceCursor() {
+  /* SP on the status bar makes the cursor move by the line add (SPC) */
+  function advanceCursor(spaced) {
     const b = block();
+    const step = spaced ? Math.max(1, app.step) : 1;
     switch (app.advance) {
-      case 'up': app.cursor.line = Math.max(0, app.cursor.line - app.step); break;
+      case 'up': app.cursor.line = Math.max(0, app.cursor.line - step); break;
       case 'right': app.cursor.field = Math.min(3, app.cursor.field + 1); break;
       case 'left': app.cursor.field = Math.max(0, app.cursor.field - 1); break;
       case 'nexttrk': app.cursor.track = Math.min(b.tracks - 1, app.cursor.track + 1); break;
       case 'prevtrk': app.cursor.track = Math.max(0, app.cursor.track - 1); break;
       default:
-        if (app.cursor.line + app.step < b.lines) app.cursor.line += app.step;
+        if (app.cursor.line + step < b.lines) app.cursor.line += step;
         else if (app.cursor.block < app.song.blocks.length - 1) { app.cursor.block++; app.cursor.line = 0; }
         break;
     }
@@ -867,12 +988,16 @@
     q: 12, '2': 13, w: 14, '3': 15, e: 16, r: 17, '5': 18, t: 19, '6': 20,
     y: 21, '7': 22, u: 23, i: 24, '9': 25, o: 26, '0': 27, p: 28, '[': 29, '=': 30
   };
+  MW.noteFromPianoKey = function (key, octave) {
+    const offset = PIANO[String(key).toLowerCase()];
+    return offset === undefined ? null : MW.clamp(octave * 12 + 1 + offset, 1, 120);
+  };
 
   const PANEL_ORDER = ['play', 'instr', 'block', 'edit', 'range', 'transp', 'vol', 'midi', 'files', 'misc'];
   const ADVANCE_ORDER = ['down', 'up', 'right', 'left', 'nexttrk', 'prevtrk'];
 
   /* programmable keys: Shift 0-9 insert a stored note or command */
-  app.prog = app.prog || Array.from({ length: 10 }, () => ({ note: null, ins: null, cmd: null, dat: null }));
+  app.prog = app.prog || Array.from({ length: 10 }, () => ({ note: 0, ins: 0, cmd: 0, dat: 0 }));
   let chordNotes = [];
   app.chordStartTrack = 0;
   let chordTimer = 0;
@@ -927,12 +1052,31 @@
     afterEdit();
   }
 
-  function pickProgKey(i) {
+  /* the panel edits one of twelve definitions: the ten Shift keys or
+     one of the two Alt templates */
+  function currentDef() {
+    if (app.progAlt === 'L') return app.altL;
+    if (app.progAlt === 'R') return app.altR;
+    return app.prog[app.progTarget];
+  }
+
+  function setCurrentDef(def) {
+    if (app.progAlt === 'L') app.altL = def;
+    else if (app.progAlt === 'R') app.altR = def;
+    else app.prog[app.progTarget] = def;
+  }
+
+  function defName() {
+    return app.progAlt === 'L' ? 'L.Alt' : app.progAlt === 'R' ? 'R.Alt' : 'Shift-' + app.progTarget;
+  }
+
+  function pickProgKey() {
     const c = curCell();
     if (!c) return;
-    app.prog[i] = { note: c.note, ins: c.ins, cmd: c.cmd, dat: c.dat };
-    app.progTarget = i;
-    MW.toast('Shift-' + i + ' set to ' + MW.noteName(c.note, app.hb) + ' ' + MW.insName(c.ins));
+    /* the note characters of the Alt definitions are always wildcards */
+    const note = app.progAlt === 'C' ? c.note : null;
+    setCurrentDef({ note, ins: c.ins, cmd: c.cmd, dat: c.dat });
+    MW.toast(defName() + ' set to ' + MW.noteName(c.note, app.hb) + ' ' + MW.insName(c.ins));
     MW.panels.refresh();
   }
 
@@ -944,16 +1088,18 @@
     const t0 = Math.min(s.t0, s.t1);
     const first = b.rows[l0] && b.rows[l0][t0];
     if (!first) return;
-    app.prog[app.progTarget] = { note: first.note, ins: first.ins, cmd: first.cmd, dat: first.dat };
-    MW.toast('Shift-' + app.progTarget + ' picked from the range');
+    const note = app.progAlt === 'C' ? first.note : null;
+    setCurrentDef({ note, ins: first.ins, cmd: first.cmd, dat: first.dat });
+    MW.toast(defName() + ' picked from the range');
     MW.panels.refresh();
   }
 
   function pickProgBuffer() {
     if (clipboard.kind !== 'range' || !clipboard.tracks.length) return MW.toast('Copy a range first', true);
     const first = clipboard.tracks[0][0];
-    app.prog[app.progTarget] = { note: first.note, ins: first.ins, cmd: first.cmd, dat: first.dat };
-    MW.toast('Shift-' + app.progTarget + ' picked from the buffer');
+    const note = app.progAlt === 'C' ? first.note : null;
+    setCurrentDef({ note, ins: first.ins, cmd: first.cmd, dat: first.dat });
+    MW.toast(defName() + ' picked from the buffer');
     MW.panels.refresh();
   }
 
@@ -985,7 +1131,7 @@
       t = nextTrackFrom(t, b.tracks);
     }
     app.cursor.track = app.chordStartTrack;
-    advanceCursor();
+    advanceCursor(app.autoSpace);
     afterEdit();
   }
 
@@ -1006,7 +1152,7 @@
     if (app.playOnNote && !MW.player.playing) {
       MW.player.playBlock(app.cursor.block);
     }
-    advanceCursor();
+    advanceCursor(app.autoSpace);
     afterEdit();
   }
 
@@ -1056,6 +1202,12 @@
   }
 
   function onKeyDown(e) {
+    /* Esc is the Edit Mode switch, even while a field has focus */
+    if (e.key === 'Escape') {
+      app.editMode = !app.editMode;
+      MW.touchStatus('edit', ['editMode']);
+      return;
+    }
     if (isTypingTarget(e)) return;
 
     const key = e.key;
@@ -1065,12 +1217,30 @@
     const meta = e.metaKey;
     const lower = key.length === 1 ? key.toLowerCase() : key;
 
+    /* remember which Alt is down: the note event itself cannot tell us */
+    if (key === 'Alt') { app.altHeld = e.code === 'AltRight' ? 'right' : 'left'; return; }
+
     /* the Amiga key. Meta is the honest mapping; Ctrl is accepted for the
        file and clipboard shortcuts a browser leaves alone. */
     const amiga = meta || (ctrl && !shift && !alt && !/^[0-9]$/.test(key)
       && key !== ' ' && !/^(a|z)$/i.test(key));
 
     const b = block();
+
+    if (MW.displays.current === 'sample' && !ctrl && !alt && !meta && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+      MW.displays.scrollSample(key === 'ArrowLeft' ? -1 : 1);
+      e.preventDefault();
+      return;
+    }
+
+    // In notation view the horizontal cursor follows pattern lines, not tracks.
+    if (MW.displays.current === 'notation' && !ctrl && !alt && !meta && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+      app.cursor.line = MW.clamp(app.cursor.line + (key === 'ArrowLeft' ? -1 : 1), 0, b.lines - 1);
+      MW.displays.refresh();
+      MW.touchStatus('cursor', ['cursor']);
+      e.preventDefault();
+      return;
+    }
 
     /* ---------------- panels ---------------- */
     if (ctrl && /^F([1-9]|10)$/.test(key)) {
@@ -1162,7 +1332,7 @@
         return;
       }
       if (alt && !shift && dx) { moveCursor(0, dx, 0); return; }
-      if (dy) MW.grid.scrollRows(dy); else moveHoriz(dx);
+      if (dy) MW.grid.scrollRows(dy * (app.autoSpace ? Math.max(1, app.step) : 1)); else moveHoriz(dx);
       return;
     }
 
@@ -1192,12 +1362,6 @@
       return;
     }
 
-    if (key === 'Escape') {
-      app.editMode = !app.editMode;
-      MW.touchStatus('edit', ['editMode']);
-      return;
-    }
-
     if (key === 'Tab') {
       e.preventDefault();
       moveHoriz(shift ? -1 : 1);
@@ -1209,14 +1373,14 @@
       if (!app.editMode) return;
       const c = curCell();
       if (c) { c.note = 0; c.ins = app.currentIns; }
-      advanceCursor();
+      advanceCursor(app.autoSpace);
       afterEdit();
       return;
     }
 
     if (key === '~' || key === '`') {
-      app.spaceAsDel = !app.spaceAsDel;
-      MW.touchStatus('space', ['spaceAsDel']);
+      app.autoSpace = !app.autoSpace;
+      MW.touchStatus('space', ['autoSpace']);
       return;
     }
 
@@ -1298,22 +1462,36 @@
     }
 
     /* ---------------- programmable keys ---------------- */
-    if (ctrl && shift && /^[0-9]$/.test(key)) { e.preventDefault(); pickProgKey(parseInt(key, 10)); return; }
-    if (shift && /^[0-9]$/.test(key)) { e.preventDefault(); applyProgKey(parseInt(key, 10)); return; }
+    /* Shift + a number row key produces a symbol as e.key on most layouts,
+       so read the digit from the physical key */
+    const shiftDigit = /^Digit[0-9]$/.test(e.code || '') ? e.code.slice(5)
+      : /^[0-9]$/.test(key) ? key : null;
+    if (ctrl && shift && shiftDigit != null) { e.preventDefault(); pickProgKey(parseInt(shiftDigit, 10)); return; }
+    if (shift && shiftDigit != null) { e.preventDefault(); applyProgKey(parseInt(shiftDigit, 10)); return; }
 
     /* ---------------- notes and numbers ---------------- */
-    const off = PIANO[lower];
+    /* Option changes e.key on macOS, so hold Alt reads the physical key */
+    const physical = /^Key([A-Z])$/.test(e.code || '') ? e.code.slice(3).toLowerCase() : null;
+    const pianoKey = alt && physical ? physical : lower;
+    const off = PIANO[pianoKey];
     /* in the note column every piano key is a note; in the numeric
        columns the digits must win, or 0/2/3/5/7/9 can't be typed */
     if (off !== undefined && !(app.editMode && app.cursor.field > 0)) {
       e.preventDefault();
-      if (app.editMode && app.cursor.field === 0) enterNote(off, alt ? 'left' : null);
+      if (app.editMode && app.cursor.field === 0) enterNote(off, alt ? (app.altHeld || 'left') : null);
       else if (!app.editMode) MW.voicePreview(MW.clamp(app.octave * 12 + 1 + off, 1, 120), app.currentIns);
       return;
     }
 
     if (app.editMode && app.cursor.field > 0 && /^[0-9a-v]$/i.test(key)) {
       e.preventDefault();
+      /* Alt plus a digit sets the high command nibble: Alt-9 is command 19 */
+      const altDigit = alt && /^Digit[0-9]$/.test(e.code || '') ? e.code.slice(5) : null;
+      if (altDigit != null && app.cursor.field === 2) {
+        const c = curCell();
+        if (c) { c.cmd = 0x10 + parseInt(altDigit, 16); afterEdit(); }
+        return;
+      }
       typeIntoField(lower);
       return;
     }
@@ -1344,34 +1522,6 @@
   }
 
   /* ------------------------------------------------------------ file io */
-
-  function remapInstruments(incoming) {
-    const target = app.song;
-    if (!target || !target.instruments) return false;
-    const used = target.instruments.filter(Boolean).length;
-    if (!used) return false;
-    if (incoming.instruments.filter(Boolean).length === 0) return false;
-    const yes = typeof confirm === 'function'
-      ? confirm('Add the instruments from this module to the ones already in memory? Cancel replaces them.')
-      : false;
-    if (!yes) return false;
-
-    const map = new Array(63).fill(0);
-    for (let i = 0; i < 63; i++) {
-      const src = incoming.instruments[i];
-      if (!src) continue;
-      let slot = target.instruments.indexOf(src);
-      if (slot < 0) slot = target.instruments.findIndex(v => !v);
-      if (slot < 0) break;
-      target.instruments[slot] = src;
-      map[i] = slot + 1;
-    }
-    incoming.blocks.forEach(b => b.rows.forEach(r => r.forEach(c => {
-      if (c.ins) c.ins = map[c.ins - 1] || 0;
-    })));
-    incoming.instruments = target.instruments;
-    return true;
-  }
 
   function handleFileBuffer(buffer, name) {
     let bytes;
@@ -1406,6 +1556,31 @@
   }
   MW.handleFileBuffer = handleFileBuffer;
 
+  function replaceModule(song) {
+    app.notaPresets = [];
+    app.notaPresetReady = false;
+    app.notaSelectedTrack = null;
+    app.notaTracks = {};
+    app.notaGhost = {};
+    app.notaInstruments = {};
+    app.notaSave = false;
+    app.song = song;
+    app.cursor = { block: song.playseq[0] || 0, line: 0, track: 0, field: 0, seq: 0 };
+    app.currentIns = 1;
+    app.selection = null;
+    app.mutedTracks = new Array(16).fill(false);
+    app.selectedTracks = new Array(16).fill(false);
+    const shared = song.instruments;
+    (song.multis || []).forEach(m => { m.instruments = shared; });
+    app.songList = [song].concat(song.multis || []);
+    app.songIndex = 0;
+    app.seq = 0;
+    MW.lastSeq = -1;
+    MW.player.setSong(song);
+    MW.grid.lastPlayLine = -1;
+    refreshAll();
+  }
+
   function openBuffer(buffer, name) {
     let song;
     try {
@@ -1417,26 +1592,13 @@
     if (!song) { MW.toast('Not a module Octanaut recognises', true); return; }
 
     if (song.channels > 16) song.channels = 16;
-    if (app.song && app.song !== song) remapInstruments(song);
-    app.song = song;
-    app.cursor = { block: song.playseq[0] || 0, line: 0, track: 0, field: 0, seq: 0 };
-    app.currentIns = 1;
-    app.selection = null;
-    app.mutedTracks = new Array(16).fill(false);
-    app.selectedTracks = new Array(16).fill(false);
     song.name = name ? name.replace(/\.[^.]+$/, '') : song.name;
-
-    const shared = song.instruments;
-    (song.multis || []).forEach(m => { m.instruments = shared; });
-    app.songList = [song].concat(song.multis || []);
-    app.songIndex = 0;
-
-    MW.player.setSong(song);
-    MW.grid.lastPlayLine = -1;
-    refreshAll();
+    replaceModule(song);
     MW.panels.show('play');
 
-    const missing = song.instruments.filter(i => i && i.missing).length;
+    const usedInstruments = new Set();
+    [song, ...(song.multis || [])].forEach(part => part.blocks.forEach(block => block.rows.forEach(row => row.forEach(cell => { if (cell.ins) usedInstruments.add(cell.ins); }))));
+    const missing = song.instruments.filter((i, index) => i && i.missing && usedInstruments.has(index + 1)).length;
     if (missing) MW.toast(`Loaded ${song.format}. ${missing} instrument slots reference external samples.`);
     else MW.toast(`Loaded ${song.format}: ${song.blocks.length} blocks, ${song.channels} tracks`);
     MW.emit('song', song);
@@ -1522,6 +1684,7 @@
 
   function saveModule(format) {
     try {
+      if (app.notaPresetReady && MW.captureNotation) app.song.notation = app.notaSave ? MW.captureNotation(app) : null;
       const chosen = format === 0 ? 'mmd0' : format === 1 ? 'mmd1' : (app.saveFormat || 'mmd1');
       if (chosen === 'st') { saveST(); return; }
       const noInstr = chosen === 'mmd1n';
@@ -1652,6 +1815,7 @@
       }
 
       this.stream = stream;
+      this.sampleRate = ctx.sampleRate;
       this.source = ctx.createMediaStreamSource(stream);
       this.node = ctx.createScriptProcessor(2048, 1, 1);
       this.buffer = mode === 'record' ? new Float32Array(Math.max(1024, size || 65536)) : null;
@@ -1702,6 +1866,12 @@
         const inst = MW.app.song.instruments[MW.app.currentIns - 1];
         if (inst) {
           inst.data = data;
+          inst.c2rate = this.sampleRate;
+          inst.dataR = null;
+          inst.bits16 = true;
+          inst.stereo16 = false;
+          inst.loop = 0;
+          inst.looplen = 0;
           inst._abuf = null;
           inst._view = { a: 0, b: data.length };
           MW.refreshAll();
@@ -1885,7 +2055,18 @@
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     const a = lastActionFor(btn.dataset.act);
-    if (a) a(btn.dataset.name);
+    if (a) a(btn.dataset.name, e);
+  }
+
+  /* Shift-clicking HEX/DEC rewrites every volume command so the song keeps
+     the volumes it had. */
+  function setVolumeBase(hex, rewrite) {
+    app.song.flags.volhex = hex;
+    if (rewrite) {
+      const n = MW.rewriteVolumeCommands(app.song, !!hex);
+      MW.toast(`${hex ? 'HEX' : 'DEC'}: rewrote ${n} volume command${n === 1 ? '' : 's'}`);
+    }
+    MW.panels.refresh();
   }
 
   function lastActionFor(act) {
@@ -1914,14 +2095,8 @@
       'audio-aac': () => MW.exportAudio('aac'),
       'audio-mp3': () => MW.exportAudio('mp3'),
       'file-save-mod': saveST,
-      'file-new': () => { app.song = MW.createSong(); app.cursor = { block: 0, line: 0, track: 0, field: 0, seq: 0 }; MW.player.setSong(app.song); refreshAll(); },
-      'file-demo': () => {
-        app.song = buildDemo();
-        app.cursor = { block: 0, line: 0, track: 0, field: 0, seq: 0 };
-        app.currentIns = 1;
-        MW.player.setSong(app.song);
-        refreshAll();
-      },
+      'file-new': () => replaceModule(MW.createSong()),
+      'file-demo': () => loadExample(false),
       'ins-open': () => document.getElementById('ins-file-input').click(),
       'ins-new': () => {
         const inst = MW.createInstrument('synth');
@@ -1971,7 +2146,8 @@
       'rng-clear': () => ops.clearRange(),
       'rng-cut': () => ops.copyRange(true),
       'rng-copy': () => ops.copyRange(false),
-      'rng-paste': () => ops.pasteRange(),
+      'rng-paste': () => ops.pasteRange(false),
+      'rng-paste-selected': () => ops.pasteRange(true),
       'spread-2': () => ops.spread(2), 'spread-3': () => ops.spread(3), 'spread-4': () => ops.spread(4),
       'mk-slide1': () => ops.makeSlide('s1'), 'mk-slide2': () => ops.makeSlide('s2'),
       'mk-volslide': () => ops.makeVolumeSlide(),
@@ -1982,8 +2158,8 @@
       'ins-delete': () => ops.instrumentDelete(),
       'misc-follow': () => { app.follow = !app.follow; MW.panels.refresh(); },
       'misc-filter': () => { app.song.flags.filteron = app.song.flags.filteron ? 0 : 1; MW.audio.setFilter(app.song.flags.filteron); MW.panels.refresh(); },
-      'vol-hex': () => { app.song.flags.volhex = 1; MW.panels.refresh(); },
-      'vol-dec': () => { app.song.flags.volhex = 0; MW.panels.refresh(); },
+      'vol-hex': (name, e) => setVolumeBase(1, e && e.shiftKey),
+      'vol-dec': (name, e) => setVolumeBase(0, e && e.shiftKey),
       'name-sharp': () => { app.hb = false; prefs.save(); MW.panels.refresh(); },
       'name-flat': () => { app.hb = true; prefs.save(); MW.panels.refresh(); },
       'prefs-reset': () => { prefs.reset(); MW.toast('Saved preferences cleared'); },
@@ -2035,8 +2211,8 @@
       },
       'ins-jump': () => { const i = app.song.instruments[app.currentIns - 1]; if (i) { i.jump = !i.jump; MW.panels.refresh(); } },
       'pick-note': () => pickProgKey(app.progTarget),
-      'prog-prev': () => { app.progTarget = (app.progTarget + 9) % 10; MW.panels.refresh(); },
-      'prog-next': () => { app.progTarget = (app.progTarget + 1) % 10; MW.panels.refresh(); },
+      'prog-prev': () => { app.progAlt = 'C'; app.progTarget = (app.progTarget + 9) % 10; MW.panels.refresh(); },
+      'prog-next': () => { app.progAlt = 'C'; app.progTarget = (app.progTarget + 1) % 10; MW.panels.refresh(); },
       'midi-extsync': () => { app.extSync = !app.extSync; if (!app.extSync) MW.player.extPulse = null; MW.panels.refresh(); },
       'midi-map-active': () => {
         if (!app.midiMap) app.midiMap = Array.from({ length: 128 }, () => ({ kind: 'note' }));
@@ -2103,7 +2279,7 @@
       'midi-msg-prev': () => { app.midiMsgIndex = Math.max(0, app.midiMsgIndex - 1); MW.panels.refresh(); },
       'midi-msg-next': () => { app.midiMsgIndex = Math.min(app.midiMessages.length - 1, app.midiMsgIndex + 1); MW.panels.refresh(); },
       'midi-msg-new': () => { app.midiMessages.push({ name: '', data: [] }); app.midiMsgIndex = app.midiMessages.length - 1; MW.panels.refresh(); },
-      'midi-msg-insert': () => { app.midiMessages.splice(app.midiMsgIndex, 0, { name: '', data: [] }); app.midiMsgIndex++; MW.panels.refresh(); },
+      'midi-msg-insert': () => { app.midiMessages.splice(app.midiMsgIndex, 0, { name: '', data: [] }); MW.panels.refresh(); },
       'midi-msg-del': () => { if (app.midiMessages.length > 1) app.midiMessages.splice(app.midiMsgIndex, 1); app.midiMsgIndex = Math.min(app.midiMsgIndex, app.midiMessages.length - 1); MW.panels.refresh(); },
       'midi-msg-clear': () => { const m = app.midiMessages[app.midiMsgIndex]; if (m) m.data = []; MW.panels.refresh(); },
       'midi-msg-inc': () => { const m = app.midiMessages[app.midiMsgIndex]; if (m) m.data.push(0); MW.panels.refresh(); },
@@ -2141,13 +2317,7 @@
         app.cursor = { block: 0, line: 0, track: 0, field: 0, seq: 0 };
         refreshAll();
       },
-      'misc-clear-all': () => {
-        app.song = MW.createSong();
-        app.cursor = { block: 0, line: 0, track: 0, field: 0, seq: 0 };
-        app.currentIns = 1;
-        MW.player.setSong(app.song);
-        refreshAll();
-      },
+      'misc-clear-all': () => replaceModule(MW.createSong()),
       'midi-enable': () => MW.enableMidi(),
       'midi-panic': () => MW.midiPanic(),
       'midi-vel': () => { app.readVelocity = !app.readVelocity; MW.panels.refresh(); },
@@ -2353,7 +2523,7 @@
       const input = document.createElement('input');
       input.type = 'file';
       input.multiple = true;
-      input.accept = '.mmd0,.mmd1,.mmd2,.mmd3,.med,.mod,.mmd,.msh,.8svx';
+      input.accept = '.mmd0,.mmd1,.mmd2,.mmd3,.mmdc,.med,.mod,.mmd,.msh,.8svx';
       input.onchange = () => {
         this.entries = Array.from(input.files).map(f => ({ name: f.name, file: f, dir: false }));
         this.selected = this.entries.length ? 0 : null;
@@ -2577,32 +2747,9 @@
   MW.saveIFF = function () {
     const inst = app.song.instruments[app.currentIns - 1];
     if (!inst || !inst.data) return MW.toast('No sample loaded', true);
-    const d = inst.data;
-    const rate = inst.c2rate || 8363;
-    const loop = inst.looplen > 2 ? inst.loop : 0;
-    const repeat = inst.looplen > 2 ? inst.looplen : 0;
-
-    const vhdrLen = 20;
-    const name = (inst.name || 'sample').slice(0, 30) + '\0';
-    const bodyLen = d.length + (d.length & 1);
-    const total = 4 + (8 + vhdrLen) + (8 + name.length) + (8 + bodyLen);
-
-    const buf = new Uint8Array(8 + total);
-    const dv = new DataView(buf.buffer);
-    let p = 0;
-    const str = t => { for (let i = 0; i < t.length; i++) buf[p + i] = t.charCodeAt(i); p += t.length; };
-    const u32 = v => { dv.setUint32(p, v, false); p += 4; };
-    const u16 = v => { dv.setUint16(p, v, false); p += 2; };
-    const i8 = v => { dv.setInt8(p, v); p += 1; };
-
-    str('FORM'); u32(total); str('8SVX');
-    str('VHDR'); u32(vhdrLen);
-    u32(loop); u32(repeat); u32(0); u32(rate); i8(1); i8(0); u32(65536);
-    str('NAME'); u32(name.length); str(name);
-    str('BODY'); u32(bodyLen);
-    for (let i = 0; i < d.length; i++) i8(Math.max(-128, Math.min(127, Math.round(d[i] * 127))));
-    if (d.length & 1) i8(0);
-    str(''); // no-op, keeps p aligned for readability
+    let buf;
+    try { buf = MW.write8SVX(inst); }
+    catch (err) { return MW.toast('Save failed: ' + err.message, true); }
 
     const blob = new Blob([buf], { type: 'audio/x-8svx' });
     const a = document.createElement('a');
@@ -2644,6 +2791,21 @@
     aEl.download = (inst.name || 'sample') + '.wav';
     aEl.click();
     setTimeout(() => URL.revokeObjectURL(aEl.href), 2000);
+  };
+
+  // Follow playback without mounting or updating the hidden tracker grid.
+  MW.followPlaybackRow = function (row) {
+    if (!app.follow) return;
+    const blockChanged = row.block !== app.cursor.block;
+    app.cursor.block = row.block;
+    app.cursor.line = row.line;
+    app.cursor.seq = row.seq;
+    if (MW.displays.current === 'notation') MW.displays.refreshNotation();
+    else if (MW.displays.current === 'grid') {
+      if (blockChanged) MW.grid.render();
+      else MW.grid.refreshLine(row.line);
+    }
+    if (blockChanged) MW.renderSeqBox();
   };
 
   /* ------------------------------------------------------------ boot */
@@ -2713,13 +2875,21 @@
 
       const eq = app.eq || [true, true, true];
       const levels = this.channelLevels();
+      /* the manual: split channel modes (5-8) turn every graphic V.U. meter off */
+      const split = !!((app.song && app.song.channels) > 4) || !!app.displaysOff;
 
-      const scopes = eq[2] !== false;
-      this.drawMonitor(ctx, w, h, scopes, eq[1] !== false, levels);
-      this.drawGridWaves(scopes);
+      /* E1: the bar graph under the info line, per instrument and per note
+         E2: the V.U. meter at each track's edge
+         E3: the oscilloscope at each track's top, hanging off the play line */
+      const bars = eq[0] !== false && !split;
+      const vu = eq[1] !== false && !split;
+      const scopes = eq[2] !== false && !split;
+      this.updateFooterMeters();
+      this.drawFooter(ctx, w, h, bars);
+      this.drawTrackScopes(scopes);
 
       if (MW.grid && MW.grid.syncMeters) {
-        MW.grid.syncMeters(eq[0] !== false ? levels : []);
+        MW.grid.syncMeters(vu ? levels : []);
       }
 
       const t = document.getElementById('timer');
@@ -2731,124 +2901,101 @@
       }
     },
 
-    /* Two oscilloscopes. Each pane covers half the tracks and draws a cyan
-       bar on every ruler tick, one sample per slot; a one-pixel bar means
-       silence, so the baseline stays continuous as it does in OctaMED. */
-    drawMonitor(ctx, w, h, scopes, sprites, levels) {
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, w, h);
-
-      const pad = 2;
-      const top = 2;
-      const boxH = Math.max(30, h - 5);
-      const baseY = top + boxH - 9;
-
-      /* like the artwork: left-aligned, a little narrower than the panel */
-      const contentW = Math.round((w - pad * 2) * 0.81);
-      const contentX = pad + 6;
-      const gap = Math.max(6, Math.round(contentW * 0.025));
-      const leftW = Math.round((contentW - gap) * 0.43);
-      const rightW = contentW - gap - leftW;
-
-      const player = MW.player;
-      const tracks = MW.clamp((player.song && player.song.channels) || 4, 1, 16);
-      /* one scope per stereo side: left-panned tracks in the left pane */
-      const leftChans = [];
-      const rightChans = [];
-      for (let t = 0; t < tracks; t++) {
-        (player.panOf(t) < 0 ? leftChans : rightChans).push(t);
-      }
-      /* centred songs would leave one scope empty; split them instead */
-      if (!leftChans.length || !rightChans.length) {
-        leftChans.length = 0;
-        rightChans.length = 0;
-        const half = Math.ceil(tracks / 2);
-        for (let t = 0; t < tracks; t++) (t < half ? leftChans : rightChans).push(t);
-      }
-      const panes = [
-        { x: contentX, w: leftW, chans: leftChans },
-        { x: contentX + leftW + gap, w: rightW, chans: rightChans }
-      ];
-
-      const pitch = 12;
-
-      panes.forEach(pane => {
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(pane.x + 0.5, top + 0.5, Math.max(1, pane.w - 1), Math.max(1, boxH - 1));
-
-        /* vertical scale: eight rungs, long every other one */
-        const rungs = 8;
-        ctx.strokeStyle = 'rgba(0,0,0,0.65)';
-        for (let i = 1; i < rungs; i++) {
-          const y = Math.round(top + (boxH - 10) * (i / rungs)) + 0.5;
-          const len = i % 2 === 0 ? 9 : 5;
-          ctx.beginPath();
-          ctx.moveTo(pane.x + 1, y);
-          ctx.lineTo(pane.x + len, y);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pane.x + pane.w - 1, y);
-          ctx.lineTo(pane.x + pane.w - len, y);
-          ctx.stroke();
-        }
-
-        /* baseline */
-        ctx.strokeStyle = '#000';
-        ctx.beginPath();
-        ctx.moveTo(pane.x + 1, baseY + 0.5);
-        ctx.lineTo(pane.x + pane.w - 1, baseY + 0.5);
-        ctx.stroke();
-
-        const innerX = pane.x + 6;
-        const innerW = Math.max(1, pane.w - 12);
-        const slots = Math.max(1, Math.floor(innerW / pitch));
-        const barW = 6;
-
-        const waves = [];
-        for (const t of pane.chans) {
-          const wv = MW.audio.channelWave(t);
-          if (wv) waves.push(wv);
-        }
-
-        for (let i = 0; i < slots; i++) {
-          const x = innerX + i * pitch;
-
-          /* ruler tick, one per slot */
-          ctx.fillStyle = '#000';
-          ctx.fillRect(x, baseY + 1, 3, 9);
-
-          let v = 0;
-          for (const wv of waves) {
-            const idx = Math.min(wv.length - 1, Math.floor((i / slots) * wv.length));
-            v += Math.abs(wv[idx] || 0);
-          }
-          if (waves.length) v /= waves.length;
-          const bh = Math.max(1, Math.round(Math.min(1, v * 3.2) * (boxH - 14)));
-
-          ctx.fillStyle = '#00ffff';
-          ctx.fillRect(x + Math.floor((pitch - barW) / 2), baseY - bh, barW, bh);
-        }
+    /* E1: the bar graph under the info line. Bar slots are instruments
+       01-31 on the left and notes C-1 upward on the right, 8 Amiga pixels
+       apart, raised by note triggers and falling like the other meters.
+       Geometry measured off OctaMED Pro 4 (via OctaMEDIC). */
+    updateFooterMeters() {
+      const app = MW.app;
+      const e1 = app.e1 || (app.e1 = {
+        instruments: new Array(31).fill(0),
+        notes: new Array(43).fill(0),
+        seen: new Array(16).fill(0)
       });
-
-      /* E2: four coloured sprites ride above the left scope */
-      if (sprites) {
-        const pane = panes[0];
-        const n = Math.min(4, levels.length);
-        for (let i = 0; i < n; i++) {
-          const v = levels[i] || 0;
-          const x = pane.x + 10 + i * ((pane.w - 30) / 3);
-          const y = top + 4 + (1 - v) * Math.max(0, boxH - 26);
-          ctx.fillStyle = ['#ff00ff', '#00ffff', '#a55aff', '#000000'][i];
-          ctx.fillRect(x, y, 8, 5);
-        }
+      const trig = MW.player.triggers || {};
+      const raise = (arr, n, level) => {
+        const i = (n | 0) - 1;
+        if (i >= 0 && i < arr.length) arr[i] = Math.max(arr[i], level);
+      };
+      for (let t = 0; t < 16; t++) {
+        const e = trig[t];
+        if (!e || e.count === e1.seen[t]) continue;
+        e1.seen[t] = e.count;
+        const level = Math.round((e.volume || 0) * 128 / 64);
+        raise(e1.instruments, e.ins, level);
+        raise(e1.notes, e.note, level);
+      }
+      /* a full meter empties in about 2/3 s at 50Hz */
+      const fall = 6;
+      for (const arr of [e1.instruments, e1.notes]) {
+        for (let i = 0; i < arr.length; i++) arr[i] = Math.max(0, arr[i] - fall);
       }
     },
 
-    /* cyan waveform traces over the note grid. Each track's trace is
-       clipped to that track's column and sits on the same baseline, read
-       from the track's own analyser so it follows the audio. */
-    drawGridWaves(on) {
+    drawFooter(ctx, w, h, bars) {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0.5, 0.5, Math.max(1, w - 1), Math.max(1, h - 1));
+
+      const sx = w / 640;
+      const sy = h / 49;
+      const top = 9 * sy;
+      const graphH = 32 * sy;
+      const axis = top + graphH;
+      const fill = (x, y, fw, fh) => ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(fw)), Math.max(1, Math.round(fh)));
+      ctx.fillStyle = '#000';
+
+      /* side rulers, either side of the gap */
+      for (const x of [14, 264, 278, 624]) fill(x * sx, top, 2, graphH);
+      /* marks every 4 lines on them, right across the gap */
+      for (let i = 0; i < 8; i++) {
+        const y = top + i * 4 * sy;
+        fill(8 * sx, y, 8 * sx, 1);
+        fill(264 * sx, y, 16 * sx, 1);
+        fill(624 * sx, y, 8 * sx, 1);
+      }
+      /* the two axes along the bottom */
+      fill(14 * sx, axis, 252 * sx, 1);
+      fill(278 * sx, axis, 348 * sx, 1);
+      /* a tick at both edges of every slot, longer at every C */
+      for (let i = 0; i < 31; i++) {
+        const x = 16 + i * 8;
+        fill(x * sx, axis + 1, 1, 3);
+        fill((x + 7) * sx, axis + 1, 1, 3);
+      }
+      for (let i = 0; i < 43; i++) {
+        const x = 280 + i * 8;
+        fill(x * sx, axis + 1, 1, 3);
+        fill((x + 7) * sx, axis + 1, 1, 3);
+      }
+      for (let i = 0; i < 4; i++) fill((280 + i * 96) * sx, axis + 1, 1, 5);
+
+      if (!bars) return;
+      const e1 = MW.app.e1;
+      if (!e1) return;
+      const pens = ['#ff0000', '#ff8888', '#ffaaaa', '#ffcccc', '#ffcccc', '#ffaaaa', '#ff8888', '#ff0000'];
+      const drawGroup = (x0, slots) => {
+        slots.forEach((level, slot) => {
+          if (!level) return;
+          const steps = Math.min(4, Math.ceil(level * 4 / 128));
+          const bh = steps * 7 * sy;
+          if (bh < 1) return;
+          const left = (x0 + slot * 8) * sx;
+          for (let c = 0; c < 8; c++) {
+            ctx.fillStyle = pens[c];
+            ctx.fillRect(Math.round(left + c * sx), Math.round(axis - bh), Math.max(1, Math.ceil(sx)), Math.ceil(bh));
+          }
+        });
+      };
+      drawGroup(16, e1.instruments);
+      drawGroup(280, e1.notes);
+    },
+
+    /* E3: a per-track oscilloscope 42 samples wide, 2 font pixels in from
+       the track edge, hanging off the highlighted line to the bottom */
+    drawTrackScopes(on) {
       const canvas = document.getElementById('ch-waves');
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
@@ -2861,41 +3008,36 @@
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      if (!on || !MW.grid || !MW.grid.el) return;
-      const row = MW.grid.el.querySelector('.grid-row');
+      if (!on || !MW.player.playing || !MW.grid || !MW.grid.el) return;
+      const row = MW.grid.el.querySelector('.grid-row.cur') || MW.grid.el.querySelector('.grid-row');
       if (!row) return;
       const base = canvas.getBoundingClientRect();
-      const y = Math.max(24, h - 92);
-      const tracks = row.querySelectorAll('.track');
-
+      const top = row.getBoundingClientRect().top - base.top;
+      const height = h - top - 8;
+      if (height < 8) return;
+      const tracks = Array.from(row.querySelectorAll('.track')).slice(0, 4);
+      const samples = 42;
       tracks.forEach((tr, i) => {
         const wave = MW.audio.channelWave(i);
         if (!wave) return;
         const r = tr.getBoundingClientRect();
-        const x0 = r.left - base.left + 6;
-        const width = Math.min(w - x0, r.width - 12);
+        const x0 = r.left - base.left + 2;
+        const width = Math.min(samples * 1.5, r.width - 4);
         if (width < 8 || x0 > w) return;
-
-        let peak = 0;
-        for (let k = 0; k < wave.length; k++) peak = Math.max(peak, Math.abs(wave[k]));
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(Math.max(0, x0), y - 12, width, 24);
-        ctx.clip();
-        ctx.strokeStyle = peak > 0.006 ? 'rgba(0,255,255,0.95)' : 'rgba(0,255,255,0.25)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash(peak > 0.006 ? [] : [2, 3]);
-        ctx.beginPath();
-        for (let x = 0; x < width; x++) {
-          const idx = Math.min(wave.length - 1, Math.floor((x / width) * wave.length));
+        ctx.fillStyle = '#ffaaaa';
+        let start = 0;
+        const rowOf = k => {
+          const idx = Math.min(wave.length - 1, Math.floor((k / samples) * wave.length));
           const v = MW.clamp(wave[idx], -1, 1);
-          const yy = y - v * 9;
-          x ? ctx.lineTo(x0 + x, yy) : ctx.moveTo(x0 + x, yy);
+          return Math.round(top + height / 2 - v * (height / 2));
+        };
+        for (let k = 1; k <= samples; k++) {
+          if (k < samples && rowOf(k) === rowOf(start)) continue;
+          const x = x0 + (start / samples) * width;
+          const fw = Math.max(1, ((k - start) / samples) * width);
+          ctx.fillRect(Math.round(x), rowOf(start), Math.ceil(fw), 1);
+          start = k;
         }
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.restore();
       });
     },
 
@@ -2919,8 +3061,22 @@
 
   /* ------------------------------------------------------------ boot */
 
+  async function loadExample(onlyIfUnchanged) {
+    const initialSong = app.song;
+    try {
+      const response = await fetch('fixtures/maniac-beat.mmd1');
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const buffer = await response.arrayBuffer();
+      if (onlyIfUnchanged && app.song !== initialSong) return;
+      openBuffer(buffer, 'Maniac Beat.mmd1');
+    } catch (err) {
+      MW.toast('Could not load the example song: ' + err.message, true);
+    }
+  }
+  MW.loadExample = loadExample;
+
   function boot() {
-    app.song = buildDemo();
+    app.song = MW.createSong();
     app.eq = [true, true, true];
     prefs.load();
     MW.player.setSong(app.song);
@@ -2938,13 +3094,33 @@
     });
 
     document.getElementById('panel').addEventListener('click', onPanelClick);
+    document.getElementById('display-body').addEventListener('click', e => {
+      if (MW.displays.current === 'midi') onPanelClick(e);
+    });
+
+    const blockNameBox = document.getElementById('st-blockname');
+    if (blockNameBox) blockNameBox.addEventListener('input', () => {
+      const b = app.song.blocks[app.cursor.block];
+      if (b) b.name = blockNameBox.value;
+    });
+    const songNameBox = document.getElementById('st-songname');
+    if (songNameBox) songNameBox.addEventListener('input', () => { app.song.name = songNameBox.value; });
 
     const nrm = document.getElementById('btn-nrm');
     if (nrm) {
-      nrm.classList.toggle('on', !!app.monNormal);
+      const modes = [['NRM', 1], ['2/3', 2 / 3], ['1/2', 1 / 2]];
+      app.nrmMode = app.nrmMode || 0;
+      const showNrm = () => {
+        const [label, rate] = modes[app.nrmMode];
+        nrm.textContent = label;
+        nrm.classList.toggle('on', app.nrmMode !== 0);
+        MW.player.rate = rate;
+      };
+      showNrm();
       nrm.onclick = () => {
-        app.monNormal = !app.monNormal;
-        nrm.classList.toggle('on', !!app.monNormal);
+        app.nrmMode = (app.nrmMode + 1) % modes.length;
+        showNrm();
+        MW.toast('Playback speed ' + nrm.textContent);
       };
     }
 
@@ -2978,7 +3154,12 @@
       refreshAll();
       MW.toast('Song ' + (app.songIndex + 1) + ' of ' + list.length);
     }
-    document.getElementById('st-song').onclick = () => showSong(1);
+    const instrumentControl = document.getElementById('st-ins-control');
+    instrumentControl.addEventListener('click', () => selectIns(1));
+    instrumentControl.addEventListener('contextmenu', e => { e.preventDefault(); selectIns(-1); });
+
+    document.getElementById('st-song-control').onclick = () => showSong(1);
+    document.getElementById('st-song-control').oncontextmenu = e => { e.preventDefault(); showSong(-1); };
     document.getElementById('st-song-next').onclick = () => showSong(1);
     document.getElementById('st-song-prev').onclick = () => showSong(-1);
 
@@ -2992,6 +3173,63 @@
       MW.grid.render();
     });
 
+    /* The status bar digits follow the manual: the digit clicked decides
+       the step (rightmost 1, then 10, 100, 1000). */
+    const digitStep = (el, clientX, digits) => {
+      const text = (el.textContent || '').trim();
+      const len = Math.max(digits, text.length);
+      const r = el.getBoundingClientRect();
+      const charW = r.width / len;
+      const start = (r.width - charW * len) / 2;
+      const index = Math.min(digits - 1, Math.max(0, Math.floor((clientX - r.left - start) / charW)));
+      return Math.pow(10, digits - 1 - index);
+    };
+    const stepSeq = (el, e, dir) => {
+      e.preventDefault();
+      const step = digitStep(el, e.clientX, 4);
+      const last = Math.max(0, app.song.playseq.length - 1);
+      app.cursor.seq = MW.clamp(app.cursor.seq + step * dir, 0, last);
+      MW.renderSeqBox();
+      MW.touchStatus('seq', ['seq']);
+    };
+    const seqIndex = document.getElementById('st-seq');
+    seqIndex.addEventListener('click', e => stepSeq(seqIndex, e, 1));
+    seqIndex.addEventListener('contextmenu', e => stepSeq(seqIndex, e, -1));
+
+    const blockIndex = document.getElementById('st-block');
+    const stepBlock = (e, dir) => {
+      e.preventDefault();
+      const step = digitStep(blockIndex, e.clientX, 4);
+      const last = Math.max(0, app.song.blocks.length - 1);
+      const next = MW.clamp(app.cursor.block + step * dir, 0, last);
+      if (next !== app.cursor.block) selectBlock(next - app.cursor.block);
+      else MW.touchStatus('block', ['cursor']);
+    };
+    blockIndex.addEventListener('click', e => stepBlock(e, 1));
+    blockIndex.addEventListener('contextmenu', e => stepBlock(e, -1));
+
+    const octaveBox = document.getElementById('st-oct');
+    const stepOctave = dir => {
+      app.octave = MW.clamp(((app.octave + dir) % 9 + 9) % 9, 0, 8);
+      MW.touchStatus('octave', ['octave']);
+      MW.panels.refresh();
+    };
+    octaveBox.addEventListener('click', () => stepOctave(1));
+    octaveBox.addEventListener('contextmenu', e => { e.preventDefault(); stepOctave(-1); });
+
+    document.getElementById('st-edit').addEventListener('click', () => {
+      app.editMode = !app.editMode;
+      MW.touchStatus('edit', ['editMode']);
+    });
+    document.getElementById('st-space').addEventListener('click', () => {
+      app.autoSpace = !app.autoSpace;
+      MW.touchStatus('space', ['autoSpace']);
+    });
+    document.getElementById('st-chord').addEventListener('click', () => {
+      app.chordMode = !app.chordMode;
+      MW.touchStatus('chord', ['chordMode']);
+    });
+
     document.getElementById('file-input').onchange = e => {
       const f = e.target.files[0];
       if (f) readFile(f);
@@ -2999,6 +3237,7 @@
     };
 
     document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', e => { if (e.key === 'Alt') app.altHeld = null; });
 
     let panicTimer = 0;
     document.addEventListener('mousedown', e => {
@@ -3012,6 +3251,15 @@
       }, 1500);
     });
     document.addEventListener('mouseup', () => clearTimeout(panicTimer));
+
+    /* the manual: a right click switches the graphic V.U. meters and
+       scrolling off; the block editor keeps the right button for ranges */
+    document.addEventListener('contextmenu', e => {
+      if (e.target.closest && e.target.closest('#grid-wrap')) return;
+      e.preventDefault();
+      app.displaysOff = !app.displaysOff;
+      MW.touchStatus('meters', ['eq']);
+    });
 
     document.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('dragging'); });
     document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('dragging'); });
@@ -3066,18 +3314,7 @@
         MW.lastSeq = row.seq;
         MW.renderSeqBox();
       }
-      if (app.follow) {
-        if (row.block !== app.cursor.block) {
-          app.cursor.block = row.block;
-          app.cursor.line = row.line;
-          app.cursor.seq = row.seq;
-          MW.grid.render();
-          MW.renderSeqBox();
-        } else {
-          app.cursor.line = row.line;
-          MW.grid.refreshLine(row.line);
-        }
-      }
+      MW.followPlaybackRow(row);
       store.set({ seq: MW.player.seqPos }, 'play');
       MW.touchStatus('play', ['cursor']);
     };
@@ -3119,7 +3356,8 @@
     });
 
     refreshAll();
-    MW.toast('Octanaut ready — space plays, Esc edits, drop a module anywhere');
+    MW.toast('Loading example song…');
+    loadExample(true);
   }
 
   function jumpToSeq() {

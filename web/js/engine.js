@@ -894,9 +894,7 @@
     },
 
     decodeVolume(dat) {
-      if (this.song.flags.volhex) return dat;
-      const d = Math.floor(dat / 16);
-      return d * 10 + (dat % 16);
+      return MW.volumeFromArg(dat, !!this.song.flags.volhex);
     },
 
     channelTick(ch, time) {
