@@ -3186,11 +3186,12 @@
       const loop = () => {
         this.raf = requestAnimationFrame(loop);
         const now = performance.now();
-        if (now - this.last < 33) return;
+        if (now - this.last < 16) return;
         const dt = (now - (this.prev || now)) / 1000;
         this.prev = now;
         this.last = now;
-        if (MW.player.playing) this.elapsed += Math.min(0.2, dt);
+        this.lastDt = Math.min(0.2, dt);
+        if (MW.player.playing) this.elapsed += this.lastDt;
         this.draw();
       };
       this.raf = requestAnimationFrame(loop);
@@ -3220,7 +3221,7 @@
       const bars = eq[0] !== false && !split;
       const vu = eq[1] !== false && !split;
       const scopes = eq[2] !== false && !split;
-      this.updateFooterMeters();
+      this.updateFooterMeters(this.lastDt || 1 / 30);
       this.drawFooter(ctx, w, h, bars);
       this.drawTrackScopes(scopes);
 
@@ -3241,13 +3242,15 @@
        01-31 on the left and notes C-1 upward on the right, 8 Amiga pixels
        apart, raised by note triggers and falling like the other meters.
        Geometry measured off OctaMED Pro 4 (via OctaMEDIC). */
-    updateFooterMeters() {
+    updateFooterMeters(dt) {
       const app = MW.app;
       const e1 = app.e1 || (app.e1 = {
         instruments: new Array(31).fill(0),
         notes: new Array(43).fill(0),
+        shown: { instruments: new Array(31).fill(0), notes: new Array(43).fill(0) },
         seen: new Array(16).fill(0)
       });
+      if (!e1.shown) e1.shown = { instruments: new Array(31).fill(0), notes: new Array(43).fill(0) };
       const trig = MW.player.triggers || {};
       const raise = (arr, n, level) => {
         const i = (n | 0) - 1;
@@ -3261,10 +3264,12 @@
         raise(e1.instruments, e.ins, level);
         raise(e1.notes, e.note, level);
       }
-      /* a full meter empties in about 2/3 s at 50Hz */
-      const fall = 6;
-      for (const arr of [e1.instruments, e1.notes]) {
-        for (let i = 0; i < arr.length; i++) arr[i] = Math.max(0, arr[i] - fall);
+      /* a V.U. needle: snap up on a trigger, then fall at a steady rate
+         per second. Drawing at the display rate turns the fall into small
+         even steps instead of the old four-block jumps. */
+      const step = Math.max(0, dt || 0);
+      for (const group of [e1.instruments, e1.notes]) {
+        for (let i = 0; i < group.length; i++) group[i] = MW.decayLevel(group[i], step, 320);
       }
     },
 
@@ -3314,9 +3319,8 @@
       const pens = ['#ff0000', '#ff8888', '#ffaaaa', '#ffcccc', '#ffcccc', '#ffaaaa', '#ff8888', '#ff0000'];
       const drawGroup = (x0, slots) => {
         slots.forEach((level, slot) => {
-          if (!level) return;
-          const steps = Math.min(4, Math.ceil(level * 4 / 128));
-          const bh = steps * 7 * sy;
+          if (level < 0.5) return;
+          const bh = (level / 128) * graphH;
           if (bh < 1) return;
           const left = (x0 + slot * 8) * sx;
           for (let c = 0; c < 8; c++) {
@@ -3348,7 +3352,9 @@
       const row = MW.grid.el.querySelector('.grid-row.cur') || MW.grid.el.querySelector('.grid-row');
       if (!row) return;
       const base = canvas.getBoundingClientRect();
-      const top = row.getBoundingClientRect().top - base.top;
+      /* the scope sits low in the editor, with its top at about two thirds
+         of the height, and spans to the bottom */
+      const top = Math.round(h * 0.66);
       const height = h - top - 8;
       if (height < 8) return;
       const tracks = Array.from(row.querySelectorAll('.track')).slice(0, 4);
@@ -3358,20 +3364,21 @@
         if (!wave) return;
         const r = tr.getBoundingClientRect();
         const x0 = r.left - base.left + 2;
-        const width = Math.min(samples * 1.5, r.width - 4);
-        if (width < 8 || x0 > w) return;
+        const width = Math.max(8, r.width - 4);
+        if (x0 > w) return;
         ctx.fillStyle = '#ffaaaa';
         let start = 0;
         const rowOf = k => {
           const idx = Math.min(wave.length - 1, Math.floor((k / samples) * wave.length));
-          const v = MW.clamp(wave[idx], -1, 1);
+          /* a little gain so a quiet channel still fills the scope */
+          const v = MW.clamp((wave[idx] || 0) * 5, -1, 1);
           return Math.round(top + height / 2 - v * (height / 2));
         };
         for (let k = 1; k <= samples; k++) {
           if (k < samples && rowOf(k) === rowOf(start)) continue;
           const x = x0 + (start / samples) * width;
           const fw = Math.max(1, ((k - start) / samples) * width);
-          ctx.fillRect(Math.round(x), rowOf(start), Math.ceil(fw), 1);
+          ctx.fillRect(Math.round(x), rowOf(start), Math.ceil(fw), 2);
           start = k;
         }
       });

@@ -353,6 +353,16 @@
 
   MW.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+  /* Meter animation: a level falls by a rate per second, and a displayed
+     level eases toward its target so bars rise and fall smoothly. */
+  MW.decayLevel = function (level, dt, perSecond) {
+    return Math.max(0, level - (perSecond || 160) * Math.max(0, dt || 0));
+  };
+  MW.easeLevel = function (shown, target, dt, rate) {
+    const k = 1 - Math.exp(-(rate || 14) * Math.max(0, dt || 0));
+    return shown + (target - shown) * k;
+  };
+
   MW.formatBytes = function (n) {
     const v = Math.max(0, Number(n) || 0);
     if (v < 1024) return v + ' B';

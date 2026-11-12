@@ -117,3 +117,17 @@ test('group insertion reports only the lines that fit', () => {
   assert.equal(block.rows[2][0].note, 21);
   assert.equal(block.rows[3][0].note, 22);
 });
+
+test('meter levels decay per second and ease toward their target', () => {
+  assert.equal(MW.decayLevel(100, 0.5, 160), 20);
+  assert.equal(MW.decayLevel(10, 0.5, 160), 0);
+  assert.equal(MW.decayLevel(100, 0, 160), 100);
+
+  const up = MW.easeLevel(0, 100, 1 / 30, 14);
+  assert.ok(up > 0 && up < 100, 'moves toward the target without overshooting');
+  const more = MW.easeLevel(up, 100, 1 / 30, 14);
+  assert.ok(more > up && more < 100);
+  assert.equal(MW.easeLevel(40, 100, 0, 14), 40, 'no time, no movement');
+  const down = MW.easeLevel(100, 0, 1 / 30, 14);
+  assert.ok(down < 100 && down > 0);
+});

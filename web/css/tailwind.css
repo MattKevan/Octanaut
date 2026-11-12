@@ -218,15 +218,15 @@
   }
 
   .ch-meters {
-    @apply pointer-events-none absolute inset-0 z-0 overflow-hidden;
+    @apply pointer-events-none absolute inset-0 z-[2] overflow-hidden;
   }
 
   .ch-waves {
-    @apply pointer-events-none absolute inset-0 z-0 block h-full w-full overflow-hidden;
+    @apply pointer-events-none absolute inset-0 z-[1] block h-full w-full overflow-hidden;
   }
 
   .ch-meter {
-    @apply pointer-events-none absolute bottom-0 top-1/2 w-[12px] border-x-2 border-[#aaaaaa];
+    @apply pointer-events-none absolute bottom-0 top-1/2 w-[26px] border-x-2 border-[#aaaaaa];
     background: linear-gradient(to bottom, #ff2211 0%, #ffcc22 40%, #66ff11 70%, #008800 100%);
     clip-path: inset(100% 0 0 0);
   }
