@@ -1552,20 +1552,225 @@
     MW.grid.render();
   }
 
-  /* ------------------------------------------------------------ file io */
+  /* ------------------------------------------------------- sample import */
 
-  function loadSampleBuffer(buffer, name) {
-    let inst = null;
-    try { inst = MW.loadInstrument(buffer); } catch (e) { /* reported below */ }
-    if (!inst) return MW.toast('Could not read that instrument', true);
-    inst.name = inst.name || String(name || 'sample').replace(/\.[^.]+$/, '');
-    app.song.instruments[app.currentIns - 1] = inst;
-    if (MW.audio) MW.audio.invalidateBuffers();
-    refreshAll();
-    MW.toast('Loaded ' + (name || 'sample') + ' into ' + MW.insName(app.currentIns));
-    return inst;
+  function importBaseName(name) {
+    return String(name || 'sample').split('/').pop().replace(/\.[^.]+$/, '') || 'sample';
   }
-  MW.loadSampleBuffer = loadSampleBuffer;
+
+  async function importInstrumentBuffer(buffer, name, settings) {
+    let meta;
+    try {
+      meta = MW.sampleImport.sniff(new Uint8Array(buffer));
+    } catch (e) {
+      MW.toast('Could not read that file', true);
+      return null;
+    }
+
+    /** @type {any} */
+    let decoded = null;
+    /** @type {any} */
+    let built = null;
+    if (!settings && meta.asks) {
+      const choice = await openImportDialog(buffer, name, meta);
+      if (!choice) return null;
+      decoded = choice.decoded;
+      built = choice.built;
+      settings = choice.settings;
+    }
+
+    /** @type {any} */
+    let result = null;
+    try {
+      if (built) result = { ...built, meta, decoded };
+      else if (decoded) result = { ...MW.sampleImport.build(decoded, settings || MW.sampleImport.defaults()), meta, decoded };
+      else result = await MW.sampleImport.load(buffer, settings);
+    } catch (err) {
+      MW.toast(err.message || 'Could not read that instrument', true);
+      return null;
+    }
+    if (!result || !result.instrument) {
+      MW.toast('Could not read that instrument', true);
+      return null;
+    }
+
+    const inst = result.instrument;
+    inst.name = inst.name || importBaseName(name);
+    app.song.instruments[app.currentIns - 1] = inst;
+    if (MW.player && MW.player.invalidateBuffers) MW.player.invalidateBuffers();
+    refreshAll();
+
+    const rate = result.report ? result.report.rate : (inst.c2rate || 8363);
+    const frames = result.report ? result.report.frames : (inst.data ? inst.data.length : 0);
+    let note = 'Loaded ' + importBaseName(name) + ' into ' + MW.insName(app.currentIns) +
+      ' (' + rate + ' Hz, ' + frames + ' samples)';
+    if (result.report && result.report.truncated) note += ' - trimmed to ' + MW.sampleImport.MAX_FRAMES;
+    if (inst.importWarning) note += ' - ' + inst.importWarning;
+    MW.toast(note);
+    return result;
+  }
+  MW.importInstrumentBuffer = importInstrumentBuffer;
+
+  MW.previewSample = function (inst, note) {
+    const ctx = MW.audio && MW.audio.init ? MW.audio.init() : null;
+    if (!ctx) return { stop() {} };
+    if (MW.audio.unlock) MW.audio.unlock();
+    const buffer = MW.player.pcmBuffer(inst);
+    if (!buffer) return { stop() {} };
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.playbackRate.value = 428 / MW.period(note || 13);
+    const gain = ctx.createGain();
+    gain.gain.value = 0.26;
+    src.connect(gain);
+    gain.connect(MW.audio.limiter || ctx.destination);
+    let stopped = false;
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      try { src.stop(); } catch (e) { /* already stopped */ }
+      try { gain.disconnect(); } catch (e) { /* already gone */ }
+    };
+    src.onended = stop;
+    src.start();
+    return { stop };
+  };
+
+  function openImportDialog(buffer, name, meta) {
+    return new Promise(resolve => {
+      const stereo = (meta.channels || 1) > 1;
+      const noteChoice = app.importNote || 'c3';
+      const channel = app.importChannel || 'mixed';
+      const el = document.createElement('div');
+      el.className = 'requester import-sample';
+      el.innerHTML = `
+        <div class="req-frame">
+          <div class="req-title">Load sample</div>
+          <div class="req-path">${escapeHtml(name || 'sample')}</div>
+          <div class="req-note" id="import-info">Reading…</div>
+          <div class="flex flex-wrap items-center gap-2 text-[13px]">
+            <label class="flex items-center gap-1">CONVERT TO
+              <select id="import-note" class="h-[26px] border border-ink bg-paper px-1 text-[13px] text-ink">
+                <option value="source"${noteChoice === 'source' ? ' selected' : ''}>Source rate</option>
+                <option value="c1"${noteChoice === 'c1' ? ' selected' : ''}>C-1</option>
+                <option value="c2"${noteChoice === 'c2' ? ' selected' : ''}>C-2</option>
+                <option value="c3"${noteChoice === 'c3' ? ' selected' : ''}>C-3</option>
+              </select>
+            </label>
+            ${stereo ? `<label class="flex items-center gap-1"><input type="checkbox" id="import-stereo"${app.importStereo ? ' checked' : ''}> KEEP STEREO</label>
+              <label class="flex items-center gap-1">CHANNEL
+                <select id="import-channel" class="h-[26px] border border-ink bg-paper px-1 text-[13px] text-ink">
+                  <option value="mixed"${channel === 'mixed' ? ' selected' : ''}>Mixed</option>
+                  <option value="left"${channel === 'left' ? ' selected' : ''}>Left</option>
+                  <option value="right"${channel === 'right' ? ' selected' : ''}>Right</option>
+                </select>
+              </label>` : ''}
+            ${meta.loop ? `<label class="flex items-center gap-1"><input type="checkbox" id="import-loop"${app.importLoop !== false ? ' checked' : ''}> LOOP</label>` : ''}
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-[13px]">
+            <label class="flex items-center gap-1"><input type="checkbox" id="import-normalise"${app.importNormalise ? ' checked' : ''}> NORMALISE</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="import-preview"> PREVIEW</label>
+          </div>
+          <div class="req-note" id="import-target"></div>
+          <div class="req-buttons">
+            <span class="spacer"></span>
+            <button type="button" class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="import-cancel">Cancel</button>
+            <button type="button" class="flex h-[26px] items-center justify-center border border-ink bg-paper px-2 text-[14px] leading-none whitespace-nowrap text-ink on:bg-ink on:text-paper active:bg-ink active:text-paper" id="import-ok" disabled>Load</button>
+          </div>
+        </div>`;
+      document.body.appendChild(el);
+
+      const info = el.querySelector('#import-info');
+      const target = el.querySelector('#import-target');
+      const ok = el.querySelector('#import-ok');
+      const noteEl = el.querySelector('#import-note');
+      const channelEl = el.querySelector('#import-channel');
+      const stereoEl = el.querySelector('#import-stereo');
+      const loopEl = el.querySelector('#import-loop');
+      const normaliseEl = el.querySelector('#import-normalise');
+      const previewEl = el.querySelector('#import-preview');
+      const state = { decoded: null, built: null, settings: null, preview: null, done: false };
+
+      const stopPreview = () => {
+        if (state.preview) { state.preview.stop(); state.preview = null; }
+      };
+      const startPreview = () => {
+        stopPreview();
+        if (!previewEl.checked || !state.built) return;
+        state.preview = MW.previewSample(state.built.instrument, (state.settings && state.settings.note) || 13);
+      };
+      const collect = () => {
+        const choice = noteEl.value;
+        return {
+          note: choice === 'source' ? null : choice === 'c1' ? 1 : choice === 'c2' ? 13 : 25,
+          channel: channelEl ? channelEl.value : 'mixed',
+          stereo: stereoEl ? !!stereoEl.checked : false,
+          loop: loopEl ? !!loopEl.checked : false,
+          normalise: !!normaliseEl.checked
+        };
+      };
+      const refresh = () => {
+        if (!state.decoded) return;
+        const settings = collect();
+        const p = MW.sampleImport.plan(state.decoded, settings);
+        const frames = Math.min(state.decoded.channels[0].length, MW.sampleImport.MAX_FRAMES);
+        target.textContent = 'New rate: ' + p.rate + ' Hz (C-2 ' + p.c2rate + ')' +
+          (p.rate < state.decoded.rate ? '' : ' - stays') +
+          (frames >= MW.sampleImport.MAX_FRAMES ? ' - trimmed to ' + MW.sampleImport.MAX_FRAMES : '');
+        try {
+          state.built = MW.sampleImport.build(state.decoded, settings);
+          state.settings = settings;
+          ok.disabled = false;
+          startPreview();
+        } catch (err) {
+          state.built = null;
+          target.textContent = err.message;
+          ok.disabled = true;
+          stopPreview();
+        }
+      };
+      const finish = value => {
+        if (state.done) return;
+        state.done = true;
+        stopPreview();
+        el.remove();
+        document.removeEventListener('keydown', onKey);
+        resolve(value);
+      };
+      const load = () => {
+        if (!state.decoded || !state.built) return;
+        app.importNote = noteEl.value;
+        app.importChannel = channelEl ? channelEl.value : 'mixed';
+        app.importStereo = stereoEl ? !!stereoEl.checked : false;
+        app.importLoop = loopEl ? !!loopEl.checked : false;
+        app.importNormalise = !!normaliseEl.checked;
+        prefs.save();
+        finish({ decoded: state.decoded, settings: state.settings, built: state.built });
+      };
+      const onKey = e => {
+        if (e.key === 'Escape') { e.preventDefault(); finish(null); }
+        else if (e.key === 'Return') { e.preventDefault(); load(); }
+      };
+
+      el.querySelectorAll('select,input').forEach(input => { input.onchange = refresh; });
+      el.querySelector('#import-cancel').onclick = () => finish(null);
+      ok.onclick = load;
+      document.addEventListener('keydown', onKey);
+
+      MW.sampleImport.decode(buffer, meta).then(decoded => {
+        state.decoded = decoded;
+        const seconds = decoded.channels[0].length / decoded.rate;
+        info.textContent = decoded.rate + ' Hz, ' +
+          (decoded.bits == null ? 'compressed' : decoded.bits + ' bit') + ', ' +
+          (decoded.channels.length === 1 ? 'mono' : 'stereo') + ', ' + seconds.toFixed(2) + ' s';
+        refresh();
+      }).catch(err => {
+        info.textContent = err.message;
+        target.textContent = '';
+        ok.disabled = true;
+      });
+    });
+  }
 
   function handleFileBuffer(buffer, name, source) {
     let bytes;
@@ -1596,12 +1801,12 @@
         MW.toast('Extracted ' + entry.name + ' from ' + (name || 'the archive'));
         const data = entry.data.slice().buffer;
         const entryName = entry.name.split('/').pop();
-        return entry.instrument ? loadSampleBuffer(data, entryName) : openBuffer(data, entryName, source);
+        return entry.instrument ? MW.importInstrumentBuffer(data, entryName) : openBuffer(data, entryName, source);
       }
       return MW.requester.openEntries(entries, name || 'Archive');
     }
 
-    if (MW.detectFile(buffer) === 'instrument') return loadSampleBuffer(buffer, name);
+    if (MW.detectFile(buffer) === 'instrument') return MW.importInstrumentBuffer(buffer, name);
     openBuffer(buffer, name, source);
   }
   MW.handleFileBuffer = handleFileBuffer;
@@ -2104,7 +2309,12 @@
           dep2: app.dep2,
           no16: app.no16,
           ptkey: app.ptkey,
-          timeSig: app.timeSig
+          timeSig: app.timeSig,
+          importNote: app.importNote,
+          importChannel: app.importChannel,
+          importStereo: app.importStereo,
+          importLoop: app.importLoop,
+          importNormalise: app.importNormalise
         }));
       } catch (e) { /* private mode, ignore */ }
     },
@@ -2129,6 +2339,11 @@
         app.no16 = !!p.no16;
         app.ptkey = !!p.ptkey;
         if (p.timeSig) app.timeSig = p.timeSig;
+        if (p.importNote) app.importNote = p.importNote;
+        if (p.importChannel) app.importChannel = p.importChannel;
+        app.importStereo = !!p.importStereo;
+        app.importLoop = p.importLoop !== false;
+        app.importNormalise = !!p.importNormalise;
       } catch (e) { /* ignore */ }
     },
     reset() {
@@ -2948,7 +3163,7 @@
         if (e.dir) { await this.enter(e); return; }
         if (e.instrument) {
           this.close();
-          return MW.loadSampleBuffer(e.data.slice().buffer, e.name.split('/').pop());
+          return MW.importInstrumentBuffer(e.data.slice().buffer, e.name.split('/').pop());
         }
         if (e.remote) {
           this.note = 'Downloading ' + e.name + ' from Modland…';
@@ -3756,14 +3971,7 @@
       const f = e.target.files[0];
       if (!f) return;
       const reader = new FileReader();
-      reader.onload = () => {
-        const inst = MW.loadInstrument(reader.result);
-        if (!inst) { MW.toast('Could not read that instrument', true); return; }
-        inst.name = inst.name || f.name.replace(/\.[^.]+$/, '');
-        app.song.instruments[app.currentIns - 1] = inst;
-        refreshAll();
-        MW.toast('Loaded ' + f.name + ' into ' + MW.insName(app.currentIns));
-      };
+      reader.onload = () => { MW.importInstrumentBuffer(reader.result, f.name); };
       reader.readAsArrayBuffer(f);
       e.target.value = '';
     };

@@ -590,12 +590,7 @@
             if (!entry) return;
             try {
               const file = await entry.handle.getFile();
-              const inst = MW.loadInstrument(await file.arrayBuffer());
-              if (!inst) return MW.toast('Could not read that instrument', true);
-              inst.name = inst.name || file.name.replace(/\.[^.]+$/, '');
-              app.song.instruments[app.currentIns - 1] = inst;
-              MW.touchStatus('instrument', ['song', 'currentIns']);
-              MW.toast('Loaded ' + file.name + ' into ' + MW.insName(app.currentIns));
+              await MW.importInstrumentBuffer(await file.arrayBuffer(), file.name);
             } catch (e) { MW.toast('Could not read that instrument', true); }
           } else if (action === 'save') MW.runAction('file-save-iff');
           else if (action === 'save-inst') {

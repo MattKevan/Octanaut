@@ -221,3 +221,59 @@ test('the module size is encoded once after a change, not on every status update
   assert.equal(calls, 1, 'playing does not re-encode it');
 });
 
+
+/* ---------------------------------------------------------- sample import */
+
+function audioChunk(id, data) {
+  const head = Buffer.alloc(8);
+  head.write(id, 0, 'ascii');
+  head.writeUInt32LE(data.length, 4);
+  return Buffer.concat([head, data, data.length & 1 ? Buffer.from([0]) : Buffer.alloc(0)]);
+}
+
+function audioWav(data, { channels = 1, bits = 16, rate = 44100 } = {}) {
+  const block = channels * bits / 8;
+  const fmt = Buffer.alloc(16);
+  fmt.writeUInt16LE(1, 0); fmt.writeUInt16LE(channels, 2);
+  fmt.writeUInt32LE(rate, 4); fmt.writeUInt32LE(rate * block, 8);
+  fmt.writeUInt16LE(block, 12); fmt.writeUInt16LE(bits, 14);
+  const body = Buffer.concat([Buffer.from('WAVE'), audioChunk('fmt ', fmt), audioChunk('data', data)]);
+  const head = Buffer.alloc(8);
+  head.write('RIFF', 0, 'ascii');
+  head.writeUInt32LE(body.length, 4);
+  const out = Buffer.concat([head, body]);
+  return out.buffer.slice(out.byteOffset, out.byteOffset + out.length);
+}
+
+const audio16 = (...v) => Buffer.from(new Int16Array(v).buffer);
+const setupImport = () => runtime(['sample-import', 'loaders', 'store', 'engine', 'synth', 'writer', 'app']);
+
+test('importInstrumentBuffer places a WAV in the current slot', async () => {
+  const mw = setupImport();
+  mw.app.currentIns = 3;
+  const settings = { note: null, channel: 'mixed', stereo: false, loop: false, normalise: false };
+  const result = await mw.importInstrumentBuffer(audioWav(audio16(0, 1000)), 'kick.wav', settings);
+  const inst = mw.app.song.instruments[2];
+  assert.equal(inst.name, 'kick');
+  assert.equal(inst.c2rate, 44100);
+  assert.equal(inst.data.length, 2);
+  assert.equal(result.report.frames, 2);
+});
+
+test('importInstrumentBuffer trims and reports a long sample', async () => {
+  const mw = setupImport();
+  const data = Buffer.from(new Int16Array(140000).map((_, i) => i % 100).buffer);
+  const result = await mw.importInstrumentBuffer(audioWav(data), 'long.wav', { note: null, loop: false });
+  assert.equal(result.instrument.data.length, 131072);
+  assert.equal(result.report.truncated, true);
+});
+
+test('a failed import leaves the old instrument alone', async () => {
+  const mw = setupImport();
+  const old = mw.app.song.instruments[0] = mw.createInstrument();
+  old.data = new Float32Array([0.5]);
+  const broken = audioWav(audio16(0)).slice(0, 14);
+  const result = await mw.importInstrumentBuffer(broken, 'bad.wav', { note: null });
+  assert.equal(result, null);
+  assert.equal(mw.app.song.instruments[0], old);
+});
