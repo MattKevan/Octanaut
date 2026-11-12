@@ -68,6 +68,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 |---|---|---|
 | File requester with Currdir / Devices / Assigns | yes | Drawn in the app's own style, with `DF0:`, `DH0:` and an OS folder as volumes. `DF0:` lists instantly from IndexedDB; `DH0:` is the read-only Modland archive, searched from the bundled OctaMED index; the OS volume uses the File System Access API where the browser has it, and Browse feeds the same list from the native picker elsewhere. |
 | Load song (MED 1.12 – 3.20, OctaMED 1–4, MMD0/1, ST modules) | yes | MMD0/1/2/3 and packed MMDC, MED4, MED2, ProTracker, plus MSH and 8SVX instruments. MED 2.00 (`MED` + v3) is rejected with a message. |
+| Load sample (WAV, MP3, AAC, FLAC, Ogg, AIFF, 8SVX, raw) | yes | Header sniffing, browser decoding, and a dialog for note, channel, stereo, loop and normalise. 131072-frame limit. |
 | Load instrument (raw, IFF, synth, hybrid) | yes | |
 | Load ST module | yes | Folded into Load; effects converted. |
 | Save MOD1 (+instruments) | yes | `.med` with samples included. |
@@ -79,7 +80,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 | INFO / ICON on save | no | |
 | Delete file | yes | Removes the selected file from `DF0:` or the open OS folder. |
 | Load / save MIDI messages and maps | yes | JSON dumps; messages are not written into modules. |
-| Save instrument as raw or IFF | yes | WAV and IFF 8SVX. |
+| Save instrument as raw or IFF | yes | WAV at 16-bit and the sample's own rate; IFF 8SVX at 8-bit. |
 | Export audio (browser extra) | part | WAV always; AAC through WebCodecs; MP3 where the browser exposes an encoder. |
 
 ## Play panel
@@ -279,6 +280,7 @@ The V4 gaps that matter most:
 1. **MOD1 without instruments.** `.med` always embeds the samples. The instrument-less variant, which resolves names through MED_Paths, is still absent.
 2. **MIDI messages in modules.** Editing, sending, capture, maps and dumps work, but SysEx messages are not written into MMD1.
 3. **Instrument names from MED_Paths.** The list browses real folders and keeps them across reloads, but it does not read a MED_Paths file or resolve missing instrument names by path.
+4. **Multi-octave IFF playback.** Imports keep the longest copy as a one-octave sample.
 4. **MIDI data in saved modules.** Commands 10 and 1C work while playing, but MIDI messages are not written into MMD1, so a saved module loses them.
 5. **Editor polish.** Sample/synth range tools and notation print modes.
 6. **Filesystem-adjacent features.** INFO/ICON on save, absolute instrument names and paths add/remove; the RGB palette editor is only partly there.

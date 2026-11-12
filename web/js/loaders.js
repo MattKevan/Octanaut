@@ -1031,9 +1031,12 @@
     if (meta) {
       if (meta.format === 'msh') return loadMSH(buffer);
       if (meta.format === '8svx') return load8SVX(buffer);
-      if (meta.format === 'wav') {
+      if (meta.format === 'wav' || meta.format === 'aiff') {
         try {
-          return MW.sampleImport.build(MW.sampleImport.readWav(buffer), MW.sampleImport.defaults()).instrument;
+          const decoded = meta.format === 'wav'
+            ? MW.sampleImport.readWav(buffer)
+            : MW.sampleImport.readAiff(buffer);
+          return MW.sampleImport.build(decoded, MW.sampleImport.defaults()).instrument;
         } catch (e) {
           return null;
         }

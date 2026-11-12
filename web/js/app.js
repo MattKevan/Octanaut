@@ -1740,9 +1740,9 @@
       const load = () => {
         if (!state.decoded || !state.built) return;
         app.importNote = noteEl.value;
-        app.importChannel = channelEl ? channelEl.value : 'mixed';
-        app.importStereo = stereoEl ? !!stereoEl.checked : false;
-        app.importLoop = loopEl ? !!loopEl.checked : false;
+        if (channelEl) app.importChannel = channelEl.value;
+        if (stereoEl) app.importStereo = !!stereoEl.checked;
+        if (loopEl) app.importLoop = !!loopEl.checked;
         app.importNormalise = !!normaliseEl.checked;
         prefs.save();
         finish({ decoded: state.decoded, settings: state.settings, built: state.built });

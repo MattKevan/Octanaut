@@ -64,10 +64,14 @@ Octanaut reads and plays:
 | **MED2** | MED 1.12 fixed-layout songs. |
 | **ProTracker / SoundTracker / NoiseTracker** | 4 and 8 channel `.mod`, converted to MED effects on import. |
 | **MSH** | OctaMED synthetic instruments, the little 50-byte patches. |
-| **IFF 8SVX** and raw samples | Instrument import. |
+| **WAV** | 8, 16, 24 and 32-bit PCM, 32/64-bit float, extensible format and `smpl` loops, converted to the current instrument. |
+| **IFF 8SVX** and raw samples | Instrument import. Fibonacci-delta bodies; multi-octave copies are kept as one octave. |
+| **MP3 and AAC** | M4A/MP4 and ADTS AAC, decoded by the browser, then converted like any other sample. |
+| **FLAC and Ogg** | Decoded by the browser where it has the codec. Ogg covers Vorbis and Opus. |
+| **AIFF/AIFC** | 8, 16, 24 and 32-bit PCM, float and `sowt`, read natively. |
 | **LHA archives** | Drop a `.lha` and the module inside is extracted and opened. If it holds several, you get a picker. Headers at levels 0, 1 and 2; methods -lh0-, -lh1-, -lh4- to -lh7-. |
 
-It writes **MMD1** (`.med`, V4's native format), **MMD0** (the older interoperable format), **ProTracker modules** with the effects converted, **WAV**, **AAC** and **IFF 8SVX** samples. Audio export renders the song offline, so it does not depend on real-time playback. MP3 appears when the browser exposes an encoder, which Chromium currently does not. It also records from a microphone, which the sample editor's Monitor and Record gadgets drive.
+It writes **MMD1** (`.med`, V4's native format), **MMD0** (the older interoperable format), **ProTracker modules** with the effects converted, **WAV**, **AAC** and **IFF 8SVX** samples. MMD1 keeps 16-bit and stereo samples; MMD0 is 8-bit mono. WAV export keeps the sample's own rate. Audio export renders the song offline, so it does not depend on real-time playback. MP3 appears when the browser exposes an encoder, which Chromium currently does not. It also records from a microphone, which the sample editor's Monitor and Record gadgets drive.
 
 Playing an OctaMED demo from 1991 is the point. `File > Load demo` gives you something to poke at if you do not have a module to hand.
 
@@ -204,6 +208,8 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 
 - **MIDI messages and maps** are partial: SysEx messages can be edited, captured, sent and saved as JSON; external clock and transport follow; the input map has all 128 keys. Key-up recording and writing SysEx into MMD1 are still missing.
 - **The sample list** shows loaded instruments and can browse user-selected folders, but does not use `MED_Paths` or resolve missing names automatically.
+- **Multi-octave IFF samples** import as their longest copy, so the octave copies do not play separately yet.
+- **AAC on Linux Firefox** needs a system codec. The import says so when one is missing; WAV always works.
 - **The sample and synth editors** support freehand drawing and range operations; Sample D.PIXELS and exact original effect algorithms remain incomplete.
 - **Amiga-only controls** (ICON, Workbench open/close, LOADGFX, MOUSE2) are disabled. They have no browser equivalent.
 - **MP3 export** depends on a browser audio encoder. Chromium exposes AAC but not MP3, so there the WAV and AAC buttons are the reliable pair.

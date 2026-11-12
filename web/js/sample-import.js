@@ -249,11 +249,11 @@
 
   function sniffFlac(dv) {
     if (dv.byteLength < 42) return base('flac', { compressed: true });
-    const rate = (dv.getUint8(10) << 12) | (dv.getUint8(11) << 4) | (dv.getUint8(12) >> 4);
-    const channels = ((dv.getUint8(12) >> 1) & 7) + 1;
-    const bits = (((dv.getUint8(12) & 1) << 4) | (dv.getUint8(13) >> 4)) + 1;
-    const total = (dv.getUint8(13) & 0x0f) * 4294967296 +
-      u32(dv, 14, false);
+    const rate = (dv.getUint8(18) << 12) | (dv.getUint8(19) << 4) | (dv.getUint8(20) >> 4);
+    const channels = ((dv.getUint8(20) >> 1) & 7) + 1;
+    const bits = (((dv.getUint8(20) & 1) << 4) | (dv.getUint8(21) >> 4)) + 1;
+    const total = (dv.getUint8(21) & 0x0f) * 4294967296 +
+      u32(dv, 22, false);
     return base('flac', {
       rate: rate || null,
       bits,
@@ -292,12 +292,12 @@
     if (dv.byteLength >= 4 && tag(dv, 0) === 'fLaC') return sniffFlac(dv);
     if (dv.byteLength >= 4 && tag(dv, 0) === 'OggS') return sniffOgg(dv);
     if (dv.byteLength >= 4 && tag(dv, 0) === 'MSH\0') return base('msh', { bits: 8, channels: 1, asks: false });
+    const m4a = sniffM4a(dv);
+    if (m4a) return m4a;
     const mp3 = sniffMp3(dv);
     if (mp3) return mp3;
     const aac = sniffAdts(dv);
     if (aac) return aac;
-    const m4a = sniffM4a(dv);
-    if (m4a) return m4a;
     return base('raw', { rate: 8363, bits: 8, channels: 1, frames: dv.byteLength, asks: false });
   }
 
@@ -400,6 +400,84 @@
     }
 
     return { rate: fmt.rate, bits: fmt.bits, channels, loop, truncated };
+  }
+
+  /* --------------------------------------------------------------- AIFF */
+
+  function readAiff(buffer, maxFrames) {
+    const dv = new DataView(buffer);
+    const byteLength = buffer.byteLength;
+    if (byteLength < 12 || tag(dv, 0) !== 'FORM' ||
+      (tag(dv, 8) !== 'AIFF' && tag(dv, 8) !== 'AIFC')) {
+      throw new Error('AIFF file is damaged');
+    }
+    const max = maxFrames == null ? MAX_FRAMES : Math.max(0, maxFrames | 0);
+    let channels = 0, frames = 0, bits = 0, rate = 0;
+    let compression = 'NONE';
+    let soundOff = -1, soundSize = 0;
+    let pos = 12;
+    while (pos + 8 <= byteLength) {
+      const id = tag(dv, pos);
+      const size = u32(dv, pos + 4, false);
+      const body = pos + 8;
+      if (body + size > byteLength) {
+        if (id === 'SSND' && size >= 8) {
+          const offset = u32(dv, body, false);
+          soundOff = body + 8 + offset;
+          soundSize = Math.max(0, byteLength - body - 8 - offset);
+        }
+        break;
+      }
+      if (id === 'COMM' && size >= 18) {
+        channels = u16(dv, body, false);
+        frames = u32(dv, body + 2, false);
+        bits = u16(dv, body + 6, false);
+        rate = Math.round(extended80(dv, body + 8));
+        if (size >= 22) compression = tag(dv, body + 18);
+      } else if (id === 'SSND' && size >= 8) {
+        const offset = u32(dv, body, false);
+        soundOff = body + 8 + offset;
+        soundSize = Math.max(0, size - 8 - offset);
+      }
+      pos = body + size + (size & 1);
+    }
+    if (!channels || !bits || soundOff < 0) throw new Error('AIFF file is damaged');
+    const float = compression === 'fl32' || compression === 'FL32' ||
+      compression === 'fl64' || compression === 'FL64';
+    if (!float && compression !== 'NONE' && compression !== 'twos' && compression !== 'sowt') {
+      throw new Error('Compressed AIFF is not supported. Save it as PCM first.');
+    }
+    if (![8, 16, 24, 32, 64].includes(bits) || (float && bits !== 32 && bits !== 64)) {
+      throw new Error('Unsupported AIFF depth');
+    }
+    const little = compression === 'sowt';
+    const bytesPer = bits / 8;
+    const block = Math.max(1, channels * bytesPer);
+    const available = Math.min(frames > 0 ? frames : Infinity, Math.floor(soundSize / block));
+    const count = Math.min(available, max);
+    /** @type {Float32Array[]} */
+    const out = [];
+    for (let c = 0; c < channels; c++) out.push(new Float32Array(count));
+    const read24 = p => {
+      let n = little
+        ? dv.getUint8(p) | (dv.getUint8(p + 1) << 8) | (dv.getUint8(p + 2) << 16)
+        : (dv.getUint8(p) << 16) | (dv.getUint8(p + 1) << 8) | dv.getUint8(p + 2);
+      if (n & 0x800000) n -= 0x1000000;
+      return n / 8388608;
+    };
+    for (let i = 0; i < count; i++) {
+      for (let c = 0; c < channels; c++) {
+        const p = soundOff + i * block + c * bytesPer;
+        let value;
+        if (float) value = bits === 32 ? dv.getFloat32(p, false) : dv.getFloat64(p, false);
+        else if (bits === 8) value = dv.getInt8(p) / 128;
+        else if (bits === 16) value = (little ? dv.getInt16(p, true) : dv.getInt16(p, false)) / 32768;
+        else if (bits === 24) value = read24(p);
+        else value = (little ? dv.getInt32(p, true) : dv.getInt32(p, false)) / 2147483648;
+        out[c][i] = value;
+      }
+    }
+    return { rate: rate || DEFAULT_RATE, bits, channels: out, loop: null, truncated: available > max };
   }
 
   /* ---------------------------------------------------------- conversion */
@@ -553,6 +631,7 @@
 
   async function decode(buffer, meta) {
     if (meta && meta.format === 'wav') return readWav(buffer);
+    if (meta && meta.format === 'aiff') return readAiff(buffer);
     if (meta && meta.compressed) {
       if (meta.duration != null && meta.duration > MAX_SECONDS) {
         throw new Error('That file is longer than 10 minutes. Import a shorter sample.');
@@ -599,6 +678,7 @@
     MAX_SECONDS,
     sniff,
     readWav,
+    readAiff,
     plan,
     resample,
     build,

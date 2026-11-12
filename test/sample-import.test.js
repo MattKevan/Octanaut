@@ -248,6 +248,7 @@ function m4aBox(rate) {
   hdlr.write('soun', 8, 'ascii');
   const out = Buffer.concat([
     box('ftyp', Buffer.from('M4A \0\0\0\0')),
+    box('free', Buffer.from([0xff, 0xfb, 0x90, 0x40])),
     box('moov', box('trak', box('mdia', box('hdlr', hdlr), box('mdhd', mdhd))))
   ]);
   return out.buffer.slice(out.byteOffset, out.byteOffset + out.length);
@@ -259,7 +260,7 @@ const flac = (() => {
   const b = Buffer.alloc(8 + 34);
   b.write('fLaC', 0);
   b[4] = 0; b[5] = 0; b[6] = 0; b[7] = 34;
-  b[10] = 0x0a; b[11] = 0xc4; b[12] = 0x42; b[13] = 0xf0;
+  b[18] = 0x0a; b[19] = 0xc4; b[20] = 0x42; b[21] = 0xf0;
   return b;
 })();
 
@@ -313,4 +314,54 @@ test('decode refuses long or oversized compressed files before decoding', async 
 test('a browser without the codec says so', async () => {
   const mw = runtime(['sample-import'], { OfflineAudioContext: BrokenContext });
   await assert.rejects(() => mw.sampleImport.decode(wav(), { format: 'mp3', rate: 44100 }), /WAV always works/);
+});
+
+function beChunk(id, data) {
+  const head = Buffer.alloc(8);
+  head.write(id, 0, 'ascii');
+  head.writeUInt32BE(data.length, 4);
+  return Buffer.concat([head, data, data.length & 1 ? Buffer.from([0]) : Buffer.alloc(0)]);
+}
+function aiff({ channels = 1, bits = 16, data = Buffer.alloc(2), compression } = {}) {
+  const frames = Math.floor(data.length / (channels * bits / 8));
+  const comm = Buffer.alloc(compression ? 24 : 18);
+  comm.writeUInt16BE(channels, 0);
+  comm.writeUInt32BE(frames, 2);
+  comm.writeUInt16BE(bits, 6);
+  Buffer.from([0x40, 0x0e, 0xac, 0x44, 0, 0, 0, 0, 0, 0]).copy(comm, 8);
+  if (compression) { comm.write(compression, 18, 'ascii'); comm.writeUInt16BE(0, 22); }
+  const ssnd = Buffer.concat([Buffer.alloc(8), data]);
+  const body = Buffer.concat([
+    Buffer.from(compression ? 'AIFC' : 'AIFF'),
+    beChunk('COMM', comm),
+    beChunk('SSND', ssnd)
+  ]);
+  const head = Buffer.alloc(8);
+  head.write('FORM', 0, 'ascii');
+  head.writeUInt32BE(body.length, 4);
+  const out = Buffer.concat([head, body]);
+  return out.buffer.slice(out.byteOffset, out.byteOffset + out.length);
+}
+
+test('AIFF decodes big-endian PCM and stereo', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const mono = s.readAiff(aiff({ data: Buffer.from([0x00, 0x00, 0x40, 0x00, 0x80, 0x00]) }));
+  assert.deepEqual(Array.from(mono.channels[0]), [0, 0.5, -1]);
+  const st = s.readAiff(aiff({
+    channels: 2,
+    data: Buffer.from([0x00, 0x00, 0x40, 0x00, 0x80, 0x00, 0x00, 0x00])
+  }));
+  assert.deepEqual(Array.from(st.channels[0]), [0, -1]);
+  assert.deepEqual(Array.from(st.channels[1]), [0.5, 0]);
+});
+
+test('AIFF decodes sowt little-endian PCM', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  const d = s.readAiff(aiff({ compression: 'sowt', data: Buffer.from([0x00, 0x00, 0x00, 0x40]) }));
+  assert.deepEqual(Array.from(d.channels[0]), [0, 0.5]);
+});
+
+test('damaged AIFF fails with a readable message', () => {
+  const s = runtime(['sample-import']).sampleImport;
+  assert.throws(() => s.readAiff(aiff({ data: Buffer.alloc(2) }).slice(0, 12)), /AIFF file is damaged/);
 });
