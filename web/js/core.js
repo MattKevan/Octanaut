@@ -38,6 +38,29 @@
 
   MW.hex = (v, w) => v.toString(16).toUpperCase().padStart(w || 2, '0');
 
+  /* SLIST file names: the base-32 slot number, a safe instrument name and
+     one instrument extension. Kept local to core so the Files panel's
+     sanitiser stays untouched. */
+  MW.instFileName = function (inst, index) {
+    const clean = String((inst && inst.name) || '').trim()
+      .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
+      .replace(/\s+/g, ' ')
+      .replace(/^\.+/, '')
+      .slice(0, 48);
+    const base = (clean || 'sample').replace(/\.(8svx|msh|raw|wav|iff)$/i, '');
+    return MW.insName(index || 1) + ' ' + base + '.8svx';
+  };
+
+  /* every slot that actually has sample data */
+  MW.instrumentSaveList = function (song) {
+    const out = [];
+    ((song && song.instruments) || []).forEach((inst, i) => {
+      if (!inst || !inst.data || !inst.data.length) return;
+      out.push({ index: i + 1, name: MW.instFileName(inst, i + 1), inst });
+    });
+    return out;
+  };
+
   /* A volume command's argument: two decimal digits, or hex when VOL is on
      HEX. A hex digit in a decimal argument still counts as its value, as in
      OctaMED, and the result is capped at 64. */
