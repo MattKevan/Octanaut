@@ -3242,36 +3242,23 @@
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  /* ------------------------------------------------------- first-run hint
+  /* ------------------------------------------------------- empty-editor hint
    *
-   * A new visitor gets an empty song and no obvious way to fill it: the
-   * browser has no disks to browse, and DH0: is not a thing they can guess.
-   * The note appears once, and only while the song is still untouched.
+   * A load with nothing in the editor leaves no obvious way forward: the
+   * browser has no disks to browse, and DH0: is not a thing anyone can guess.
+   * The note repeats on every load that starts empty, not just the first.
    */
-
-  const HINT_KEY = 'octanaut.hint.v1';
-
-  function hintSeen() {
-    try { return localStorage.getItem(HINT_KEY) === 'seen'; } catch (e) { return false; }
-  }
-
-  function rememberHint() {
-    try { localStorage.setItem(HINT_KEY, 'seen'); } catch (e) { /* private mode */ }
-  }
 
   const emptyHint = MW.emptyHint = {
     el: null,
     keys: null,
 
-    shouldShow(restored) {
-      if (restored) return false;
-      if (hintSeen()) return false;
-      return MW.songIsEmpty(app.song);
+    shouldShow() {
+      return !this.el && MW.songIsEmpty(app.song);
     },
 
     show() {
       if (this.el) return;
-      rememberHint();
       const el = document.createElement('div');
       el.className = 'requester';
       el.innerHTML = `
@@ -3567,7 +3554,12 @@
     for (let i = 0; i < 5; i++) {
       const idx = start + i;
       const up = i < 2;
-      if (idx >= total) { rows += '<div class="flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap"></div>'; continue; }
+      if (idx >= total) {
+        rows += '<div class="flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap"></div>';
+        /* keep a cell for every row, so the arrows line up with the entries */
+        arrows += '<div aria-hidden="true"></div>';
+        continue;
+      }
       const cls = 'flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap'
         + (idx === cur || (MW.player.playing && idx === MW.player.seqPos) ? ' bg-ink text-paper' : '');
       /* the sequence list shows block numbers, as OctaMED does */
@@ -4119,7 +4111,7 @@
     if (restored) {
       MW.toast('Restored ' + (app.song.name || 'last session') + ' — autosaved ' + saveClock(MW.storage.savedAt));
     }
-    if (MW.emptyHint.shouldShow(restored)) MW.emptyHint.show();
+    if (MW.emptyHint.shouldShow()) MW.emptyHint.show();
     MW.booted = true;
   }
 
