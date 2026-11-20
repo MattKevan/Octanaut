@@ -3540,6 +3540,16 @@
 
   /* ------------------------------------------------------------ sequence box */
 
+  /* OctaMED's editor has four arrow buttons beside the list: two up and two
+     down, for stepping and for jumping to either end. They are fixed
+     furniture, not one arrow per sequence entry. */
+  const SEQ_ARROWS = [
+    { go: 'first', glyph: '↑', title: 'First entry' },
+    { go: 'prev', glyph: '↑', title: 'Previous entry' },
+    { go: 'next', glyph: '↓', title: 'Next entry' },
+    { go: 'last', glyph: '↓', title: 'Last entry' }
+  ];
+
   MW.renderSeqBox = function () {
     const host = document.getElementById('seqbox');
     const arrowsHost = document.getElementById('seqarrows');
@@ -3550,28 +3560,25 @@
     const start = MW.clamp(cur - 2, 0, Math.max(0, total - 5));
 
     let rows = '';
-    let arrows = '';
     for (let i = 0; i < 5; i++) {
       const idx = start + i;
-      const up = i < 2;
       if (idx >= total) {
         rows += '<div class="flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap"></div>';
-        /* keep a cell for every row, so the arrows line up with the entries */
-        arrows += '<div aria-hidden="true"></div>';
         continue;
       }
       const cls = 'flex min-w-0 items-center justify-center gap-1 overflow-hidden text-[16px] leading-none whitespace-nowrap'
         + (idx === cur || (MW.player.playing && idx === MW.player.seqPos) ? ' bg-ink text-paper' : '');
       /* the sequence list shows block numbers, as OctaMED does */
       rows += `<div class="${cls}" data-seq="${idx}" title="Sequence ${idx + 1}">${MW.hex(s.playseq[idx])}</div>`;
-      arrows += `<button class="flex items-center justify-center border-b border-ink bg-paper text-[15px] leading-none active:bg-ink active:text-paper" data-seqmove="${idx}" data-dir="${up ? -1 : 1}" title="${up ? 'Move this entry up' : 'Move this entry down'}">${up ? '↑' : '↓'}</button>`;
     }
     host.innerHTML = `<div class="grid h-full grid-rows-5">${rows}</div>`;
     if (arrowsHost) {
       /* Inline as well as the class, so an old cached stylesheet cannot leave
          the arrows in a single stretched row. */
-      arrowsHost.style.gridTemplateRows = 'repeat(5, minmax(0, 1fr))';
-      arrowsHost.innerHTML = arrows;
+      arrowsHost.style.gridTemplateRows = 'repeat(4, minmax(0, 1fr))';
+      arrowsHost.innerHTML = SEQ_ARROWS.map(a =>
+        `<button class="flex items-center justify-center border-b border-ink bg-paper text-[15px] leading-none active:bg-ink active:text-paper" data-seqgo="${a.go}" title="${a.title}">${a.glyph}</button>`
+      ).join('');
     }
   };
 
@@ -3901,19 +3908,20 @@
       if (row) { app.cursor.seq = parseInt(row.dataset.seq, 10); jumpToSeq(); }
     });
 
-    /* the arrows beside each play-sequence row move that entry up or down */
-    function moveSeqEntry(idx, dir) {
-      const seq = app.song.playseq;
-      const to = idx + dir;
-      if (idx < 0 || to < 0 || idx >= seq.length || to >= seq.length) return;
-      const t = seq[idx]; seq[idx] = seq[to]; seq[to] = t;
-      app.cursor.seq = to;
+    /* the four arrows beside the list step through it or jump to an end */
+    function gotoSeq(where) {
+      const total = app.song.playseq.length;
+      const cur = MW.clamp(app.cursor.seq, 0, total - 1);
+      const to = where === 'first' ? 0
+        : where === 'last' ? total - 1
+          : where === 'prev' ? cur - 1
+            : cur + 1;
+      app.cursor.seq = MW.clamp(to, 0, total - 1);
       jumpToSeq();
     }
     document.getElementById('seqarrows').addEventListener('click', e => {
-      const b = e.target.closest('[data-seqmove]');
-      if (!b) return;
-      moveSeqEntry(parseInt(b.dataset.seqmove, 10), parseInt(b.dataset.dir, 10));
+      const b = e.target.closest('[data-seqgo]');
+      if (b) gotoSeq(b.dataset.seqgo);
     });
 
     function showSong(dir) {

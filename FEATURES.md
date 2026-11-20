@@ -87,7 +87,7 @@ The remaining functional gaps are note-length capture for MIDI key-up, the sampl
 
 | Feature | Status | Notes |
 |---|---|---|
-| Play sequence window, 5 rows, per-row move arrows | yes | Each row's arrow moves that entry up or down; + / − / INS / DEL / INS↓ edit the list. |
+| Play sequence window, 5 rows, four arrows | yes | Top to bottom: first entry, previous entry, next entry, last entry. + / − / INS / DEL / INS↓ edit the list. |
 | + / − / INS / DEL / INS↓ | yes | Plus append and remove for the last entry. |
 | Play song / Continue song / Play block / Continue block / Stop | yes | |
 | "D" — play block when a note is entered | yes | The D gadget in the Play panel. |
