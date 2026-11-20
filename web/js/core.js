@@ -237,6 +237,28 @@
     block.highlight = hl;
   };
 
+  /* Nothing written yet: no notes or commands, no instruments, no names and
+     the default single entry in the play sequence. Used for the first-run
+     hint, so it has to treat the song a new boot creates as empty. */
+  MW.songIsEmpty = function (song) {
+    if (!song) return true;
+    const name = String(song.name == null ? '' : song.name).trim();
+    if (name && name.toLowerCase() !== 'untitled') return false;
+    if (String(song.annotation == null ? '' : song.annotation).trim()) return false;
+    if (Array.isArray(song.instruments) && song.instruments.some(ins => ins)) return false;
+    if (Array.isArray(song.playseq) && song.playseq.length > 1) return false;
+    for (const block of song.blocks || []) {
+      if (!block) continue;
+      if (String(block.name == null ? '' : block.name).trim()) return false;
+      for (const row of block.rows || []) {
+        for (const cell of row || []) {
+          if (cell && !MW.blankCell(cell)) return false;
+        }
+      }
+    }
+    return true;
+  };
+
   /* ---------- instruments ---------- */
 
   MW.createInstrument = function (type) {

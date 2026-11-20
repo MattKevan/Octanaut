@@ -131,3 +131,39 @@ test('meter levels decay per second and ease toward their target', () => {
   const down = MW.easeLevel(100, 0, 1 / 30, 14);
   assert.ok(down < 100 && down > 0);
 });
+
+test('a fresh song reads as empty and any content ends that', () => {
+  const song = MW.createSong();
+  assert.equal(MW.songIsEmpty(song), true);
+  assert.equal(MW.songIsEmpty(null), true);
+  /* the default name is the template's, not the user's */
+  assert.equal(MW.songIsEmpty(Object.assign(MW.createSong(), { name: 'untitled' })), true);
+
+  const withNote = MW.createSong();
+  withNote.blocks[0].rows[3][1].note = 25;
+  assert.equal(MW.songIsEmpty(withNote), false);
+
+  const withCommand = MW.createSong();
+  withCommand.blocks[0].rows[0][0].cmd = 0x0c;
+  assert.equal(MW.songIsEmpty(withCommand), false);
+
+  const named = MW.createSong();
+  named.name = 'my tune';
+  assert.equal(MW.songIsEmpty(named), false);
+
+  const annotated = MW.createSong();
+  annotated.annotation = 'from a module';
+  assert.equal(MW.songIsEmpty(annotated), false);
+
+  const namedBlock = MW.createSong();
+  namedBlock.blocks[0].name = 'verse';
+  assert.equal(MW.songIsEmpty(namedBlock), false);
+
+  const withInstrument = MW.createSong();
+  withInstrument.instruments[0] = MW.createInstrument();
+  assert.equal(MW.songIsEmpty(withInstrument), false);
+
+  const sequenced = MW.createSong();
+  sequenced.playseq.push(0);
+  assert.equal(MW.songIsEmpty(sequenced), false);
+});

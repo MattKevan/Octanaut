@@ -1896,6 +1896,7 @@
     song.name = name ? name.replace(/\.[^.]+$/, '') : song.name;
     if (source) song.annotation = song.annotation ? song.annotation + '\n' + source : source;
     replaceModule(song);
+    if (MW.emptyHint) MW.emptyHint.close();
     MW.panels.show('play');
 
     const usedInstruments = new Set();
@@ -3241,6 +3242,84 @@
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  /* ------------------------------------------------------- first-run hint
+   *
+   * A new visitor gets an empty song and no obvious way to fill it: the
+   * browser has no disks to browse, and DH0: is not a thing they can guess.
+   * The note appears once, and only while the song is still untouched.
+   */
+
+  const HINT_KEY = 'octanaut.hint.v1';
+
+  function hintSeen() {
+    try { return localStorage.getItem(HINT_KEY) === 'seen'; } catch (e) { return false; }
+  }
+
+  function rememberHint() {
+    try { localStorage.setItem(HINT_KEY, 'seen'); } catch (e) { /* private mode */ }
+  }
+
+  const emptyHint = MW.emptyHint = {
+    el: null,
+    keys: null,
+
+    shouldShow(restored) {
+      if (restored) return false;
+      if (hintSeen()) return false;
+      return MW.songIsEmpty(app.song);
+    },
+
+    show() {
+      if (this.el) return;
+      rememberHint();
+      const el = document.createElement('div');
+      el.className = 'requester';
+      el.innerHTML = `
+        <div class="req-frame w-[min(460px,92vw)]" role="dialog" aria-modal="true" aria-labelledby="hint-title">
+          <div class="req-title" id="hint-title">No song loaded</div>
+          <p class="mb-1 text-[12px] leading-[18px]">Go to FILES &gt; DH0: to load songs.</p>
+          <p class="mb-2 text-[10.5px] leading-[14px] text-[#555]">DH0: is the Modland archive. DF0: is this browser's work disk.</p>
+          <div class="req-buttons">
+            <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-3 text-[14px] leading-none whitespace-nowrap text-ink active:bg-ink active:text-paper" id="hint-files">FILES</button>
+            <span class="spacer"></span>
+            <button class="flex h-[26px] items-center justify-center border border-ink bg-paper px-3 text-[14px] leading-none whitespace-nowrap text-ink active:bg-ink active:text-paper" id="hint-ok">OK</button>
+          </div>
+        </div>`;
+      document.body.appendChild(el);
+      this.el = el;
+
+      const ok = el.querySelector('#hint-ok');
+      ok.onclick = () => this.close();
+      el.querySelector('#hint-files').onclick = () => this.openFiles();
+      el.addEventListener('mousedown', e => { if (e.target === el) this.close(); });
+      /* Keep the keyboard on the dialog: Escape closes it, anything else
+         stays out of the editor underneath. */
+      document.addEventListener('keydown', this.keys = e => {
+        if (e.key === 'Escape') this.close();
+        e.stopPropagation();
+      }, true);
+      if (ok.focus) ok.focus();
+    },
+
+    close() {
+      if (this.el) this.el.remove();
+      this.el = null;
+      if (this.keys) {
+        document.removeEventListener('keydown', this.keys, true);
+        this.keys = null;
+      }
+    },
+
+    openFiles() {
+      this.close();
+      MW.panels.show('files');
+      const req = MW.requester;
+      if (!req) return;
+      req._modlandLoaded = true;
+      req.setVolume('DH0:');
+    }
+  };
+
   /* ------------------------------------------------------------ midi */
 
   const MIDI_MAP_FUNCTIONS = [
@@ -4040,6 +4119,7 @@
     if (restored) {
       MW.toast('Restored ' + (app.song.name || 'last session') + ' — autosaved ' + saveClock(MW.storage.savedAt));
     }
+    if (MW.emptyHint.shouldShow(restored)) MW.emptyHint.show();
     MW.booted = true;
   }
 
