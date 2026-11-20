@@ -47,9 +47,9 @@ npm run build
 npx netlify-cli deploy --prod --dir=web --no-build --message "..."
 ```
 
-`--no-build` uploads `web/` exactly as it stands, so run the build first and check the tests. `netlify.toml` records the same command and publish directory for any deploy that does build on Netlify's machines, plus the cache headers: HTML revalidates every time, `js/` and `css/` cache for an hour, fonts for a year.
+`--no-build` uploads `web/` exactly as it stands, so run the build first and check the tests. `netlify.toml` records the same command and publish directory for any deploy that does build on Netlify's machines, plus the cache headers: the page, scripts and styles revalidate on every load, fonts cache for a year. Scripts are versioned with a query string rather than a hashed filename, so a long cache would pin an old file if a deploy landed mid-flight.
 
-The compiled CSS and panels are checked in, and `web/index.html` stamps them with `?v=`. Bump that stamp whenever either file changes, or returning visitors keep the old copy for the length of the cache.
+The compiled CSS and panels are checked in, and `web/index.html` stamps them with `?v=`. Bump that stamp whenever either file changes: it names the release, and a fresh stamp cannot be answered from any cache holding the previous build.
 
 The site link lives in `.netlify/`, which is ignored. On a fresh clone, `npx netlify-cli link` once before deploying.
 
