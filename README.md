@@ -38,6 +38,21 @@ Fonts are bundled in `web/fonts/`:
 
 Everything outside the note editor – panels, status strip, tabs, requester – is Departure Mono.
 
+## Deploying
+
+The live site is <https://octanaut.netlify.app>. Deploys are made by hand from this machine, because a Netlify build costs credits and the project does not need one: pushing to GitHub updates the repository and nothing else.
+
+```
+npm run build
+npx netlify-cli deploy --prod --dir=web --no-build --message "..."
+```
+
+`--no-build` uploads `web/` exactly as it stands, so run the build first and check the tests. `netlify.toml` records the same command and publish directory for any deploy that does build on Netlify's machines, plus the cache headers: HTML revalidates every time, `js/` and `css/` cache for an hour, fonts for a year.
+
+The compiled CSS and panels are checked in, and `web/index.html` stamps them with `?v=`. Bump that stamp whenever either file changes, or returning visitors keep the old copy for the length of the cache.
+
+The site link lives in `.netlify/`, which is ignored. On a fresh clone, `npx netlify-cli link` once before deploying.
+
 ## The note editor
 
 The playhead is a fixed white bar across the exact vertical centre of the tracker area, running from the line-number gutter to the right edge. It stays visible when playback is stopped. The active cell box rides that bar and moves horizontally.
@@ -224,6 +239,7 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 ```
 app/
   package.json      Tailwind and test scripts
+  netlify.toml      build command, publish directory, cache headers
   tsconfig.json     type checking for the core
   test/             unit tests and headless checks
   web/              the served site
