@@ -3567,7 +3567,12 @@
       arrows += `<button class="flex items-center justify-center border-b border-ink bg-paper text-[15px] leading-none active:bg-ink active:text-paper" data-seqmove="${idx}" data-dir="${up ? -1 : 1}" title="${up ? 'Move this entry up' : 'Move this entry down'}">${up ? '↑' : '↓'}</button>`;
     }
     host.innerHTML = `<div class="grid h-full grid-rows-5">${rows}</div>`;
-    if (arrowsHost) arrowsHost.innerHTML = arrows;
+    if (arrowsHost) {
+      /* Inline as well as the class, so an old cached stylesheet cannot leave
+         the arrows in a single stretched row. */
+      arrowsHost.style.gridTemplateRows = 'repeat(5, minmax(0, 1fr))';
+      arrowsHost.innerHTML = arrows;
+    }
   };
 
   /* ------------------------------------------------------------ scope */

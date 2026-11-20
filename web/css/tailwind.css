@@ -514,6 +514,11 @@ body.dragging::after {
 body.dep2 .cell .note { color: #f0f0f0; }
 body.dep2 .grid-row.playing .cell .note { color: #000; }
 
+/* The arrow column shares the five row heights of the sequence box. The
+   markup carries the same template as a utility; this rule keeps the rows
+   equal even when the page and a cached stylesheet disagree about the class. */
+.seqarrows { grid-template-rows: repeat(5, minmax(0, 1fr)); }
+
 @media (max-width: 1120px) {
   .credit { display: none; }
   .deck { grid-template-columns: minmax(0, 1fr) 230px; }
