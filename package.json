@@ -8,9 +8,11 @@
     "watch:css": "tailwindcss -i web/css/tailwind.css -o web/css/app.css --minify --watch",
     "build:panels": "esbuild web/src/panels.tsx --bundle --format=iife --global-name=OctanautPanels --outfile=web/js/panels.js --jsx=automatic --jsx-import-source=preact --target=es2020 --minify",
     "watch:panels": "esbuild web/src/panels.tsx --bundle --format=iife --global-name=OctanautPanels --outfile=web/js/panels.js --jsx=automatic --jsx-import-source=preact --target=es2020 --minify --watch",
-    "build": "npm run build:css && npm run build:panels",
+    "build": "npm run build:css && npm run build:panels && npm run build:assets",
+    "build:assets": "node scripts/hash-assets.js",
+    "watch:assets": "node scripts/hash-assets.js --watch",
     "serve": "live-server web --port=3000 --no-browser --wait=200",
-    "dev": "concurrently -k -n CSS,PANELS,SERVE -c blue,green,magenta \"npm:watch:css\" \"npm:watch:panels\" \"npm:serve\"",
+    "dev": "concurrently -k -n CSS,PANELS,ASSETS,SERVE -c blue,green,yellow,magenta \"npm:watch:css\" \"npm:watch:panels\" \"npm:watch:assets\" \"npm:serve\"",
     "typecheck": "tsc --noEmit",
     "test": "npm run typecheck && node --test test/*.test.js && node test/run.js",
     "test:corpus": "node test/corpus.js"

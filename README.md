@@ -21,10 +21,12 @@ The interface is built with Tailwind CSS v4. The source lives in `web/css/tailwi
 npm install          # once
 npm run build:css    # compile web/css/app.css
 npm run build:panels # compile web/js/panels.js from TSX
-npm run build        # both
-npm run dev          # watch both and serve at http://localhost:3000
+npm run build:assets # copy the files index.html loads to hashed names
+npm run build        # all three
+npm run dev          # watch all three and serve at http://localhost:3000
 npm run watch:css    # rebuild CSS only
 npm run watch:panels # rebuild panels only
+npm run watch:assets # re-hash when a watched file changes
 npm run serve        # static server without the watchers
 ```
 
@@ -47,9 +49,11 @@ npm run build
 npx netlify-cli deploy --prod --dir=web --no-build --message "..."
 ```
 
-`--no-build` uploads `web/` exactly as it stands, so run the build first and check the tests. `netlify.toml` records the same command and publish directory for any deploy that does build on Netlify's machines, plus the cache headers: the page, scripts and styles revalidate on every load, fonts cache for a year. Scripts are versioned with a query string rather than a hashed filename, so a long cache would pin an old file if a deploy landed mid-flight.
+`--no-build` uploads `web/` exactly as it stands, so run the build first and check the tests. `netlify.toml` records the same command and publish directory for any deploy that does build on Netlify's machines, plus the cache headers: the page revalidates on every load, the hashed files under `assets/` are immutable for a year, the plain sources under `js/` and `css/` revalidate, and fonts cache for a year.
 
-The compiled CSS and panels are checked in, and `web/index.html` stamps them with `?v=`. Bump that stamp whenever either file changes: it names the release, and a fresh stamp cannot be answered from any cache holding the previous build.
+`scripts/hash-assets.js` gives every script and stylesheet that `index.html` loads a name containing a hash of its contents: `assets/app.06b8dd94d4.css`. The page is rewritten to point at those names, so a changed file always has a new URL and can be cached forever. The plain files stay in `web/js` and `web/css` for the tests and for opening `index.html` from disk, and the run deletes hashed copies nothing references. It is safe to run more than once.
+
+The compiled CSS, the panel bundle and the hashed copies are all checked in.
 
 The site link lives in `.netlify/`, which is ignored. On a fresh clone, `npx netlify-cli link` once before deploying.
 
@@ -240,10 +244,12 @@ The app state lives in one object wrapped by `MW.store`. A panel subscribes to t
 app/
   package.json      Tailwind and test scripts
   netlify.toml      build command, publish directory, cache headers
+  scripts/hash-assets.js  hashed asset copies and the index rewrite
   tsconfig.json     type checking for the core
   test/             unit tests and headless checks
   web/              the served site
-    index.html
+    index.html      loads everything from assets/
+    assets/         hashed copies of the files index.html loads
     css/tailwind.css  Tailwind source
     css/app.css       compiled output, checked in
     fonts/            Departure Mono and Pixel Operator

@@ -3,6 +3,9 @@
 @source "../index.html";
 @source "../js/*.js";
 @source "../src/**/*.tsx";
+/* web/assets holds generated copies; scanning them adds nothing and makes the
+   build depend on its own output. */
+@source not "../assets";
 
 /* ------------------------------------------------------------------ fonts */
 

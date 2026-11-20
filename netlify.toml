@@ -16,9 +16,15 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# The ?v= stamps in index.html are query strings, not content hashes. If the
-# CDN serves a new page beside an old asset during a deploy, a long cache would
-# keep that mismatch until it expired, so scripts and styles revalidate.
+# index.html names every script and stylesheet by a hash of its contents, so
+# those copies can be cached forever. The plain files under js/ and css/ are
+# not used by the page; they stay revalidating for anything that links to them
+# directly.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 [[headers]]
   for = "/js/*"
   [headers.values]
